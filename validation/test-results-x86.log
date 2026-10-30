@@ -1,0 +1,96 @@
+PASS: renamed download cannot overwrite the original native executable
+PASS: all original pages retained
+PASS: extended save and layout review refuses a runtime without the isolation marker
+PASS: original navigation nodes retained
+PASS: native file persistence review refuses an unmarked production runtime
+PASS: grouped icon navigation replaces the visible native tree with a readable wider sidebar
+PASS: mockup navigation has a German surface category with a vector icon
+PASS: sidebar tools invoke the original native folder and log handlers
+PASS: expert selector invokes the original native mode toggle
+PASS: native tree double buffering is enabled
+PASS: native control identity retained
+PASS: theme construction preserves input values
+PASS: input and options-list white frames removed
+PASS: custom chrome preserves combo selection and native radio group
+PASS: standard combo paints once without invoking the native frame renderer
+PASS: resized disabled combo has no white trailing native field
+PASS: combo border follows the full resized native client area
+PASS: native tabs render to memory without an intermediate screen frame
+PASS: buffered native controls retain selection behavior
+PASS: native music slider paints without a legacy frame and preserves its value
+PASS: native slider value and notifications remain functional
+PASS: plugin dialog is themed before native visibility and its first paint
+PASS: preparing an existing page avoids redundant input invalidation
+PASS: group side frame is replaced by its flat surface
+PASS: group separator uses a muted theme color
+PASS: no dirty state after presentation changes
+PASS: light theme readable
+PASS: semantic color swatch preserved in light mode
+PASS: dark theme readable
+PASS: native combo items survive light and dark switches
+PASS: theme switch has no setting side effects
+PASS: context can collapse
+PASS: context can expand
+PASS: field edit detected
+PASS: edits survive theme and context changes
+PASS: return to original value clears edit marker
+PASS: native page activation still runs
+PASS: subsection tab points to original navigation node
+PASS: subsection tabs use underline styling without box frames
+PASS: wrapped subsection tabs never expose native white scrollbars
+PASS: all wrapped tab rows fit their automatically sized strip
+PASS: tab uses native activation lifecycle
+PASS: navigation within a group reuses its tabs without rebuilding them
+PASS: native CanActivate veto preserved
+PASS: change tracking recovers after native navigation veto
+PASS: semantic color swatch preserved in dark mode
+PASS: appearance preferences persist independently
+PASS: appearance never triggers native save or cancel
+PASS: original save and cancel handlers retained
+PASS: Enter and Escape retain native buttons
+PASS: native toolbar actions retained
+PASS: search finds original subsection
+PASS: search finds option labels without removing pages
+PASS: global search also finds German page aliases
+PASS: search does not mutate native navigation
+PASS: search finds native checked-list options
+PASS: native checked-list edits detected after ItemCheck
+PASS: checked-list values survive theme switching
+PASS: read-only inventory generated
+PASS: history back uses the original native activation lifecycle
+PASS: history forward restores the original page
+PASS: larger type scales native field text together with its geometry
+PASS: font scaling preserves native values, radio groups and edit state
+PASS: readability scale persists independently of MediaPortal settings
+PASS: render transaction blocks intermediate visible frames
+PASS: nested render transaction cannot expose an unfinished outer frame
+PASS: render transaction restores the previously visible form
+PASS: native child windows share the form composition buffer
+PASS: large text at narrow window width keeps search and toolbar options on separate visible rows
+PASS: all toolbar actions fit their responsive row at 175 percent
+PASS: selected list rows have an explicit themed background in dark mode
+PASS: selected list text uses the readable theme foreground in dark mode
+PASS: selected list rows have an explicit themed background in light mode
+PASS: selected list text uses the readable theme foreground in light mode
+PASS: legacy blue list text remains readable in dark mode
+PASS: already readable list colors are preserved
+PASS: legacy blue list text remains readable in light mode
+PASS: already readable list colors are preserved
+PASS: repeated zoom and viewport resize restore anchored groups and fields without geometry drift
+PASS: stable geometry scaling preserves native text values
+PASS: late native controls inherit the original font baseline and are scaled at the current zoom
+PASS: native groups and their page minimum expand to retain overflowing fields
+PASS: content fitting is idempotent and does not grow docked layouts on each refresh
+PASS: native slider fixture starts with a direct HWND range above the WinForms default
+PASS: native slider range and value survive handle recreation during presentation changes
+PASS: native buffering slider value survives both themes
+PASS: the complete presentation transaction preserves slider state even when a parent change triggers native sibling handlers
+PASS: unselected combo text survives a theme change without selecting a nonexistent item
+PASS: brighter hover highlight retains readable text contrast
+PASS: native successful validation color remains exact and readable in dark mode
+PASS: native failed validation color remains exact and readable after a theme switch
+PASS: render transaction never shows a previously hidden startup form
+PASS: main shell attaches before the first native display instead of Idle
+PASS: first visible main-window surface already contains the completed Studio layout
+PASS: early presentation setup preserves native Load and clean input baselines
+95 checks passed.

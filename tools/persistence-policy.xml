@@ -1,0 +1,509 @@
+<persistencePolicy nativeVersion="1.39.0" sourceCommit="d1f11e283bd918521b1613b3488fe417fa2e5157">
+  <page type="Project" scope="readonly" source="Project.cs" />
+  <page type="General" scope="isolated-file" source="General.cs">
+    <field name="cbDebug" />
+    <field name="checkBoxAutoRestart" />
+    <field name="checkBoxEnableWatchdog" />
+    <field name="mpThreadPriority" />
+    <field name="numericUpDownDelay" />
+    <field name="rbHDMNetUse" />
+    <field name="rbHDMPing" />
+    <field name="rbHDMSamba" />
+  </page>
+  <page type="GeneralVolume" scope="isolated-file" source="GeneralVolume.cs">
+    <field name="_useClassicHandler" />
+    <field name="_useCustomHandler" />
+    <field name="_useCustomLevel" />
+    <field name="_useLastKnownLevel" />
+    <field name="_useLogarithmicHandler" />
+    <field name="_useSystemCurrent" />
+    <field name="_useVistaHandler" />
+    <field name="_useVolumeOSD" />
+    <field name="_useWave" />
+    <field name="_useWin10Handler" />
+    <field name="_useWindowsHandler" />
+    <field name="mpCBHideWinOSD" />
+  </page>
+  <page type="GeneralKeyboardControl" scope="readonly" source="GeneralKeyboardControl.cs" />
+  <page type="Keys" scope="isolated-file" source="GeneralKeys.cs" />
+  <page type="GeneralDynamicRefreshRate" scope="isolated-file" source="GeneralDynamicRefreshRate.cs">
+    <field name="chkEnableDynamicRR" />
+    <field name="chkForceRR" />
+    <field name="chkNotifyOnRR" />
+    <field name="chkUseDefaultRR" />
+    <field name="chkUseDeviceReset" />
+  </page>
+  <page type="GeneralStartupResume" scope="isolated-file" source="GeneralStartupResume.cs">
+    <field name="cbScreen" />
+    <field name="cbWaitForTvService" />
+    <field name="mpCheckBoxMpResume" />
+    <field name="mpCheckBoxMpStartup" />
+    <field name="nudDelay" />
+  </page>
+  <page type="Gui" scope="isolated-file" source="Gui.cs">
+    <field name="homeComboBox" />
+  </page>
+  <page type="GuiLanguage" scope="isolated-file" source="GuiLanguage.cs">
+    <field name="checkBoxUsePrefix" />
+    <field name="languageComboBox" />
+  </page>
+  <page type="GuiControls" scope="isolated-file" source="GuiControls.cs">
+    <field name="HorizontalScrollSpeedUpDown" />
+    <field name="listLoopDelayUpDown" />
+    <field name="VerticalScrollSpeedUpDown" />
+  </page>
+  <page type="GuiThumbs" scope="isolated-file" source="GuiThumbs.cs">
+    <field name="checkBoxFolderThumbOnDemand" />
+    <field name="checkBoxPicThumbOnDemand" />
+    <field name="checkBoxPictureThumbs" />
+    <field name="checkBoxShareThumb" />
+    <field name="checkBoxVideoThumbs" />
+    <field name="numericpreRecordInterval" />
+    <field name="numericUpDownThumbColumns" />
+    <field name="numericUpDownThumbRows" />
+    <field name="trackBarQuality" />
+  </page>
+  <page type="GuiScreensaver" scope="isolated-file" source="GuiScreensaver.cs">
+    <field name="checkBoxEnableScreensaver" />
+    <field name="numericUpDownDelay" />
+    <field name="pluginsComboBox" />
+    <field name="radioBtnBlankScreen" />
+    <field name="radioButtonLoadPlugin" />
+  </page>
+  <page type="GuiFileMenu" scope="isolated-file" source="GuiFileMenu.cs">
+    <field name="chbEnabled" />
+    <field name="textPinCodeBox" />
+    <field name="textTrashcanFolder" />
+  </page>
+  <page type="GuiOSD" scope="isolated-file" source="GuiOSD.cs">
+    <field name="textBoxDisplayTimeout" />
+    <field name="textBoxZapDelay" />
+    <field name="textBoxZapKeyTimeout" />
+    <field name="textBoxZapTimeout" />
+  </page>
+  <page type="GuiSkipSteps" scope="isolated-file" source="GuiSkipSteps.cs">
+    <field name="labelError" />
+    <field name="labelError2" />
+    <field name="mpRadioButton1" />
+    <field name="numericUpDownSkipTimeout" />
+    <field name="textBoxImmediateSkipSteps" />
+    <field name="textBoxManualSkipSteps" />
+  </page>
+  <page type="Movies" scope="isolated-file" source="Movies.cs">
+    <field name="audioDefaultCheckBox" />
+    <field name="borderOutlineRadioButton" />
+    <field name="borderWidthUpDown" />
+    <field name="chbKeepFoldersTogether" />
+    <field name="checkBoxShowWatched" />
+    <field name="comboBoxPlayAll" />
+    <field name="comSkipCheckBox" />
+    <field name="defaultAudioLanguageComboBox" />
+    <field name="defaultSubtitleLanguageComboBox" />
+    <field name="delayTextBox" />
+    <field name="delayVideoTextBox" />
+    <field name="folderNameTextBox" />
+    <field name="NoAudioResetCheckBox" />
+    <field name="playedPercentageTrackBar" />
+    <field name="repeatPlaylistCheckBox" />
+    <field name="saveAskRadioButton" />
+    <field name="saveNeverRadioButton" />
+    <field name="shadowDepthUpDown" />
+    <field name="streamLAVSelectionCheckBox" />
+    <field name="subEnginesCombo" />
+    <field name="subPaths" />
+    <field name="subPosRelativeCheckBox" />
+    <field name="subStyleOverrideCheckBox" />
+    <field name="subtitlesSelectionComboBox" />
+  </page>
+  <page type="MovieShares" scope="isolated-file" source="MovieShares.cs" />
+  <page type="MovieDatabase" scope="isolated-file" source="MovieDatabase.cs">
+    <field name="cbActorsListFetchSize" />
+    <field name="chbDoNotUseDatabase" />
+    <field name="chbMovieInfoOnShares" />
+    <field name="chbShowMovieInfoOnPlay" />
+    <field name="chbUseNfoScraperOnly" />
+    <field name="chbUseSortTitle" />
+    <field name="checkBoxRemoveTitlePrefix" />
+    <field name="checkBoxStripTitlePrefix" />
+    <field name="fanartQ" />
+    <field name="preferFileNameCheckBox" />
+    <field name="skipCheckBox" />
+    <field name="tbTitlePrefixes" />
+  </page>
+  <page type="MoviePlayer" scope="isolated-file" source="MoviePlayer.cs">
+    <field name="extensionsTextBox" />
+    <field name="externalPlayerCheckBox" />
+    <field name="fileNameTextBox" />
+    <field name="parametersTextBox" />
+    <field name="wmvCheckBox" />
+  </page>
+  <page type="MovieZoom" scope="isolated-file" source="MovieZoom.cs">
+    <field name="cbAllowCinemaScope235" />
+    <field name="cbAllowLetterbox" />
+    <field name="cbAllowNonLinearStretch" />
+    <field name="cbAllowNormal" />
+    <field name="cbAllowOriginal" />
+    <field name="cbAllowStretch" />
+    <field name="cbAllowZoom" />
+    <field name="cbAllowZoom149" />
+    <field name="defaultZoomModeComboBox" />
+  </page>
+  <page type="MovieExtensions" scope="isolated-file" source="MovieExtensions.cs" />
+  <page type="MovieViews" scope="isolated-file" source="MovieViews.cs" />
+  <page type="MoviePostProcessing" scope="isolated-file" source="MoviePostProcessing.cs" />
+  <page type="BD" scope="isolated-file" source="BD.cs">
+    <field name="defaultAudioLanguageComboBox" />
+    <field name="defaultSubtitleLanguageComboBox" />
+    <field name="ParentalControlUpDown" />
+    <field name="preferredAudioTypeComboBox" />
+    <field name="RegionCodeComboBox" />
+    <field name="SubsEnabled" />
+  </page>
+  <page type="BDZoom" scope="isolated-file" source="BDZoom.cs">
+    <field name="cbAllowCinemaScope235" />
+    <field name="cbAllowLetterbox" />
+    <field name="cbAllowNonLinearStretch" />
+    <field name="cbAllowNormal" />
+    <field name="cbAllowOriginal" />
+    <field name="cbAllowStretch" />
+    <field name="cbAllowZoom" />
+    <field name="cbAllowZoom149" />
+    <field name="defaultZoomModeComboBox" />
+  </page>
+  <page type="BDPostProcessing" scope="isolated-file" source="BDPostProcessing.cs" />
+  <page type="BDPlayer" scope="isolated-file" source="BDPlayer.cs">
+    <field name="fileNameTextBox" />
+    <field name="parametersTextBox" />
+    <field name="useExternalPlayerForBluRay" />
+    <field name="useInternalBDPlayer" />
+    <field name="useMediaInfoBD" />
+  </page>
+  <page type="DVD" scope="isolated-file" source="DVD.cs">
+    <field name="defaultAudioLanguageComboBox" />
+    <field name="defaultSubtitleLanguageComboBox" />
+    <field name="showClosedCaptions" />
+    <field name="showSubtitlesCheckBox" />
+  </page>
+  <page type="DVDPlayer" scope="isolated-file" source="DVDPlayer.cs">
+    <field name="fileNameTextBox" />
+    <field name="parametersTextBox" />
+    <field name="useExternalPlayerForDVD" />
+    <field name="useMediaInfo" />
+  </page>
+  <page type="DVDZoom" scope="isolated-file" source="DVDZoom.cs">
+    <field name="aspectRatioComboBox" />
+    <field name="defaultZoomModeComboBox" />
+    <field name="displayModeComboBox" />
+    <field name="pixelRatioCheckBox" />
+  </page>
+  <page type="DVDPostProcessing" scope="isolated-file" source="DVDPostProcessing.cs" />
+  <page type="GeneralDaemonTools" scope="isolated-file" source="GeneralDaemonTools.cs">
+    <field name="checkBoxAskBeforePlaying" />
+    <field name="checkBoxDaemonTools" />
+    <field name="comboBoxDrive" />
+    <field name="comboDriveNo" />
+    <field name="comboDriveType" />
+    <field name="textBoxDaemonTools" />
+    <field name="textBoxExtensions" />
+  </page>
+  <page type="GeneralAutoplay" scope="isolated-file" source="GeneralAutoplay.cs">
+    <field name="autoPlayAudioComboBox" />
+    <field name="autoPlayPhotoComboBox" />
+    <field name="autoPlayVideoComboBox" />
+  </page>
+  <page type="TVRadio" scope="isolated-file" source="TVRadio.cs" note="Only client configuration is saved; a live TV server is not assumed.">
+    <field name="mpCheckBoxIsAutoMacAddressEnabled" />
+    <field name="mpCheckBoxIsWakeOnLanEnabled" />
+    <field name="mpNumericTextBoxWOLTimeOut" />
+    <field name="mpTextBoxHostname" />
+    <field name="mpTextBoxMacAddress" />
+  </page>
+  <page type="TV" scope="isolated-file" source="TV.cs">
+    <field name="byIndexCheckBox" />
+    <field name="cbAutoFullscreen" />
+    <field name="cbChannelChange" />
+    <field name="cbConfirmTimeshiftStop" />
+    <field name="cbContinuousScrollGuide" />
+    <field name="cbDeinterlace" />
+    <field name="cbHideAllChannels" />
+    <field name="cbRelaxTsReader" />
+    <field name="cbShowChannelStateIcons" />
+    <field name="cbTurnOnTv" />
+    <field name="channelNumberMaxLengthNumUpDn" />
+    <field name="checkBoxNotifyPlaySound" />
+    <field name="chkRecnotifications" />
+    <field name="comboboxShowEpisodeInfo" />
+    <field name="enableAudioDualMonoModes" />
+    <field name="mpCheckBoxAutoShowSubWhenTvStarts" />
+    <field name="mpCheckBoxEnableCCSub" />
+    <field name="mpCheckBoxEnableDVBSub" />
+    <field name="mpCheckBoxEnableTTXTSub" />
+    <field name="mpCheckBoxPrefAC3" />
+    <field name="mpCheckBoxPrefAudioOverLang" />
+    <field name="showChannelNumberCheckBox" />
+    <field name="txtNotifyAfter" />
+    <field name="txtNotifyBefore" />
+  </page>
+  <page type="Radio" scope="isolated-file" source="Radio.cs">
+    <field name="byIndexCheckBox" />
+    <field name="channelNumberMaxLengthNumUpDn" />
+    <field name="showChannelNumberCheckBox" />
+  </page>
+  <page type="TVZoom" scope="isolated-file" source="TVZoom.cs">
+    <field name="cbAllowCinemaScope235" />
+    <field name="cbAllowLetterbox" />
+    <field name="cbAllowNonLinearStretch" />
+    <field name="cbAllowNormal" />
+    <field name="cbAllowOriginal" />
+    <field name="cbAllowStretch" />
+    <field name="cbAllowZoom" />
+    <field name="cbAllowZoom149" />
+    <field name="defaultZoomModeComboBox" />
+  </page>
+  <page type="TVPostProcessing" scope="isolated-file" source="TVPostProcessing.cs" />
+  <page type="TVTeletext" scope="isolated-file" source="TVTeletext.cs">
+    <field name="cbHiddenMode" />
+    <field name="cbRememberValue" />
+    <field name="cbTransparentMode" />
+    <field name="nudFontSize" />
+  </page>
+  <page type="TVAdvancedOptions" scope="isolated-file" source="TVAdvancedOptions.cs">
+    <field name="mpDoNotAllowSlowMotionDuringZappingCheckBox" />
+    <field name="mpUseRtspCheckBox" />
+    <field name="textBoxRecording" />
+    <field name="textBoxTimeshifting" />
+  </page>
+  <page type="Music" scope="isolated-file" source="Music.cs">
+    <field name="audioPlayerComboBox" />
+    <field name="autoShuffleCheckBox" />
+    <field name="cbResumeSelect" />
+    <field name="cbUpmixFiveDotOne" />
+    <field name="cbUpmixMono" />
+    <field name="cbUpmixQuadro" />
+    <field name="cbUpmixStereo" />
+    <field name="chkAddAllTracks" />
+    <field name="chkDisableSimilarTrackLookups" />
+    <field name="chkEnableResumeSupport" />
+    <field name="cmbSelectOption" />
+    <field name="EnableAlbumReplayGainChkBox" />
+    <field name="EnableReplayGainChkBox" />
+    <field name="FadeOnStartStopChkbox" />
+    <field name="GaplessPlaybackChkBox" />
+    <field name="hScrollBarBalance" />
+    <field name="PlaylistCurrentCheckBox" />
+    <field name="playlistFolderTextBox" />
+    <field name="playlistNumberOfSongsTextBox" />
+    <field name="PlayListUTF8CheckBox" />
+    <field name="PlayNowJumpToCmbBox" />
+    <field name="radioButtonVUAnalog" />
+    <field name="radioButtonVULed" />
+    <field name="repeatPlaylistCheckBox" />
+    <field name="ResumePlaylistChkBox" />
+    <field name="SavePlaylistOnExitChkBox" />
+    <field name="soundDeviceComboBox" />
+    <field name="StreamOutputLevelNud" />
+    <field name="tbResumeAfter" />
+    <field name="tbResumeSearchValue" />
+    <field name="trackBarBuffering" />
+    <field name="trackBarCrossfade" />
+    <field name="UseSkipStepsCheckBox" />
+    <field name="WasapiExclusiveModeCkBox" />
+    <field name="WasApiSpeakersCombo" />
+  </page>
+  <page type="MusicShares" scope="isolated-file" source="MusicShares.cs" />
+  <page type="MusicDatabase" scope="isolated-file" source="MusicDatabase.cs">
+    <field name="buildThumbsCheckBox" />
+    <field name="checkBoxAllImages" />
+    <field name="checkBoxCreateArtist" />
+    <field name="checkBoxCreateFolderThumb" />
+    <field name="checkBoxCreateGenre" />
+    <field name="checkBoxStripArtistPrefix" />
+    <field name="checkBoxUpdateSinceLastImport" />
+    <field name="checkBoxUseFolderThumb" />
+    <field name="comboBoxDateAdded" />
+    <field name="folderAsAlbumCheckBox" />
+    <field name="monitorSharesCheckBox" />
+    <field name="tbPrefixes" />
+  </page>
+  <page type="MusicImport" scope="isolated-file" source="MusicImport.cs">
+    <field name="checkBoxBackground" />
+    <field name="checkBoxCBR" />
+    <field name="checkBoxDatabase" />
+    <field name="checkBoxFastMode" />
+    <field name="checkBoxMono" />
+    <field name="checkBoxReplace" />
+    <field name="checkBoxUnknown" />
+    <field name="hScrollBarBitrate" />
+    <field name="hScrollBarPriority" />
+    <field name="hScrollBarQuality" />
+    <field name="radioButtonQuality" />
+    <field name="textBoxFormat" />
+    <field name="textBoxImportDir" />
+  </page>
+  <page type="MusicExtensions" scope="isolated-file" source="MusicExtensions.cs" />
+  <page type="MusicViews" scope="isolated-file" source="MusicViews.cs" />
+  <page type="MusicSort" scope="isolated-file" source="MusicSort.cs" />
+  <page type="MusicDSP" scope="isolated-file" source="MusicDSP.cs" note="musicdsp.xml is isolated; singleton is reset for the reload check.">
+    <field name="checkBoxCompressor" />
+    <field name="checkBoxDAmp" />
+    <field name="comboBoxDynamicAmplification" />
+    <field name="textBoxGainDBValue" />
+    <field name="trackBarCompressor" />
+  </page>
+  <page type="Pictures" scope="isolated-file" source="Pictures.cs">
+    <field name="autoHideOSDCheckBox" />
+    <field name="autoShuffleCheckBox" />
+    <field name="checkBoxEnableVideo" />
+    <field name="checkBoxGroupDays" />
+    <field name="checkBoxPlayVideosInSlideshow" />
+    <field name="checkBoxUseExif" />
+    <field name="checkBoxUsePicasa" />
+    <field name="durationTextBox" />
+    <field name="kenburnsTextBox" />
+    <field name="radioButtonKenBurns" />
+    <field name="radioButtonRandom" />
+    <field name="repeatSlideshowCheckBox" />
+    <field name="showOSDCheckBox" />
+    <field name="transitionTextBox" />
+  </page>
+  <page type="PictureShares" scope="isolated-file" source="PictureShares.cs" />
+  <page type="PictureThumbs" scope="readonly" source="PictureThumbs.cs">
+    <field name="skipCheckBox" />
+  </page>
+  <page type="PictureExtensions" scope="isolated-file" source="PictureExtensions.cs" />
+  <page type="Remote" scope="isolated-file" source="Remote.cs">
+    <field name="checkBoxAppCommandBackground" />
+    <field name="checkBoxCentareaEnabled" />
+    <field name="checkBoxCentareaReMapMouseButton" />
+    <field name="checkBoxCentareaVerbose" />
+    <field name="checkBoxFireDTVEnabled" />
+    <field name="checkBoxFireDTVExtendedLogging" />
+    <field name="checkBoxHcwAllowExternal" />
+    <field name="checkBoxHcwEnabled" />
+    <field name="checkBoxHcwExtendedLogging" />
+    <field name="checkBoxHcwFilterDoubleKlicks" />
+    <field name="checkBoxHcwKeepControl" />
+    <field name="checkBoxHidEnabled" />
+    <field name="checkBoxHidExtendedLogging" />
+    <field name="checkBoxHidKeyboard" />
+    <field name="checkBoxIrTransEnabled" />
+    <field name="checkBoxIrTransExtendedLogging" />
+    <field name="checkBoxMapJoystick" />
+    <field name="checkBoxX10ChannelControl" />
+    <field name="checkBoxX10Enabled" />
+    <field name="checkBoxX10ExtendedLogging" />
+    <field name="comboBoxHidProfiles" />
+    <field name="hScrollBarHcwButtonRelease" />
+    <field name="hScrollBarHcwRepeatFilter" />
+    <field name="hScrollBarHcwRepeatSpeed" />
+    <field name="mpCheckBoxAppCommandEnabled" />
+    <field name="mpCheckBoxAppCommandVerbose" />
+    <field name="numericRepeatDelay" />
+    <field name="numericRepeatSpeed" />
+    <field name="radioButtonX10Ati" />
+    <field name="radioButtonX10Firefly" />
+    <field name="radioButtonX10Medion" />
+    <field name="TextBoxChannelNumber" />
+    <field name="textBoxIrTransServerPort" />
+    <field name="textBoxRemoteModel" />
+  </page>
+  <page type="RemoteUSBUIRT" scope="isolated-file" source="RemoteUSBUIRT.cs">
+    <field name="_commandRepeat" />
+    <field name="_digitCheckBox" />
+    <field name="_enterCheckBox" />
+    <field name="_inputCheckBox" />
+    <field name="_interCommandDelay" />
+    <field name="_outputCheckBox" />
+    <field name="_repeatDelay" />
+    <field name="_repeatWait" />
+  </page>
+  <page type="RemoteSerialUIR" scope="isolated-file" source="RemoteSerialUIR.cs">
+    <field name="BaudRateCombo" />
+    <field name="checkBoxDTR" />
+    <field name="checkBoxInitUIRIrman" />
+    <field name="checkBoxRTS" />
+    <field name="CommandDelayCombo" />
+    <field name="CommPortCombo" />
+    <field name="HandShakeCombo" />
+    <field name="inputCheckBox" />
+    <field name="IRLengthCombo" />
+    <field name="LearningTimeoutCombo" />
+    <field name="ParityCombo" />
+  </page>
+  <page type="RemoteWinLirc" scope="isolated-file" source="RemoteWinLirc.cs">
+    <field name="enterCheckBox" />
+    <field name="inputCheckBox" />
+    <field name="IRDelayTextBox" />
+    <field name="pathToWinlircTextBox" />
+    <field name="remoteNameTextBox" />
+    <field name="repeatValTextBox" />
+    <field name="useMultipleCheckBox" />
+  </page>
+  <page type="RemoteRedEye" scope="isolated-file" source="RemoteRedEye.cs">
+    <field name="CommandDelayCombo" />
+    <field name="CommPortCombo" />
+    <field name="inputCheckBox" />
+  </page>
+  <page type="FiltersSection" scope="isolated-file" source="Filters.cs" note="Only the actual five profile-backed codec/renderer child sections; legacy decoder registry editors are not part of this section.">
+    <field name="autoDecoderSettings" />
+    <field name="ForceSourceSplitter" />
+    <field name="mpCheckBoxTS" />
+    <field name="audioRendererComboBox" />
+    <field name="audioCodecComboBox" />
+    <field name="videoCodecComboBox" />
+    <field name="h264videoCodecComboBox" />
+    <field name="hevcvideoCodecComboBox" />
+    <field name="vc1ivideoCodecComboBox" />
+    <field name="vc1videoCodecComboBox" />
+    <field name="xvidvideoCodecComboBox" />
+    <field name="aacAudioCodecComboBox" />
+    <field name="SplitterComboBox" />
+    <field name="SplitterFileComboBox" />
+    <field name="audioRendererComboBox" />
+    <field name="audioCodecComboBox" />
+    <field name="videoCodecComboBox" />
+    <field name="h264videoCodecComboBox" />
+    <field name="hevcvideoCodecComboBox" />
+    <field name="vc1videoCodecComboBox" />
+    <field name="audioCodecComboBox" />
+    <field name="videoCodecComboBox" />
+    <field name="h264videoCodecComboBox" />
+    <field name="hevcvideoCodecComboBox" />
+    <field name="audioRendererComboBox" />
+    <field name="aacAudioCodecComboBox" />
+    <field name="ddplusAudioCodecComboBox" />
+    <field name="audioRendererComboBox" />
+    <field name="videoCodecComboBox" />
+    <field name="audioCodecComboBox" />
+    <field name="dvdNavigatorComboBox" />
+    <field name="checkBoxAC3" />
+    <field name="checkBoxDXVA" />
+    <field name="checkboxMpNonsquare" />
+    <field name="checkboxDXEclusive" />
+    <field name="mpVMR9FilterMethod" />
+    <field name="checkBoxVMRWebStreams" />
+    <field name="checkBoxDecimateMask" />
+    <field name="radioButtonEVR" />
+    <field name="radioButtonMadVR" />
+    <field name="UseEVRMadVRForTV" />
+    <field name="DisableLowLatencyMode" />
+    <field name="UseMadVideoRenderer3D" />
+    <field name="numericUpDownFrame" />
+    <field name="reduceMadvrFrame" />
+    <field name="DRCheckBox" />
+    <field name="mpCheck1080p" />
+  </page>
+  <page type="PluginsNew" scope="isolated-file" source="PluginsNew.cs" />
+  <page type="MediaInfo" scope="isolated-file" source="MediaInfo.cs">
+    <field name="mpCheckBoxDeleteOlder" />
+    <field name="mpCheckBoxEnAudio" />
+    <field name="mpCheckBoxEnAudioCD" />
+    <field name="mpCheckBoxEnBluray" />
+    <field name="mpCheckBoxEnDVD" />
+    <field name="mpCheckBoxEnImage" />
+    <field name="mpCheckBoxEnPicture" />
+    <field name="mpCheckBoxEnVideo" />
+    <field name="nudDays" />
+  </page>
+  <page type="ThirdPartyChecks" scope="readonly" source="ThirdPartyChecks.cs" />
+</persistencePolicy>
