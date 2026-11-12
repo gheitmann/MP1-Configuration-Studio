@@ -2,7 +2,9 @@
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
-> **Project status:** `0.1.0-alpha.1` is a historical preview. Development follows the [roadmap to 1.0](ROADMAP.md). Version 1.0.0 is the supported target; no further alpha releases are planned.
+> **Current release:** [1.0.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.0.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. The Studio shell is German; native page labels follow the MediaPortal language.
+>
+> `0.1.0-alpha.1` is kept as a historical preview only.
 
 Studio adds grouped navigation with icons, search, navigation history, light/dark themes, adjustable text and page scaling (100–175%, default 125%), and a collapsible help column. The original MediaPortal pages, controls and save handlers remain in use.
 
@@ -16,14 +18,17 @@ Studio adds grouped navigation with icons, search, navigation history, light/dar
 
 ## Install and run
 
-The historical alpha requires Windows, .NET Framework 4.7.2 or newer, and an existing MediaPortal 1.39 installation. The 1.0 target requires .NET Framework 4.8 and supports MediaPortal 1.39 x64; x86 will not be shipped.
+1.0.0 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.
 
-1. Back up your MediaPortal configuration before trying this historical preview.
-2. Download the release ZIP and extract all files together.
-3. Run `MP1ConfigurationStudio.exe`. Keep the executable and its configuration files alongside it.
-4. On first launch, Studio adds its own files beside the installed `Configuration.exe`; Windows may request administrator approval for this copy.
+1. Back up the MediaPortal configuration.
+2. Close MediaPortal and the original configurator.
+3. Download `MP1-Configuration-Studio-1.0.0-Setup.exe` or the portable ZIP from [Releases](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.0.0). Verify the SHA256 sidecar.
+4. Run the setup (administrator approval is required) or extract the portable ZIP completely.
+5. Start `MP1ConfigurationStudio.exe`.
 
-The original `Configuration.exe` and native DLLs are not replaced. Run `Configuration.exe` to use the original interface. To remove Studio, close it and remove only the additional `MP1ConfigurationStudio*` files. Appearance preferences are stored separately under `%LOCALAPPDATA%\MP1 Configuration Studio\appearance.xml`.
+The original `Configuration.exe` and native DLLs are not replaced. Run `Configuration.exe` to use the original interface. Uninstall through the setup uninstaller or remove only the additional `MP1ConfigurationStudio*` files. Appearance preferences are stored separately under `%LOCALAPPDATA%\MP1 Configuration Studio\appearance.xml`.
+
+The setup and ZIP are unsigned. Windows SmartScreen or antivirus software may warn; the SHA256 sidecars and the source in this repository allow verification.
 
 ## Configuration safety and classic fallback
 
@@ -41,7 +46,7 @@ The original `Configuration.exe` and native DLLs are not replaced. Run `Configur
 
 ## Validation and limits
 
-See [VALIDATION.md](VALIDATION.md) for the measured results and remaining coverage. The `0.1.0-alpha.1` build is an unsigned historical preview. Hardware-dependent features, every third-party plugin, and every Windows display configuration still require broader testing. Some native page labels remain English. Standalone plugin and Windows dialogs retain their own layout. Final validation evidence will be published with 1.0.0.
+1.0.0 validation: 174/174 fixture checks on x64, 27/27 native smoke checks on isolated MediaPortal 1.39 x64, and a full 175% review of 61/61 pages with 0 value failures and 0 overflow candidates. Attach time is 303–320 ms. See [RC1 verification](docs/RC1-VERIFICATION.md) and [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md) for scope and known limitations. The build is unsigned.
 
 ## Build
 

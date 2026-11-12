@@ -369,6 +369,8 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 
 ## 11. Versioning and release policy
 
+**Released:** [1.0.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.0.0) on 2026-11-13, unsigned with a documented waiver. See [FINAL-1.0.0-VERIFICATION.md](docs/FINAL-1.0.0-VERIFICATION.md).
+
 - Semantic versioning: `1.0.0`, `1.0.1`, `1.1.0`.
 - Pre-releases use `v1.0.0-beta.1` and `v1.0.0-rc.1`. The word "alpha" is retired.
 - Assembly version `1.0.0.0`; product display `1.0.0 for MediaPortal 1.39`.

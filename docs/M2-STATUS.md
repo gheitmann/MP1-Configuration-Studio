@@ -1,7 +1,8 @@
 # M2 Status
 
 **Updated:** 2026-11-13
-**Branch:** `m1-foundation` (M2 work continues on the same branch)
+**Branch:** `main`
+**Release:** [1.0.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.0.0) published unsigned with a documented waiver. See [FINAL-1.0.0-VERIFICATION.md](FINAL-1.0.0-VERIFICATION.md).
 **Last verification:** 174/174 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates.
 
 ## Completed
@@ -18,7 +19,7 @@
 | 175% scaling | Done | Full review: 61/61 pages, 0 value failures, 0 overflow candidates, 5 plugin dialogs |
 | Attach performance | Done | Lazy page preparation reduced attach from 2.7–3.2 s to 303–320 ms, below the 2.0 s budget |
 | Search v2 | Done | Combo, list, and list-view options are searchable and selectable |
-| Release packaging | Partial | Tag workflow built the RC draft release, portable ZIP, Inno setup, and matching SHA256 sidecars; signing and clean-VM checks pending |
+| Release packaging | Done (waived) | 1.0.0 published with portable ZIP, Inno setup, matching SHA256 sidecars; unsigned and clean-VM checks waived |
 | Native verification | Done | 27/27 after classic, tier, backup, High Contrast, and lazy-preparation changes |
 
 ## Decisions
@@ -31,8 +32,8 @@
 ## Next M2 items
 
 1. DPI/theme matrix and expand native smoke coverage.
-2. Clean Windows 11 VM verification of the CI artifact.
-3. Code signing and final release publication.
+2. Clean Windows 11 VM verification of the published artifact.
+3. Code signing for a future signed re-release (current 1.0.0 is unsigned by waiver).
 4. NUnit migration for the fixture suite (deferred from M1-11).
 5. High Contrast owner-draw audit for native tabs, lists, and sliders.
 6. English shell localization (deferred to 1.1).
