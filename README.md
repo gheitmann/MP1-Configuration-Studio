@@ -39,6 +39,12 @@ See [VALIDATION.md](VALIDATION.md) for the measured results and remaining covera
 
 ## Build
 
-Run `powershell -ExecutionPolicy Bypass -File .\build.ps1 -TestX86` on Windows with the .NET Framework C# compiler installed. This still builds the historical alpha set, including the unsupported x86 fixture target; the 1.0 build will be x64-only. No NuGet packages are needed. Build output and fixture results are written to `dist/`. Native integration tooling requires a separately installed MediaPortal 1.39 runtime; never point persistence tests at a live user profile.
+Build with the .NET 8 SDK:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build.ps1
+```
+
+The build targets .NET Framework 4.8 through the `Microsoft.NETFramework.ReferenceAssemblies` package, produces an x64 application, and runs the 142 fixture checks. Output and the test log are written to `dist/`. Native integration tests require an isolated MediaPortal 1.39 x64 runtime; never point persistence tests at a live user profile.
 
 Architecture details: [ARCHITEKTUR.md](ARCHITEKTUR.md). Source is licensed under [GNU GPL v3](LICENSE). MediaPortal is a separate project; this repository does not redistribute its runtime, plugins, skins or user configuration.

@@ -10,20 +10,21 @@ Thanks for considering a contribution. This project integrates deeply with a fro
 
 ## Requirements
 
-- Windows 10 22H2 or Windows 11.
-- .NET Framework 4.8.
+- Windows 11 23H2 or newer.
+- .NET 8 SDK for the build.
+- .NET Framework 4.8 runtime for MediaPortal.
 - PowerShell 5.1.
-- MediaPortal 1.39 for native integration tests. Native tests must use an isolated runtime, never a live user profile.
+- MediaPortal 1.39 x64 for native integration tests. Native tests must use an isolated runtime, never a live user profile.
 
 ## Build and test
 
-Until the M1 build modernization lands, use the current script:
+Build and run the fixture checks:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1 -TestX86
+powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-The build writes outputs and test logs to `dist/`. All 95 fixture checks must pass for x64 and x86.
+The build writes outputs and the test log to `dist/`. All 142 fixture checks must pass on x64.
 
 Native integration checks require a separately staged MediaPortal runtime with the isolation marker. Follow the existing tooling and never point persistence tests at a live profile.
 

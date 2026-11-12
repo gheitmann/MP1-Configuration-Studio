@@ -1,5 +1,9 @@
 dist/
+bin/
+obj/
+.vs/
 *.pdb
 *.user
+*.log
 test-results/
 artifacts/

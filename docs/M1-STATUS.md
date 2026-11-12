@@ -10,8 +10,8 @@
 | Item | State |
 | --- | --- |
 | MediaPortal | 1.39 x64 installed at `C:\Program Files\Team MediaPortal\MediaPortal` |
-| .NET SDK | 8.0.428, portable at `work\dotnet` |
-| Legacy compiler | Still used by `build.ps1` until M1-03 lands |
+| .NET SDK | 8.0.428, portable at `work\dotnet`; used by `build.ps1` |
+| Legacy compiler | No longer used by the build; kept only in git history |
 | Git | System Git and portable MinGit available |
 | GitHub | Authenticated as `gheitmann` through Windows Credential Manager; `m1-foundation` and the archive tag are pushed |
 | Testing | x64 only; no external testers required; optional 0–5 pilot |
@@ -28,8 +28,8 @@
 | --- | --- | --- |
 | M1-01 Archive alpha | Done | Tag `v0.1.0-alpha.1-archive` pushed |
 | M1-02 Split solution | Not started | Requires refactoring the `StudioShell` partials |
-| M1-03 MSBuild/Roslyn | Unblocked | .NET SDK 8.0.428 installed; migration is next |
-| M1-04 CI | Unblocked | Workflow can now target the SDK |
+| M1-03 MSBuild/Roslyn | Done | SDK-style `net48` project; `build.ps1` uses the .NET 8 SDK |
+| M1-04 CI | Done locally | `.github/workflows/build.yml`; first hosted run pending push |
 | M1-05 Diagnostics separation | Not started | Depends on M1-02 |
 | M1-06 `NativeContract` | Done | Commit `6a218a0`; contract validation before attach |
 | M1-07 Transactional attach | Done | Commit `6a218a0`; snapshot rollback and eight fault-injection stages |
@@ -54,11 +54,10 @@
 
 ## Next actions
 
-1. Add the SDK-based build and GitHub Actions workflow (M1-03, M1-04).
-2. Split the solution and move diagnostics out of the app (M1-02, M1-05).
-3. Add logging, version identity, and the compatibility manifest (M1-08, M1-09, M1-12).
-4. Add the support bundle and performance baseline (M1-14, M1-15).
-5. Produce the first CI-built x64 artifact (M1-17).
+1. Split the solution and move diagnostics out of the app (M1-02, M1-05).
+2. Add logging, version identity, and the compatibility manifest (M1-08, M1-09, M1-12).
+3. Add the support bundle and performance baseline (M1-14, M1-15).
+4. Produce the first CI-built x64 artifact (M1-17).
 
 ## Remaining external dependencies
 
