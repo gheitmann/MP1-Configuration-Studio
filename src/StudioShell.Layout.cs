@@ -135,7 +135,23 @@ namespace MP1.ConfigurationStudio
         {
             var menu=new ContextMenuStrip {Font=font};
             Action<ToolStripItemCollection,ToolStripItemCollection> copy=null;copy=delegate(ToolStripItemCollection source,ToolStripItemCollection target){foreach(ToolStripItem original in source){if(original is ToolStripSeparator){target.Add(new ToolStripSeparator());continue;}var proxy=new ToolStripMenuItem(original.Text){Enabled=original.Enabled};var checkedButton=original as ToolStripButton;if(checkedButton!=null)proxy.Checked=checkedButton.Checked;ToolStripItem action=original;target.Add(proxy);var dropdown=original as ToolStripDropDownItem;if(dropdown!=null&&dropdown.DropDownItems.Count>0)copy(dropdown.DropDownItems,proxy.DropDownItems);else proxy.Click+=delegate{ClickNative(action);};}};
-            copy(nativeTools.Items,menu.Items);theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
+            copy(nativeTools.Items,menu.Items);
+            menu.Items.Add(new ToolStripSeparator());
+            var about=new ToolStripMenuItem("Über MP1 Configuration Studio");
+            about.Click+=delegate{ShowAbout();};
+            menu.Items.Add(about);
+            theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
+        }
+        private void ShowAbout()
+        {
+            string version=System.Diagnostics.FileVersionInfo.GetVersionInfo(Application.ExecutablePath).FileVersion;
+            string text="MP1 Configuration Studio "+version+"\r\n\r\n"
+                +"Für MediaPortal 1.39 x64.\r\n\r\n"
+                +"Inoffizielles Projekt, nicht mit Team MediaPortal verbunden.\r\n"
+                +"Lizenz: GPL-3.0-or-later.\r\n\r\n"
+                +"Protokoll: "+StudioLog.FilePath+"\r\n"
+                +"Projekt: https://github.com/gheitmann/MP1-Configuration-Studio";
+            MessageBox.Show(form,text,"Über MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void TraverseHistory(int direction){int next=historyIndex+direction;while(next>=0&&next<history.Count){if(history[next].TreeView==tree){traversingHistory=true;try{if(Navigate(history[next]))historyIndex=next;}finally{traversingHistory=false;}UpdateHistoryButtons();return;}next+=direction;}}
         private void RecordHistory(TreeNode node){if(!traversingHistory&&(historyIndex<0||!Object.ReferenceEquals(history[historyIndex],node))){if(historyIndex+1<history.Count)history.RemoveRange(historyIndex+1,history.Count-historyIndex-1);history.Add(node);historyIndex=history.Count-1;}UpdateHistoryButtons();}

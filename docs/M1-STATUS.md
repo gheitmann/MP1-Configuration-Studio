@@ -34,10 +34,10 @@
 | M1-06 `NativeContract` | Done | Commit `6a218a0`; contract validation before attach |
 | M1-07 Transactional attach | Done | Commit `6a218a0`; snapshot rollback and eight fault-injection stages |
 | M1-08 Logging/exceptions | Done | Structured rolling log, redaction, crash dialog log path |
-| M1-09 Versioning/About | Not started | |
+| M1-09 Versioning/About | Done | Product/file version 1.0.0; About entry in the tools menu |
 | M1-10 Governance/docs | Done | Commit `c2d6c43` |
 | M1-11 Test runner | Unblocked | Test framework can be restored with the SDK |
-| M1-12 Compatibility manifest | Not started | Needs the 61-section inventory |
+| M1-12 Compatibility manifest | Done | 61 section types, embedded default, override file, four checks |
 | M1-13 Appearance schema v2 | Done | Commit `44e8066`; 7 new checks |
 | M1-14 Performance baseline | Not started | |
 | M1-15 Support bundle | Not started | |
@@ -47,7 +47,7 @@
 ## Verification
 
 - Baseline `0.1.0-alpha.1`: 95/95 x64 and x86 checks passed before changes.
-- Current branch: 148/148 x64 fixture checks passed from the diagnostics host.
+- Current branch: 154/154 x64 fixture checks passed from the diagnostics host.
 - The shipped application binary contains no `ShellTests`, audit, review, or persistence symbols.
 - Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime.
 - Logs are written to `%LOCALAPPDATA%\MP1 Configuration Studio\logs\studio.log` and rotate at 2 MB with three files.
@@ -57,9 +57,9 @@
 ## Next actions
 
 1. Split the remaining application into Core/Native/App (M1-02).
-2. Add version identity and the compatibility manifest (M1-09, M1-12).
-3. Add the support bundle and performance baseline (M1-14, M1-15).
-4. Produce and verify the first CI-built x64 artifact (M1-17).
+2. Add the support bundle and performance baseline (M1-14, M1-15).
+3. Produce and verify the first CI-built x64 artifact (M1-17).
+4. Verify the native smoke after the version and logging changes.
 
 ## Remaining external dependencies
 

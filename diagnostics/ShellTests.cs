@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -25,6 +27,8 @@ namespace MP1.ConfigurationStudio
             var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.Save();
             RunAppearanceSchemaChecks(directory);
             RunLoggingChecks(directory);
+            RunVersionChecks();
+            RunCompatibilityPolicyChecks(directory);
             RunNativeContractChecks();
             RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
@@ -281,6 +285,29 @@ namespace MP1.ConfigurationStudio
             StudioLog.Info("after rotation");
             Check(File.Exists(StudioLog.FilePath),"logging keeps the current file after rotation");
             Check(Directory.GetFiles(logDirectory,"studio*.log").Length<=3,"logging rotation keeps at most three files");
+        }
+        private static void RunVersionChecks()
+        {
+            Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==0&&assemblyVersion.Build==0,"assembly version targets 1.0.0.0");
+            string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+            Check(fileVersion.StartsWith("1.0.0",StringComparison.Ordinal),"file version targets 1.0.0");
+        }
+        private static void RunCompatibilityPolicyChecks(string directory)
+        {
+            CompatibilityPolicy.Initialize();
+            Check(CompatibilityPolicy.Count>=61,"compatibility policy loads all known sections");
+            SectionPolicy general=CompatibilityPolicy.Resolve("MediaPortal.Configuration.Sections.General");
+            Check(general.Tier==CompatibilityTier.B&&general.Zoom&&general.Search,"compatibility policy defaults to tier B");
+            SectionPolicy unknown=CompatibilityPolicy.Resolve("Example.Unknown");
+            Check(unknown.Tier==CompatibilityTier.B&&unknown.Zoom,"compatibility policy defaults unknown sections to tier B");
+
+            string overridePath=Path.Combine(directory,"compatibility-override.xml");
+            File.WriteAllText(overridePath,"<compatibility><section type=\"MediaPortal.Configuration.Sections.General\" tier=\"A\" zoom=\"false\" theme=\"full\" search=\"false\" /></compatibility>");
+            CompatibilityPolicy.Initialize(overridePath);
+            SectionPolicy overridden=CompatibilityPolicy.Resolve("MediaPortal.Configuration.Sections.General");
+            Check(overridden.Tier==CompatibilityTier.A&&!overridden.Zoom&&!overridden.Search&&overridden.ThemeMode=="full","compatibility override applies");
+            CompatibilityPolicy.Initialize();
         }
         private static void RunNativeContractChecks()
         {

@@ -13,8 +13,10 @@ using Microsoft.Win32;
 
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
-[assembly: AssemblyVersion("1.39.0.0")]
-[assembly: AssemblyFileVersion("1.39.0.14")]
+[assembly: AssemblyProduct("MP1 Configuration Studio")]
+[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
 
 namespace MP1.ConfigurationStudio
 {
@@ -25,6 +27,7 @@ namespace MP1.ConfigurationStudio
         {
             StudioLog.Initialize();
             StudioLog.Info("MP1 Configuration Studio starting");
+            CompatibilityPolicy.Initialize(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"compatibility.xml"));
             try
             {
 #if DIAGNOSTICS
