@@ -53,6 +53,7 @@ namespace MP1.ConfigurationStudio
         public static StudioShell Attach(Form form,string preferences)
         {
             List<Control> sections=NativeContract.ReadSections(form);
+            StudioLog.Info("Attach: read "+sections.Count+" native sections");
             InjectFault("snapshot");
             var snapshot=new NativeUiSnapshot(form,sections);
             StudioShell shell=null;
@@ -66,10 +67,12 @@ namespace MP1.ConfigurationStudio
                     NativeContract.Require<ToolStrip>(form,NativeContract.ToolStripField),
                     NativeContract.FindField(form,NativeContract.DonateLinkField) as Control,
                     preferences,sections);
+                StudioLog.Info("Attach transaction completed");
                 return shell;
             }
-            catch
+            catch(Exception ex)
             {
+                StudioLog.Error(ex,"Attach transaction failed");
                 if(shell!=null)shell.DisposeFailedAttach();
                 snapshot.Restore();
                 throw;
@@ -84,8 +87,9 @@ namespace MP1.ConfigurationStudio
                 shell=new StudioShell(form,tree,holder,ok,cancel,null,tools,null,preferences,sections);
                 return shell;
             }
-            catch
+            catch(Exception ex)
             {
+                StudioLog.Error(ex,"Fixture attach transaction failed");
                 if(shell!=null)shell.DisposeFailedAttach();
                 snapshot.Restore();
                 throw;

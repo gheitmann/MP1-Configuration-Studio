@@ -23,6 +23,8 @@ namespace MP1.ConfigurationStudio
         [STAThread]
         public static int Main(string[] args)
         {
+            StudioLog.Initialize();
+            StudioLog.Info("MP1 Configuration Studio starting");
             try
             {
 #if DIAGNOSTICS
@@ -48,6 +50,7 @@ namespace MP1.ConfigurationStudio
                 if (version.FileMajorPart != 1 || version.FileMinorPart != 39)
                     throw new InvalidOperationException("Diese Ausgabe unterstützt MediaPortal 1.39. Gefunden: " + version.FileVersion + ". Das Original wurde nicht verändert.");
                 var architecture=AssemblyName.GetAssemblyName(Path.Combine(runtime,"Core.dll")).ProcessorArchitecture;
+                StudioLog.Info("Native runtime="+runtime+" version="+version.FileVersion+" architecture="+architecture);
                 bool requires32=architecture==ProcessorArchitecture.X86,requires64=architecture==ProcessorArchitecture.Amd64;
                 if((requires32&&Environment.Is64BitProcess)||(requires64&&!Environment.Is64BitProcess))
                 {
@@ -78,7 +81,8 @@ namespace MP1.ConfigurationStudio
             catch (Exception ex)
             {
                 while (ex is TargetInvocationException && ex.InnerException != null) ex = ex.InnerException;
-                string error = "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.";
+                StudioLog.Error(ex,"Startup failed");
+                string error = "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.\r\n\r\nProtokoll: " + StudioLog.FilePath;
                 if (Array.IndexOf(args, "--self-test") >= 0) Console.Error.WriteLine(ex);
                 else MessageBox.Show(error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
@@ -185,13 +189,16 @@ namespace MP1.ConfigurationStudio
                     try
                     {
                         NativeContractReport report=NativeContract.Validate(form);
+                        StudioLog.Info(report.Summary());
                         if(!report.IsValid)
                         {
+                            StudioLog.Error("Native contract validation failed: "+report.Summary());
                             MessageBox.Show(form,"Die installierte MediaPortal-Oberfläche entspricht nicht dem erwarteten 1.39-Vertrag.\r\n\r\n"+report.Summary()+"\r\n\r\nDas originale Konfigurationsfenster bleibt unverändert. Bitte Configuration.exe verwenden.",
                                 "Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
                             return;
                         }
                         shell = StudioShell.Attach(form, preferences);
+                        StudioLog.Info("Studio shell attached");
                         Action ready=delegate{
 #if DIAGNOSTICS
                             if (!String.IsNullOrEmpty(audit)) shell.StartAudit(audit);
@@ -205,7 +212,8 @@ namespace MP1.ConfigurationStudio
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(form, "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und Configuration.exe verwenden.\r\n\r\n" + ex.Message,
+                        StudioLog.Error(ex,"Studio shell attach failed");
+                        MessageBox.Show(form, "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und Configuration.exe verwenden.\r\n\r\n" + ex.Message + "\r\n\r\nProtokoll: " + StudioLog.FilePath,
                             "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }

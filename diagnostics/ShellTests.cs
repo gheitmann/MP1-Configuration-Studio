@@ -24,6 +24,7 @@ namespace MP1.ConfigurationStudio
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
             var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.Save();
             RunAppearanceSchemaChecks(directory);
+            RunLoggingChecks(directory);
             RunNativeContractChecks();
             RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
@@ -261,6 +262,25 @@ namespace MP1.ConfigurationStudio
             var future=new Appearance(futurePath);
             future.Save();
             Check(future.SchemaVersion==99&&File.ReadAllText(futurePath).Contains("schema=\"99\"")&&!String.IsNullOrEmpty(future.LastError),"newer appearance schema is not overwritten");
+        }
+        private static void RunLoggingChecks(string directory)
+        {
+            string logDirectory=Path.Combine(directory,"logs-test");
+            if(Directory.Exists(logDirectory))Directory.Delete(logDirectory,true);
+            StudioLog.Initialize(logDirectory);
+            StudioLog.Info("attach test info");
+            StudioLog.Warn("theme warning");
+            StudioLog.Error(new InvalidOperationException("injected failure"),"logging test");
+            Check(File.Exists(StudioLog.FilePath),"logging creates a log file");
+            string text=File.ReadAllText(StudioLog.FilePath);
+            Check(text.Contains("INFO")&&text.Contains("WARN")&&text.Contains("ERROR"),"logging writes levels");
+            Check(text.Contains("injected failure"),"logging writes exception details");
+            string redacted=StudioLog.Redact("token=ghp_abcdefghijklmnopqrstuvwxyz123456 password=hunter2");
+            Check(!redacted.Contains("ghp_abcdefghijklmnopqrstuvwxyz123456")&&!redacted.Contains("hunter2")&&redacted.Contains("***"),"logging redacts secrets");
+            StudioLog.Info(new string('x',2*1024*1024+1024));
+            StudioLog.Info("after rotation");
+            Check(File.Exists(StudioLog.FilePath),"logging keeps the current file after rotation");
+            Check(Directory.GetFiles(logDirectory,"studio*.log").Length<=3,"logging rotation keeps at most three files");
         }
         private static void RunNativeContractChecks()
         {

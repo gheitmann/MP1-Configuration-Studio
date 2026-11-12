@@ -37,7 +37,7 @@ namespace MP1.ConfigurationStudio
             if(form==null||form.IsDisposed||form.Disposing||!prepared.Add(form))return;
             form.FormClosed+=delegate{prepared.Remove(form);};
             try{prepare(form);}
-            catch(Exception ex){prepared.Remove(form);Trace.TraceError("Dialog appearance: {0}",ex);}
+            catch(Exception ex){prepared.Remove(form);StudioLog.Error(ex,"Dialog appearance failed");}
         }
         private IntPtr Observe(int code,IntPtr w,IntPtr l)
         {
