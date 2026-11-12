@@ -18,7 +18,7 @@
 | 175% scaling | Done | Full review: 61/61 pages, 0 value failures, 0 overflow candidates, 5 plugin dialogs |
 | Attach performance | Done | Lazy page preparation reduced attach from 2.7–3.2 s to 303–320 ms, below the 2.0 s budget |
 | Search v2 | Done | Combo, list, and list-view options are searchable and selectable |
-| Release packaging | Partial | Portable ZIP verified; Inno Setup script and tag release workflow prepared; signing and clean-VM checks pending |
+| Release packaging | Partial | Tag workflow built the RC draft release, portable ZIP, Inno setup, and matching SHA256 sidecars; signing and clean-VM checks pending |
 | Native verification | Done | 27/27 after classic, tier, backup, High Contrast, and lazy-preparation changes |
 
 ## Decisions
