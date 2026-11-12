@@ -17,11 +17,10 @@ namespace MP1.ConfigurationStudio
         {
             string runtime=AppDomain.CurrentDomain.BaseDirectory;
             if(!File.Exists(Path.Combine(runtime,"studio-test-runtime.marker")))throw new InvalidOperationException("Full review requires an isolated runtime.");
-            var config=Assembly.Load("Utils").GetType("MediaPortal.Configuration.Config");var dir=config.GetNestedType("Dir");
             string isolatedRoot=Path.GetFullPath(Path.Combine(runtime,"..")).TrimEnd('\\')+"\\";
             foreach(string kind in new[]{"Config","Log","Database","Thumbs","Cache"})
             {
-                string location=Convert.ToString(config.GetMethod("GetFolder").Invoke(null,new[]{Enum.Parse(dir,kind)}));
+                string location=NativeContract.ConfigFolder(kind);
                 if(!Path.GetFullPath(location).StartsWith(isolatedRoot,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Non-isolated folder: "+kind);
             }
             SetMode(true);
@@ -34,7 +33,7 @@ namespace MP1.ConfigurationStudio
             timer.Tick+=delegate{
                 timer.Stop();
                 if(index>=nodes.Length){RunPluginDialogChecks(document,root,isolatedRoot);SetTextScale(originalScale);SetDark(originalDark);root.SetAttribute("complete","true");save();timer.Dispose();nativeCancel.PerformClick();return;}
-                TreeNode node=nodes[index++];Control page=NodeSection(node);var result=document.CreateElement("page");root.AppendChild(result);
+                TreeNode node=nodes[index++];Control page=NativeContract.NodeSection(node);var result=document.CreateElement("page");root.AppendChild(result);
                 result.SetAttribute("path",node.FullPath);result.SetAttribute("type",page==null?"":page.GetType().Name);
                 try
                 {

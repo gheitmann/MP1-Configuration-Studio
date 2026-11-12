@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -43,6 +42,7 @@ namespace MP1.ConfigurationStudio
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
+        internal static Action<string> FaultHook;
         public int OriginalSectionCount { get { return sections.Count; } }
         public int ChangedCount { get { return edits.Count; } }
         public bool ContextVisible { get { return appearance.ContextVisible; } }
@@ -52,39 +52,55 @@ namespace MP1.ConfigurationStudio
 
         public static StudioShell Attach(Form form,string preferences)
         {
-            return new StudioShell(form,Require<TreeView>(form,"sectionTree"),Require<Panel>(form,"holderPanel"),
-                Require<Button>(form,"okButton"),Require<Button>(form,"cancelButton"),FindField(form,"applyButton") as Button,
-                Require<ToolStrip>(form,"toolStrip1"),FindField(form,"linkLabel1") as Control,preferences,ReadSections(form));
+            List<Control> sections=NativeContract.ReadSections(form);
+            InjectFault("snapshot");
+            var snapshot=new NativeUiSnapshot(form,sections);
+            StudioShell shell=null;
+            try
+            {
+                shell=new StudioShell(form,NativeContract.Require<TreeView>(form,NativeContract.SectionTreeField),
+                    NativeContract.Require<Panel>(form,NativeContract.HolderPanelField),
+                    NativeContract.Require<Button>(form,NativeContract.OkButtonField),
+                    NativeContract.Require<Button>(form,NativeContract.CancelButtonField),
+                    NativeContract.FindField(form,NativeContract.ApplyButtonField) as Button,
+                    NativeContract.Require<ToolStrip>(form,NativeContract.ToolStripField),
+                    NativeContract.FindField(form,NativeContract.DonateLinkField) as Control,
+                    preferences,sections);
+                return shell;
+            }
+            catch
+            {
+                if(shell!=null)shell.DisposeFailedAttach();
+                snapshot.Restore();
+                throw;
+            }
         }
         internal static StudioShell AttachFixture(Form form, TreeView tree, Panel holder, Button ok, Button cancel, ToolStrip tools,string preferences,List<Control> sections)
         {
-            return new StudioShell(form,tree,holder,ok,cancel,null,tools,null,preferences,sections);
-        }
-        private static object FindField(object obj,string name)
-        {
-            Type t=obj.GetType();
-            while(t!=null){var f=t.GetField(name,BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.DeclaredOnly);if(f!=null)return f.GetValue(obj);t=t.BaseType;}
-            return null;
-        }
-        private static T Require<T>(object obj,string name) where T:class
-        {
-            T value=FindField(obj,name) as T;
-            if(value==null)throw new NotSupportedException("Die native Oberfläche enthält nicht das erwartete Feld: "+name);
-            return value;
-        }
-        private static List<Control> ReadSections(Form f)
-        {
-            var property=f.GetType().GetProperty("SettingSections",BindingFlags.Static|BindingFlags.Public);
-            var values=property==null?null:property.GetValue(null,null) as IDictionary;
-            if(values==null)throw new NotSupportedException("Die nativen Konfigurationsseiten konnten nicht ermittelt werden.");
-            var pages=new List<Control>();
-            foreach(DictionaryEntry entry in values)
+            var snapshot=new NativeUiSnapshot(form,sections);
+            StudioShell shell=null;
+            try
             {
-                var config=entry.Value.GetType().GetProperty("ConfigSection").GetValue(entry.Value,null) as Control;
-                if(config!=null) pages.Add(config);
+                shell=new StudioShell(form,tree,holder,ok,cancel,null,tools,null,preferences,sections);
+                return shell;
             }
-            if(pages.Count==0)throw new NotSupportedException("Es wurden keine Originalseiten gefunden.");
-            return pages;
+            catch
+            {
+                if(shell!=null)shell.DisposeFailedAttach();
+                snapshot.Restore();
+                throw;
+            }
+        }
+        private static void InjectFault(string stage)
+        {
+            Action<string> hook=FaultHook;
+            if(hook!=null)hook(stage);
+        }
+        private void DisposeFailedAttach()
+        {
+            try{tips.Dispose();}catch{}
+            try{pageZoom.Dispose();}catch{}
+            foreach(Font owned in shellFonts){try{owned.Dispose();}catch{}}
         }
         private StudioShell(Form f,TreeView originalTree,Panel originalHolder,Button ok,Button cancel,Button apply,ToolStrip tools,Control donateLink,string preferencePath,List<Control> originalSections)
         {
@@ -96,8 +112,14 @@ namespace MP1.ConfigurationStudio
             FrameRendering.EnableComposition(form);
             using(FrameRendering.Suspend(form))
             {
-            // Freeze existing page fonts and minimum geometry before changing their parent.
-            // We keep every original page, control and native event handler.
+            InjectFault("before-build");
+            building=true;form.SuspendLayout();
+            try { Build(); }
+            finally { building=false;form.ResumeLayout(true); }
+            InjectFault("after-build");
+
+            // Prepare the original pages only after the shell skeleton exists.
+            // A failure here is rolled back by the attach transaction.
             foreach(Control section in sections)
             {
                 section.Font=section.Font;
@@ -108,9 +130,18 @@ namespace MP1.ConfigurationStudio
                 theme.Prepare(section);
                 pageZoom.Capture(section);pageZoom.Apply(section,PageScale);
             }
-            building=true;form.SuspendLayout();
-            try { Build(); }
-            finally { building=false;form.ResumeLayout(true); }
+
+            if(tree.SelectedNode!=null&&NativeContract.NodeSection(tree.SelectedNode)!=null&&NativeContract.NodeSection(tree.SelectedNode).GetType().Name=="Project")
+            {
+                TreeNode start=Flatten(tree.Nodes).FirstOrDefault(n=>NativeContract.NodeSection(n)!=null&&NativeContract.NodeSection(n).GetType().Name=="General");
+                if(start!=null)Navigate(start);
+            }
+            InjectFault("before-refresh");
+            RefreshPage();ApplyTheme();
+            LayoutNativePage();
+            LayoutHelp();
+
+            InjectFault("wire-events");
             tree.BeforeSelect+=delegate(object sender,TreeViewCancelEventArgs e){switching=!e.Cancel;if(!e.Cancel){CompleteSelectionFrame(null,EventArgs.Empty);selectionFrame=FrameRendering.Suspend(center);}};
             lastSelection=tree.SelectedNode;
             tree.AfterSelect+=delegate{try{switching=false;RefreshPage();InvalidateSelection(lastSelection);InvalidateSelection(tree.SelectedNode);lastSelection=tree.SelectedNode;}finally{CompleteSelectionFrame(null,EventArgs.Empty);}};
@@ -127,16 +158,10 @@ namespace MP1.ConfigurationStudio
                 if(form.WindowState==FormWindowState.Normal){appearance.Width=form.Width;appearance.Height=form.Height;}
                 appearance.Save();tips.Dispose();pageZoom.Dispose();foreach(Font owned in shellFonts)owned.Dispose();
             };
+            holder.SizeChanged+=delegate{LayoutNativePage();};
+            foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?Color.White:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
             form.KeyPreview=true;
             form.KeyDown+=OnKeyDown;
-            if(tree.SelectedNode!=null&&NodeSection(tree.SelectedNode)!=null&&NodeSection(tree.SelectedNode).GetType().Name=="Project")
-            {
-                TreeNode start=Flatten(tree.Nodes).FirstOrDefault(n=>NodeSection(n)!=null&&NodeSection(n).GetType().Name=="General");
-                if(start!=null)Navigate(start);
-            }
-            RefreshPage();ApplyTheme();
-            LayoutNativePage();
-            LayoutHelp();
             }
         }
         private void CompleteSelectionFrame(object sender,EventArgs e)
@@ -241,7 +266,7 @@ namespace MP1.ConfigurationStudio
         private void RefreshPage()
         {
             TreeNode node=tree.SelectedNode;if(node==null)return;
-            CorrectStoredSettingDisplay(NodeSection(node));
+            CorrectStoredSettingDisplay(NativeContract.NodeSection(node));
             navigation.Sync(node,false);RecordHistory(node);
             breadcrumb.Text="Konfiguration  /  "+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node);pageIcon.Invalidate();
             TreeNode group=node.Parent??node;
@@ -309,10 +334,6 @@ namespace MP1.ConfigurationStudio
         {
             foreach(Control child in control.Controls){yield return child;foreach(Control c in Descendants(child))yield return c;}
         }
-        private static Control NodeSection(TreeNode node)
-        {
-            var p=node.GetType().GetProperty("Section");return p==null?node.Tag as Control:p.GetValue(node,null) as Control;
-        }
         private void UpdateSearch()
         {
             string query=search.Text.Trim();bool has=query.Length>0;
@@ -322,7 +343,7 @@ namespace MP1.ConfigurationStudio
             {
                 if(node.FullPath.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0||navigation.Label(node).IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0||navigation.Group(node).IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)
                 {results.Items.Add(new SearchResult(node,null,navigation.Group(node)+" / "+navigation.Label(node)));continue;}
-                Control section=NodeSection(node);if(section==null)continue;
+                Control section=NativeContract.NodeSection(node);if(section==null)continue;
                 foreach(Control c in Descendants(section))
                 {
                     var checks=c as CheckedListBox;
@@ -446,11 +467,10 @@ namespace MP1.ConfigurationStudio
                 {
                     checks.Add(new KeyValuePair<string,bool>("Original native entry assembly",Path.GetFileName(Assembly.GetEntryAssembly().Location).Equals("Configuration.exe",StringComparison.OrdinalIgnoreCase)));
                     checks.Add(new KeyValuePair<string,bool>("Process startup directory matches native runtime",Path.GetFullPath(Application.StartupPath).TrimEnd('\\').Equals(runtime.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase)));
-                    var config=Assembly.Load("Utils").GetType("MediaPortal.Configuration.Config");var dir=config.GetNestedType("Dir");
                     string isolatedRoot=Path.GetFullPath(Path.Combine(runtime,"..")).TrimEnd('\\')+"\\";
                     foreach(string kind in new[]{"Config","Log","Database","Thumbs","Cache"})
                     {
-                        string location=Convert.ToString(config.GetMethod("GetFolder").Invoke(null,new[]{Enum.Parse(dir,kind)}));
+                        string location=NativeContract.ConfigFolder(kind);
                         if(!Path.GetFullPath(location).StartsWith(isolatedRoot,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Refusing verification with a non-isolated "+kind+" path.");
                     }
                     checks.Add(new KeyValuePair<string,bool>("Mutable native paths isolated",true));
@@ -469,17 +489,17 @@ namespace MP1.ConfigurationStudio
                     var references=sections.ToArray();
                     foreach(string name in new[]{"General","Gui","GuiLanguage","MoviePlayer","Music","Pictures","Remote","FiltersSection","PluginsNew","GeneralDaemonTools"})
                     {
-                        TreeNode node=Flatten(tree.Nodes).FirstOrDefault(n=>NodeSection(n)!=null&&NodeSection(n).GetType().Name==name);
+                        TreeNode node=Flatten(tree.Nodes).FirstOrDefault(n=>NativeContract.NodeSection(n)!=null&&NativeContract.NodeSection(n).GetType().Name==name);
                         bool navigated=node!=null&&Navigate(node);
-                        checks.Add(new KeyValuePair<string,bool>("Native page activation: "+name,navigated&&holder.Controls.Count>0&&Object.ReferenceEquals(holder.Controls[0],NodeSection(node))));
+                        checks.Add(new KeyValuePair<string,bool>("Native page activation: "+name,navigated&&holder.Controls.Count>0&&Object.ReferenceEquals(holder.Controls[0],NativeContract.NodeSection(node))));
                     }
                     search.Text="Enable skin sound";checks.Add(new KeyValuePair<string,bool>("Search includes native checked-list options",results.Items.Cast<SearchResult>().Any(r=>r.Node!=null)));search.Clear();
-                    TreeNode bdZoom=Flatten(tree.Nodes).FirstOrDefault(n=>NodeSection(n)!=null&&NodeSection(n).GetType().Name=="BDZoom");
+                    TreeNode bdZoom=Flatten(tree.Nodes).FirstOrDefault(n=>NativeContract.NodeSection(n)!=null&&NativeContract.NodeSection(n).GetType().Name=="BDZoom");
                     bool bdChoicePreserved=false;
                     if(bdZoom!=null&&Navigate(bdZoom))
                     {
-                        var choice=Descendants(NodeSection(bdZoom)).OfType<ComboBox>().First(c=>c.Name=="defaultZoomModeComboBox");int originalIndex=choice.SelectedIndex;
-                        if(choice.Items.Count>1){int selected=(originalIndex+1)%choice.Items.Count;choice.SelectedIndex=selected;Navigate(Flatten(tree.Nodes).First(n=>NodeSection(n)!=null&&NodeSection(n).GetType().Name=="General"));Navigate(bdZoom);bdChoicePreserved=choice.SelectedIndex==selected;choice.SelectedIndex=originalIndex;}
+                        var choice=Descendants(NativeContract.NodeSection(bdZoom)).OfType<ComboBox>().First(c=>c.Name=="defaultZoomModeComboBox");int originalIndex=choice.SelectedIndex;
+                        if(choice.Items.Count>1){int selected=(originalIndex+1)%choice.Items.Count;choice.SelectedIndex=selected;Navigate(Flatten(tree.Nodes).First(n=>NativeContract.NodeSection(n)!=null&&NativeContract.NodeSection(n).GetType().Name=="General"));Navigate(bdZoom);bdChoicePreserved=choice.SelectedIndex==selected;choice.SelectedIndex=originalIndex;}
                     }
                     checks.Add(new KeyValuePair<string,bool>("Unsaved Blu-ray aspect-ratio selection survives native page navigation",bdChoicePreserved));
                     checks.Add(new KeyValuePair<string,bool>("All native pages and navigation retained",before==NativeTreeCount&&references.SequenceEqual(sections)));

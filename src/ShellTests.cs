@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -23,6 +24,8 @@ namespace MP1.ConfigurationStudio
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
             var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.Save();
             RunAppearanceSchemaChecks(directory);
+            RunNativeContractChecks();
+            RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
             {
                 var tree=new TreeView();var holder=new Panel {Size=new Size(502,455)};var ok=new Button();var cancel=new Button();
@@ -259,6 +262,90 @@ namespace MP1.ConfigurationStudio
             future.Save();
             Check(future.SchemaVersion==99&&File.ReadAllText(futurePath).Contains("schema=\"99\"")&&!String.IsNullOrEmpty(future.LastError),"newer appearance schema is not overwritten");
         }
+        private static void RunNativeContractChecks()
+        {
+            using(var form=new ContractForm())
+            {
+                NativeContractReport report=NativeContract.Validate(form);
+                Check(report.IsValid&&report.SectionCount==2,"native contract validates required fields and sections");
+            }
+            using(var form=new Form())
+            {
+                NativeContractReport report=NativeContract.Validate(form);
+                Check(!report.IsValid&&report.Missing.Any(m=>m.IndexOf("sectionTree",StringComparison.Ordinal)>=0),"native contract reports a missing tree field");
+                bool threw=false;
+                try{NativeContract.Require<TreeView>(form,NativeContract.SectionTreeField);}
+                catch(NotSupportedException){threw=true;}
+                Check(threw,"native contract throws a controlled error for a missing member");
+            }
+            var tagged=new TreeNode("page");var taggedPage=new UserControl();tagged.Tag=taggedPage;
+            Check(Object.ReferenceEquals(NativeContract.NodeSection(tagged),taggedPage),"native contract reads a section from the node tag");
+            var typed=new ContractNode {Section=new UserControl()};
+            Check(Object.ReferenceEquals(NativeContract.NodeSection(typed),typed.Section),"native contract reads a section from the node property");
+            NativeContractReport missingSections=NativeContract.Validate(new MissingSectionsForm());
+            Check(!missingSections.IsValid&&missingSections.SectionCount==0,"native contract reports missing sections");
+        }
+        private static void RunAttachTransactionChecks(string preferences)
+        {
+            string[] stages={"before-build","build-cleared","build-backend","build-reparented","build-complete","after-build","before-refresh","wire-events"};
+            foreach(string stage in stages)
+            {
+                ResetContractPages();
+                Control page=ContractPage("General");
+                var font=new Font("Segoe UI",10f);
+                var minimum=new Size(320,240);
+                page.Font=font;
+                page.MinimumSize=minimum;
+                using(var form=new ContractForm())
+                {
+                    Control[] top=form.Controls.Cast<Control>().ToArray();
+                    bool treeVisible=form.sectionTree.Visible;
+                    string text=form.Text;
+                    IButtonControl accept=form.AcceptButton;
+                    bool failed=false;
+                    StudioShell.FaultHook=delegate(string name){if(name==stage)throw new InvalidOperationException("fault:"+name);};
+                    try
+                    {
+                        StudioShell.Attach(form,preferences);
+                    }
+                    catch(InvalidOperationException)
+                    {
+                        failed=true;
+                    }
+                    finally
+                    {
+                        StudioShell.FaultHook=null;
+                    }
+                    Check(failed,"attach fault is raised at "+stage);
+                    Control[] restored=form.Controls.Cast<Control>().ToArray();
+                    Check(restored.Length==top.Length&&top.All(c=>restored.Contains(c)),"attach rollback restores the native control set at "+stage);
+                    Check(form.sectionTree.Visible==treeVisible&&form.Text==text&&Object.ReferenceEquals(form.AcceptButton,accept),"attach rollback restores form state at "+stage);
+                    Check(page.Font.Name==font.Name&&page.Font.SizeInPoints==font.SizeInPoints&&page.Font.Style==font.Style&&page.MinimumSize==minimum,"attach rollback restores page presentation at "+stage);
+                }
+            }
+
+            ResetContractPages();
+            using(var form=new ContractForm())
+            {
+                StudioShell shell=StudioShell.Attach(form,preferences);
+                Check(shell!=null&&!form.sectionTree.Visible,"successful attach replaces the visible native tree");
+                Check(form.Controls.Find("studioRoot",true).Length==1,"successful attach adds the studio shell");
+            }
+            ResetContractPages();
+        }
+        private static Control ContractPage(string name)
+        {
+            return ((ContractSectionEntry)ContractForm.SettingSections[name]).ConfigSection;
+        }
+        private static void ResetContractPages()
+        {
+            foreach(DictionaryEntry entry in ContractForm.SettingSections)
+            {
+                Control page=((ContractSectionEntry)entry.Value).ConfigSection;
+                page.Parent=null;
+                page.MinimumSize=Size.Empty;
+            }
+        }
         private static void VerifyStartup(string prefs)
         {
             using(var hidden=new Form())
@@ -309,6 +396,47 @@ namespace MP1.ConfigurationStudio
             form.Controls.AddRange(new Control[]{tree,holder,ok,cancel,tools});cancel.Click+=delegate{form.Close();};
             form.Load+=delegate{StudioShell.AttachFixture(form,tree,holder,ok,cancel,tools,Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"design-preview.xml"),pages);form.Text+=" · DESIGN-VORSCHAU MIT TESTFELDERN";};
             Application.Run(form);return 0;
+        }
+        private sealed class ContractSectionEntry
+        {
+            public Control ConfigSection {get;set;}
+        }
+        private sealed class ContractNode : TreeNode
+        {
+            public Control Section {get;set;}
+        }
+        private sealed class ContractForm : Form
+        {
+            internal readonly TreeView sectionTree=new TreeView();
+            internal readonly Panel holderPanel=new Panel();
+            internal readonly Button okButton=new Button();
+            internal readonly Button cancelButton=new Button();
+            internal readonly ToolStrip toolStrip1=new ToolStrip();
+            internal readonly Button applyButton=new Button();
+            internal readonly Label linkLabel1=new Label();
+            private static readonly Dictionary<string,ContractSectionEntry> sections=new Dictionary<string,ContractSectionEntry>
+            {
+                {"General",new ContractSectionEntry{ConfigSection=new UserControl{Text="General"}}},
+                {"Gui",new ContractSectionEntry{ConfigSection=new UserControl{Text="Gui"}}}
+            };
+            public static IDictionary SettingSections {get{return sections;}}
+            public ContractForm()
+            {
+                Controls.AddRange(new Control[]{sectionTree,holderPanel,okButton,cancelButton,toolStrip1});
+                var general=new TreeNode("General"){Tag=((ContractSectionEntry)sections["General"]).ConfigSection};
+                var gui=new TreeNode("Gui"){Tag=((ContractSectionEntry)sections["Gui"]).ConfigSection};
+                sectionTree.Nodes.Add(general);
+                sectionTree.Nodes.Add(gui);
+                sectionTree.SelectedNode=general;
+            }
+        }
+        private sealed class MissingSectionsForm : Form
+        {
+            private readonly TreeView sectionTree=new TreeView();
+            private readonly Panel holderPanel=new Panel();
+            private readonly Button okButton=new Button();
+            private readonly Button cancelButton=new Button();
+            private readonly ToolStrip toolStrip1=new ToolStrip();
         }
         private sealed class PaintProbeCombo : ComboBox
         {

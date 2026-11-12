@@ -13,9 +13,8 @@ namespace MP1.ConfigurationStudio
         {
             string runtime=AppDomain.CurrentDomain.BaseDirectory,rootPath=Path.GetFullPath(Path.Combine(runtime,"..")).TrimEnd('\\')+"\\";
             if(!File.Exists(Path.Combine(runtime,"studio-test-runtime.marker")))throw new InvalidOperationException("OK cycle requires an isolated runtime.");
-            Type config=Assembly.Load("Utils").GetType("MediaPortal.Configuration.Config"),dir=config.GetNestedType("Dir");
             foreach(string name in new[]{"Config","Log","Database","Thumbs","Cache","Skin","Language"})
-            {string folder=Path.GetFullPath(Convert.ToString(config.GetMethod("GetFolder").Invoke(null,new[]{Enum.Parse(dir,name)})));if(!folder.StartsWith(rootPath,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Non-isolated OK cycle path: "+name);}
+            {string folder=Path.GetFullPath(NativeContract.ConfigFolder(name));if(!folder.StartsWith(rootPath,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Non-isolated OK cycle path: "+name);}
             if(!Path.GetFullPath(IsolatedRuntime.DebugMarkerPath()).StartsWith(rootPath,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Non-isolated OK cycle debug marker.");
             var report=new XmlDocument();bool restart=false;
             if(File.Exists(path)){report.Load(path);restart=report.DocumentElement.GetAttribute("stage")=="saved";}
@@ -25,7 +24,7 @@ namespace MP1.ConfigurationStudio
                 timer.Stop();timer.Dispose();
                 try
                 {
-                    TreeNode node=Flatten(tree.Nodes).First(n=>NodeSection(n).GetType().Name=="General");Navigate(node);Control page=NodeSection(node);
+                    TreeNode node=Flatten(tree.Nodes).First(n=>NativeContract.NodeSection(n).GetType().Name=="General");Navigate(node);Control page=NativeContract.NodeSection(node);
                     var field=Descendants(page).OfType<CheckBox>().First(c=>c.Name=="checkBoxAutoRestart");
                     if(restart)
                     {

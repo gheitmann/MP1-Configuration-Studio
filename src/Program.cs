@@ -177,11 +177,18 @@ namespace MP1.ConfigurationStudio
         {
                 if(form.IsDisposed||seen.Contains(form))return;
                 FrameRendering.EnableComposition(form);
-                if (form.GetType().FullName == "MediaPortal.Configuration.SettingsForm")
+                if (form.GetType().FullName == NativeContract.SettingsFormTypeName)
                 {
                     seen.Add(form);
                     try
                     {
+                        NativeContractReport report=NativeContract.Validate(form);
+                        if(!report.IsValid)
+                        {
+                            MessageBox.Show(form,"Die installierte MediaPortal-Oberfläche entspricht nicht dem erwarteten 1.39-Vertrag.\r\n\r\n"+report.Summary()+"\r\n\r\nDas originale Konfigurationsfenster bleibt unverändert. Bitte Configuration.exe verwenden.",
+                                "Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                            return;
+                        }
                         shell = StudioShell.Attach(form, preferences);
                         Action ready=delegate{
                             if (!String.IsNullOrEmpty(audit)) shell.StartAudit(audit);

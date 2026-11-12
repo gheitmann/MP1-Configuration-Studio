@@ -16,10 +16,9 @@ namespace MP1.ConfigurationStudio
         {
             string runtime=AppDomain.CurrentDomain.BaseDirectory,rootPath=Path.GetFullPath(Path.Combine(runtime,"..")).TrimEnd('\\')+"\\";
             if(!File.Exists(Path.Combine(runtime,"studio-test-runtime.marker")))throw new InvalidOperationException("Persistence tests require an isolated runtime.");
-            Type config=Assembly.Load("Utils").GetType("MediaPortal.Configuration.Config"),dir=config.GetNestedType("Dir");
             foreach(string name in new[]{"Config","Log","Database","Thumbs","Cache","Skin","Language"})
             {
-                string folder=Path.GetFullPath(Convert.ToString(config.GetMethod("GetFolder").Invoke(null,new[]{Enum.Parse(dir,name)})));
+                string folder=Path.GetFullPath(NativeContract.ConfigFolder(name));
                 if(!folder.StartsWith(rootPath,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Persistence test refused non-isolated "+name+" directory.");
             }
             if(!Path.GetFullPath(IsolatedRuntime.DebugMarkerPath()).StartsWith(rootPath,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Persistence test refused non-isolated debug marker path.");
@@ -32,7 +31,7 @@ namespace MP1.ConfigurationStudio
             timer.Tick+=delegate{
                 timer.Stop();
                 if(index==nodes.Length){root.SetAttribute("complete","true");SaveReview(report,path);timer.Dispose();nativeCancel.PerformClick();return;}
-                TreeNode node=nodes[index++];Control page=NodeSection(node);var item=report.CreateElement("page");root.AppendChild(item);
+                TreeNode node=nodes[index++];Control page=NativeContract.NodeSection(node);var item=report.CreateElement("page");root.AppendChild(item);
                 string type=page.GetType().Name;item.SetAttribute("type",type);item.SetAttribute("path",node.FullPath);
                 try
                 {
