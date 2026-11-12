@@ -9,7 +9,6 @@
 ## Tests run
 
 - [ ] Fixture tests x64
-- [ ] Fixture tests x86
 - [ ] Native smoke on isolated runtime
 - [ ] Fault-injection attach test
 - [ ] Manual check on a real installation

@@ -14,7 +14,7 @@ Copy this file to `docs/releases/1.0.0-CHECKLIST.md` when the release process st
 | Build date (UTC) | `<date>` |
 | Built by | `<name / CI run>` |
 | Signing identity | `<certificate subject>` |
-| Supported MediaPortal | `1.39` |
+| Supported MediaPortal | `1.39 x64` |
 | Setup SHA256 | `<hash>` |
 | Portable ZIP SHA256 | `<hash>` |
 | Release manager | `<name>` |
@@ -51,7 +51,7 @@ Copy this file to `docs/releases/1.0.0-CHECKLIST.md` when the release process st
 ## 3. Build and reproducibility
 
 - [ ] A clean clone builds on a clean Windows VM with the documented toolchain.
-- [ ] The build produces x64 (and x86 if shipped) binaries.
+- [ ] The build produces x64 binaries; no x86 binary is shipped.
 - [ ] Deterministic build verified, or non-determinism is documented and accepted.
 - [ ] Build log and warnings are archived.
 - [ ] PDBs are archived for the release.
@@ -69,7 +69,7 @@ Copy this file to `docs/releases/1.0.0-CHECKLIST.md` when the release process st
 - [ ] Visual regression screenshots pass at every shipped scale (100/115/125/150%, plus 175% if shipped) in light and dark.
 - [ ] Fault-injection attach test passes.
 - [ ] Native smoke x64 passes (record count: `__ / __`).
-- [ ] Native smoke x86 passes if x86 is shipped (record count: `__ / __`).
+- [ ] Native smoke x86 is not required: 1.0 ships x64 only. If an x86 binary is ever added, this item becomes mandatory.
 - [ ] Localization completeness test passes.
 - [ ] No test writes outside the isolated runtime.
 - [ ] Test reports are attached to the release evidence.
@@ -131,20 +131,27 @@ Test every row and record the result. If the 175% option is removed at the M2 ga
 
 | # | Windows | MP architecture | OS DPI | Studio scale | Language | Configuration | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Windows 10 22H2 | x64 | 100% | 100/125/150/175% | DE | Fresh | `<pass/fail>` |
-| 2 | Windows 10 22H2 | x64 | 150% | 100/125/150/175% | EN | Migrated | `<pass/fail>` |
-| 3 | Windows 11 23H2+ | x64 | 150% | 100/125/150/175% | DE | Migrated | `<pass/fail>` |
-| 4 | Windows 11 23H2+ | x64 | 200% | 100/125/150/175% | EN | Fresh | `<pass/fail>` |
-| 5 | Windows 11 23H2+ | x86 | 125% | 100/125/150/175% | DE | Migrated | `<pass/fail>` |
-| 6 | Multi-monitor, mixed DPI | x64 | 100/150% | 125% | DE | Migrated | `<pass/fail>` |
-| 7 | Windows 11 | x64 | 100% | 150% | EN | Plugin Tier A | `<pass/fail>` |
-| 8 | Windows 11 | x64 | 150% | 125% | DE | Plugin Tier B | `<pass/fail>` |
-| 9 | Windows 11 | x64 | 150% | 125% | DE | Plugin Tier C | `<pass/fail>` |
-| 10 | Windows 11 | x64 | 150% | 125% | DE | No TV tuner / no TV Server | `<pass/fail>` |
+| 1 | Windows 11 23H2+ | x64 | 100% | 100/125/150/175% | DE | Fresh | `<pass/fail>` |
+| 2 | Windows 11 23H2+ | x64 | 150% | 100/125/150/175% | EN | Migrated | `<pass/fail>` |
+| 3 | Windows 11 23H2+ | x64 | 200% | 100/125/150/175% | DE | Fresh | `<pass/fail>` |
+| 4 | Windows 11 23H2+ | x64 | 100/150% | 125% | DE | Multi-monitor, mixed DPI | `<pass/fail>` |
+| 5 | Windows 11 | x64 | 100% | 150% | EN | Plugin Tier A | `<pass/fail>` |
+| 6 | Windows 11 | x64 | 150% | 125% | DE | Plugin Tier B | `<pass/fail>` |
+| 7 | Windows 11 | x64 | 150% | 125% | DE | Plugin Tier C | `<pass/fail>` |
+| 8 | Windows 11 | x64 | 150% | 125% | DE | No TV tuner / no TV Server | `<pass/fail>` |
+| 9 | Windows 10 22H2 | x64 | 150% | 125% | DE | Best effort if a VM is available | `<pass/fail>` |
+| 10 | Clean Windows 11 VM | x64 | 100% | 125% | EN | Fresh install | `<pass/fail>` |
 
 - [ ] At least one real HTPC with a TV display was tested.
 - [ ] At least one test used a non-administrator Windows account for normal use.
 - [ ] Results are linked in the release evidence.
+
+### Self-use and optional pilot
+
+- [ ] The release candidate was used for all maintainer configuration changes for at least seven days.
+- [ ] The self-use log records pages used, save cycles, and any workarounds.
+- [ ] If pilot users were invited, their number (0–5) and feedback are recorded.
+- [ ] If no pilot was used, the release evidence states that the release relies on automated and maintainer validation.
 
 ---
 
@@ -153,7 +160,7 @@ Test every row and record the result. If the 175% option is removed at the M2 ga
 - [ ] Fresh install on a clean Windows VM succeeds with the expected UAC prompt.
 - [ ] Installer detects the MediaPortal folder correctly, including a non-default path.
 - [ ] Installer refuses or warns when MediaPortal 1.39 is missing.
-- [ ] Upgrade from the previous public beta preserves appearance settings.
+- [ ] Upgrade from the previous public release or release candidate preserves appearance settings.
 - [ ] Uninstall removes only `MP1ConfigurationStudio*` files and its uninstall entry.
 - [ ] Uninstall leaves `Configuration.exe`, native DLLs, and `MediaPortal.xml` untouched.
 - [ ] After uninstall, the original configurator still starts.

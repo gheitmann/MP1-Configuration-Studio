@@ -21,6 +21,7 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 - 1.0.0 is supported and documented, not a snapshot.
 - Every shipped claim has a test or a documented limitation.
 - The product can say "not supported" and fall back safely.
+- Validation comes from automation and documented self-use, not from tester count.
 - After 1.0.0 the project enters maintenance mode.
 
 ---
@@ -63,11 +64,12 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 | Dimension | 1.0 target | Gate |
 | --- | --- | --- |
 | MediaPortal | 1.39, x64 | Supported |
-| MediaPortal | 1.39, x86 | M2 decision: validate or do not ship |
-| Windows | Windows 10 22H2, Windows 11 23H2+ | Supported |
+| MediaPortal | 1.39, x86 | Not shipped in 1.0; revisit only with an x86 test runtime |
+| Windows | Windows 11 23H2+ | Supported |
+| Windows | Windows 10 22H2 | Best effort, not a 1.0 gate |
 | Runtime | .NET Framework 4.8 | Required |
 | UI scaling | 100, 115, 125, 150% | Supported; 175% is conditional on M2 |
-| OS DPI | 100–200%, single and mixed multi-monitor | Mixed DPI best effort, documented |
+| OS DPI | 100–200%, single monitor | Supported; mixed multi-monitor best effort |
 | Languages | German, English | Auto-detect from MediaPortal, manual override |
 | Themes | Light, dark | Supported; Windows High Contrast uses system colors |
 | Plugins | Tier A fully tested, Tier B native look, Tier C blocked | Tier B is the default |
@@ -244,9 +246,9 @@ Hosted CI cannot run MediaPortal. Native smoke runs on a self-hosted Windows run
 | Milestone | Duration (part-time) | Output | Exit gate |
 | --- | --- | --- | --- |
 | **M1 Foundation** | 3–4 weeks | Buildable, testable, observable, safe-to-attach foundation | CI green; no test code in the app; fault injection passes |
-| **M2 Hardening** | 5–6 weeks | Compatibility policy, fallback, backups, matrix decisions | All pages and saves pass; x86 and 175% decided |
+| **M2 Hardening** | 5–6 weeks | Compatibility policy, fallback, backups, matrix decisions | All pages and saves pass; 175% decided; x64-only matrix confirmed |
 | **M3 Productization** | 5–6 weeks | Bilingual UI, search v2, installer, signing, docs | Clean install/uninstall on fresh Windows |
-| **M4 Pre-release** | 4–6 weeks | Public beta with external testers | No P1/P2; install success ≥95% |
+| **M4 Internal validation** | 1–2 weeks | Release-candidate evidence and optional small pilot | Automated and maintainer HTPC checks pass; no P1/P2 |
 | **M5 RC → 1.0.0** | 2–3 weeks | Frozen, independently verified final release | All 1.0 exit criteria |
 
 ### M1 Foundation
@@ -283,7 +285,7 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 - Add backup/restore and the sanitized support bundle.
 - Implement High Contrast fallback.
 - Validate 175% or remove it.
-- Validate x86 natively or remove the x86 binary.
+- Confirm the x64-only matrix and stop building or shipping x86 binaries.
 - Expand native smoke tests and the DPI/theme matrix.
 - Fix all P1/P2 findings.
 
@@ -292,7 +294,7 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 - 61/61 pages activate; 57/57 writable sections save; 68/68 field round trips.
 - Unknown plugin pages degrade to Tier B without blocking.
 - Fault injection and data-safety checks pass.
-- x86 and 175% decisions are recorded and reflected in the shipped matrix.
+- The 175% decision is recorded; the x64-only matrix is reflected in the shipped product.
 - No open P1/P2 issues.
 
 ### M3 Productization
@@ -313,20 +315,22 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 - Support bundle contains no setting values or credentials.
 - Search coverage matrix is documented.
 
-### M4 Pre-release
+### M4 Internal validation
 
-- Publish a signed beta with release notes and known limitations.
-- Recruit at least 20 external testers across at least 10 configurations.
-- Use issue templates for bugs and compatibility reports.
-- Four weeks of feedback, triage, and fixes.
-- No feature work during the feedback window.
+- Run the full automated matrix: fixture, visual regression, native smoke, fault injection, and save/reload cycles.
+- Use the release candidate for all of the maintainer's own configuration changes for at least seven days.
+- Install, upgrade, and uninstall on a clean Windows 11 VM and on the real HTPC.
+- Record known limitations and support-matrix results.
+- Optional: invite zero to five pilot users. Their feedback is informative, not a release gate.
+- No feature work during the validation window.
 
 **Exit gate:**
 
 - No open P1/P2 issues.
 - At most three P3 issues with documented workarounds.
-- Installation success ≥95% across tester reports.
-- All feedback triaged and recorded.
+- Automated, clean-VM, and real-HTPC checks pass.
+- Self-use period completed without data loss or blocked workflows.
+- Pilot feedback, if any, is triaged and recorded.
 
 ### M5 RC → 1.0.0
 
@@ -347,9 +351,10 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 | Reflection contract breaks | Low (1.39 frozen) | Total failure | `NativeContract`, hash/version check, classic fallback | Startup report shows missing member |
 | Plugin page breaks under zoom/theme | High | Support load | Compatibility manifest, Tier B default, per-page opt-out | Tester report or native smoke failure |
 | SmartScreen/AV blocks download | High | No adoption | Authenticode, timestamping, Microsoft submission, no obfuscation, source availability | Fresh-VM download warning |
-| x86 cannot be validated | Medium | Broken promise | Decide at M2: validate or drop | No x86 test runtime available |
+| x86 requested after 1.0 | Low | 32-bit MP users cannot use Studio | Documented x64-only support; revisit only with an x86 test runtime | x86 request |
 | Data loss through user error | Low | Catastrophic | Own files only, backup/restore, native handlers, isolated tests | Any write outside allowed paths |
 | Support burden exceeds capacity | High | Project stalls | Support matrix, tiers, diagnostics bundle, documented non-goals | Issue volume or unresolved P3s |
+| No independent testers | Medium | Blind spots | Automated matrix, seven-day self-use, optional 0–5 pilot, conservative support matrix | First user report |
 | MP1 audience shrinks | High long-term | Reduced relevance | Small scope, maintenance mode, no over-investment | Download/issue trend |
 | Localization drifts | Medium | Mixed UI | Strings in data files, CI check, translator guide | CI hardcoded-string check fails |
 | Windows update regression | Medium | Visual/DPI breakage | Annual regression on current Windows builds | New Windows release |
@@ -373,13 +378,13 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 ## 12. Definition of Done for 1.0.0
 
 1. 61/61 sections activate; 57/57 writable sections save; 68/68 field round trips; two full save/reload cycles on a fresh profile.
-2. Fresh install, upgrade, uninstall, and rollback pass on Windows 10 and Windows 11, x64 and x86 if shipped.
+2. Fresh install, upgrade, uninstall, and rollback pass on Windows 11 x64; Windows 10 is best effort if a VM is available.
 3. No open P1/P2 issues for four weeks; all P3 issues have documented workarounds.
 4. No hardcoded UI strings; German and English are complete.
 5. Fault injection at every attach stage leaves the native configurator usable.
 6. Startup, page switch, search, memory, and GDI budgets pass.
 7. Setup and binaries are signed and timestamped; SHA256 published; fresh-VM SmartScreen check recorded.
-8. At least 20 external testers across at least 10 configurations; feedback triaged.
+8. A seven-day self-use period is complete; optional pilot feedback (zero to five users) is triaged.
 9. README, support matrix, known limitations, troubleshooting, and release notes are complete.
 10. The release checklist is fully checked or has written waivers.
 
@@ -399,7 +404,7 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 
 | Decision | Options | Deadline | Owner |
 | --- | --- | --- | --- |
-| x86 support | Validate natively / drop the x86 binary | End of M2 | Maintainer |
+| x86 support | Decided: x64 only for 1.0; no x86 binary | Done | Maintainer |
 | 175% scaling | Keep if all pages pass / remove from selector | End of M2 | Maintainer |
 | Code signing | SignPath OSS / OV certificate / Azure Trusted Signing | Start of M3 | Maintainer |
 | Installer technology | Inno Setup / WiX / custom setup | Start of M3 | Maintainer |
@@ -419,7 +424,7 @@ Assumes 10–15 focused hours per week.
 | M1 Foundation | 3–4 | 4 |
 | M2 Hardening | 5–6 | 10 |
 | M3 Productization | 5–6 | 16 |
-| M4 Pre-release | 4–6 | 22 |
-| M5 RC → 1.0.0 | 2–3 | 25 |
+| M4 Internal validation | 1–2 | 18 |
+| M5 RC → 1.0.0 | 2–3 | 21 |
 
-The critical path is external testing and the DPI/plugin matrix, not feature development.
+The critical path is native verification and the DPI/plugin matrix, not feature development. External testers are optional; the release relies on automation and a documented self-use period.

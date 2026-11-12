@@ -86,11 +86,11 @@ Each ticket below is written so it can be pasted into GitHub Issues as-is. Recom
 - Keep production dependency-free; test framework packages are allowed in Diagnostics only.
 - Replace `build.ps1` with a single documented entry point.
 - Remove the `Framework64\v4.0.30319\csc.exe` dependency.
-- Preserve x64/x86/AnyCPU outputs as required by the matrix.
+- Produce an x64 application output; 1.0 does not ship x86.
 
 **Acceptance criteria:**
 - A clean Windows VM with the documented toolchain builds without Visual Studio.
-- Outputs are produced for x64 and x86 (x86 may be removed later at the M2 gate).
+- The application output is x64. The x86 build target is removed from the release script.
 - Build is deterministic or the remaining non-determinism is documented.
 - No production NuGet dependency.
 - Build log is readable and warnings are not suppressed globally.
@@ -397,7 +397,7 @@ Each ticket below is written so it can be pasted into GitHub Issues as-is. Recom
 **Acceptance criteria:**
 - Artifact is produced from a tagged commit.
 - It contains no tests, review harnesses, or local evidence.
-- It starts on a clean VM with MP 1.39 installed.
+- It starts on a clean Windows 11 x64 VM with MP 1.39 installed.
 - SHA256 is published.
 - Installer work remains out of scope.
 
@@ -423,7 +423,7 @@ M1-06 and M1-07 are the critical path. Start them as early as the project split 
 - New user-visible features or visual redesign.
 - Localization content and language switching.
 - Installer, uninstaller, and code signing.
-- x86 validation and the 175% scaling decision.
+- The 175% scaling decision.
 - Plugin tier behavior beyond the manifest skeleton.
 - Search v2.
 - Backup/restore implementation.
