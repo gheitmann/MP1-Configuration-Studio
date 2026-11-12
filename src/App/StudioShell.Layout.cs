@@ -137,6 +137,9 @@ namespace MP1.ConfigurationStudio
             Action<ToolStripItemCollection,ToolStripItemCollection> copy=null;copy=delegate(ToolStripItemCollection source,ToolStripItemCollection target){foreach(ToolStripItem original in source){if(original is ToolStripSeparator){target.Add(new ToolStripSeparator());continue;}var proxy=new ToolStripMenuItem(original.Text){Enabled=original.Enabled};var checkedButton=original as ToolStripButton;if(checkedButton!=null)proxy.Checked=checkedButton.Checked;ToolStripItem action=original;target.Add(proxy);var dropdown=original as ToolStripDropDownItem;if(dropdown!=null&&dropdown.DropDownItems.Count>0)copy(dropdown.DropDownItems,proxy.DropDownItems);else proxy.Click+=delegate{ClickNative(action);};}};
             copy(nativeTools.Items,menu.Items);
             menu.Items.Add(new ToolStripSeparator());
+            var classic=new ToolStripMenuItem("Klassische Oberfläche starten");
+            classic.Click+=delegate{StartClassic();};
+            menu.Items.Add(classic);
             var support=new ToolStripMenuItem("Support-Bundle erzeugen…");
             support.Click+=delegate{CreateSupportBundle();};
             menu.Items.Add(support);
@@ -144,6 +147,15 @@ namespace MP1.ConfigurationStudio
             about.Click+=delegate{ShowAbout();};
             menu.Items.Add(about);
             theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
+        }
+        private void StartClassic()
+        {
+            if(MessageBox.Show(form,"Das Studio-Fenster wird geschlossen. Nicht gespeicherte Änderungen gehen verloren.\r\n\r\nDie originale Oberfläche wird anschließend gestartet. Fortfahren?",
+                "Klassische Oberfläche",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+            restartClassic=true;
+            StudioLog.Info("Classic restart requested");
+            nativeCancel.PerformClick();
+            if(!form.IsDisposed)form.Close();
         }
         private void CreateSupportBundle()
         {

@@ -50,8 +50,27 @@ namespace MP1.ConfigurationStudio
                 runtime = FindRuntime(runtime);
                 string native = Path.Combine(runtime, "Configuration.exe");
                 var version = FileVersionInfo.GetVersionInfo(native);
+                if (IsClassic(args))
+                {
+                    StartNative(native, runtime);
+                    return 0;
+                }
                 if (version.FileMajorPart != 1 || version.FileMinorPart != 39)
-                    throw new InvalidOperationException("Diese Ausgabe unterstützt MediaPortal 1.39. Gefunden: " + version.FileVersion + ". Das Original wurde nicht verändert.");
+                {
+                    StudioLog.Warn("Unsupported MediaPortal version: " + version.FileVersion);
+                    DialogResult answer = MessageBox.Show(
+                        "Diese Studio-Ausgabe unterstützt MediaPortal 1.39.\r\n\r\nGefunden: " + version.FileVersion + "\r\n\r\nDie originale Oberfläche kann trotzdem gestartet werden. Fortfahren?",
+                        "MP1 Configuration Studio",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button1);
+                    if (answer == DialogResult.Yes)
+                    {
+                        StartNative(native, runtime);
+                        return 0;
+                    }
+                    return 1;
+                }
                 var architecture=AssemblyName.GetAssemblyName(Path.Combine(runtime,"Core.dll")).ProcessorArchitecture;
                 StudioLog.Info("Native runtime="+runtime+" version="+version.FileVersion+" architecture="+architecture);
                 bool requires32=architecture==ProcessorArchitecture.X86,requires64=architecture==ProcessorArchitecture.Amd64;
@@ -89,6 +108,26 @@ namespace MP1.ConfigurationStudio
                 if (Array.IndexOf(args, "--self-test") >= 0) Console.Error.WriteLine(ex);
                 else MessageBox.Show(error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
+            }
+        }
+
+        internal static bool IsClassic(string[] args)
+        {
+            return args != null && Array.IndexOf(args, "--classic") >= 0;
+        }
+
+        internal static void StartNative(string native, string runtime)
+        {
+            try
+            {
+                StudioLog.Info("Starting classic native configurator");
+                Process.Start(new ProcessStartInfo(native) { WorkingDirectory = runtime, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                StudioLog.Error(ex, "Classic start failed");
+                MessageBox.Show("Die originale Configuration.exe konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nProtokoll: " + StudioLog.FilePath,
+                    "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

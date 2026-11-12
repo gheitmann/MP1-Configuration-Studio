@@ -40,6 +40,7 @@ namespace MP1.ConfigurationStudio
         private TreeNode[] displayedTabs=new TreeNode[0];
         private IDisposable selectionFrame;
         private bool changingTheme;
+        private bool restartClassic;
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
@@ -130,13 +131,15 @@ namespace MP1.ConfigurationStudio
             // A failure here is rolled back by the attach transaction.
             foreach(Control section in sections)
             {
+                SectionPolicy policy=CompatibilityPolicy.Resolve(section.GetType().FullName);
+                if(policy.Tier==CompatibilityTier.C)continue;
                 section.Font=section.Font;
                 int contentWidth=section.Controls.Cast<Control>().Select(c=>c.Right).DefaultIfEmpty(section.Width).Max();
                 int contentHeight=section.Controls.Cast<Control>().Select(c=>c.Bottom).DefaultIfEmpty(section.Height).Max();
                 section.MinimumSize=new Size(Math.Max(section.MinimumSize.Width,contentWidth+4),Math.Max(section.MinimumSize.Height,contentHeight+8));
                 Watch(section);
-                theme.Prepare(section);
-                pageZoom.Capture(section);pageZoom.Apply(section,PageScale);
+                if(!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(section);
+                if(policy.Zoom){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
             }
 
             if(tree.SelectedNode!=null&&NativeContract.NodeSection(tree.SelectedNode)!=null&&NativeContract.NodeSection(tree.SelectedNode).GetType().Name=="Project")
@@ -165,6 +168,7 @@ namespace MP1.ConfigurationStudio
                 Application.Idle-=CompleteSelectionFrame;CompleteSelectionFrame(null,EventArgs.Empty);
                 if(form.WindowState==FormWindowState.Normal){appearance.Width=form.Width;appearance.Height=form.Height;}
                 appearance.Save();tips.Dispose();pageZoom.Dispose();foreach(Font owned in shellFonts)owned.Dispose();
+                if(restartClassic){restartClassic=false;Program.StartNative(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);}
             };
             holder.SizeChanged+=delegate{LayoutNativePage();};
             foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?Color.White:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
@@ -275,6 +279,14 @@ namespace MP1.ConfigurationStudio
         {
             var stopwatch=Stopwatch.StartNew();
             TreeNode node=tree.SelectedNode;if(node==null)return;
+            Control selectedSection=NativeContract.NodeSection(node);
+            SectionPolicy selectedPolicy=CompatibilityPolicy.Resolve(selectedSection==null?"":selectedSection.GetType().FullName);
+            if(selectedPolicy.Tier==CompatibilityTier.C)
+            {
+                if(status!=null)status.Text="Dieser Bereich ist in Studio nicht unterstützt. Bitte die klassische Oberfläche verwenden.";
+                StudioLog.Warn("Blocked Tier C page: "+(selectedSection==null?"":selectedSection.GetType().FullName));
+                return;
+            }
             CorrectStoredSettingDisplay(NativeContract.NodeSection(node));
             navigation.Sync(node,false);RecordHistory(node);
             breadcrumb.Text="Konfiguration  /  "+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node);pageIcon.Invalidate();
@@ -293,7 +305,7 @@ namespace MP1.ConfigurationStudio
             }
             else foreach(Button button in tabs.Controls.OfType<Button>())SetTabColor(button);
             helpTitle.Text=navigation.Label(node);fieldHelp="";helpText.Text=SectionHelp(node);
-            foreach(Control c in holder.Controls){Watch(c);theme.Prepare(c);}
+            foreach(Control c in holder.Controls){Watch(c);SectionPolicy pagePolicy=CompatibilityPolicy.Resolve(c.GetType().FullName);if(!String.Equals(pagePolicy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(c);}
             if(holder.Controls.Count>0)pageZoom.EnsureContentFits(holder.Controls[0]);
             LayoutNativePage();
             UpdateStatus();
@@ -310,9 +322,20 @@ namespace MP1.ConfigurationStudio
         {
             if(b==null)return;bool active=Object.ReferenceEquals(b.Tag,tree.SelectedNode);b.BackColor=theme.Colors.Background;b.ForeColor=active?theme.Colors.Accent:theme.Colors.Muted;b.FlatAppearance.BorderSize=0;var tab=b as StudioTabButton;if(tab!=null){tab.Selected=active;tab.Invalidate();}
         }
-        private bool Navigate(TreeNode node)
+        internal bool Navigate(TreeNode node)
         {
             if(node==null||node.TreeView!=tree)return false;
+            Control page=NativeContract.NodeSection(node);
+            if(page!=null)
+            {
+                SectionPolicy policy=CompatibilityPolicy.Resolve(page.GetType().FullName);
+                if(policy.Tier==CompatibilityTier.C)
+                {
+                    if(status!=null)status.Text="Dieser Bereich ist in Studio nicht unterstützt. Bitte die klassische Oberfläche verwenden.";
+                    StudioLog.Warn("Blocked Tier C navigation: "+page.GetType().FullName);
+                    return false;
+                }
+            }
             switching=true;
             try{tree.SelectedNode=node;node.EnsureVisible();}
             finally{switching=false;}

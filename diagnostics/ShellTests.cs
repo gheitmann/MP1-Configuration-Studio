@@ -294,6 +294,7 @@ namespace MP1.ConfigurationStudio
             Check(assemblyVersion.Major==1&&assemblyVersion.Minor==0&&assemblyVersion.Build==0,"assembly version targets 1.0.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
             Check(fileVersion.StartsWith("1.0.0",StringComparison.Ordinal),"file version targets 1.0.0");
+            Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
         }
         private static void RunCompatibilityPolicyChecks(string directory)
         {
@@ -408,6 +409,16 @@ namespace MP1.ConfigurationStudio
                 StudioShell shell=StudioShell.Attach(form,preferences);
                 Check(shell!=null&&!form.sectionTree.Visible,"successful attach replaces the visible native tree");
                 Check(form.Controls.Find("studioRoot",true).Length==1,"successful attach adds the studio shell");
+                string overridePath=Path.Combine(Path.GetDirectoryName(preferences),"tier-c.xml");
+                string blockedType=typeof(BlockedPage).FullName;
+                File.WriteAllText(overridePath,"<compatibility><section type=\""+blockedType+"\" tier=\"C\" zoom=\"false\" theme=\"native\" search=\"false\" /></compatibility>");
+                CompatibilityPolicy.Initialize(overridePath);
+                var blockedNode=new TreeNode("Blocked"){Tag=new BlockedPage()};
+                form.sectionTree.Nodes.Add(blockedNode);
+                TreeNode previous=form.sectionTree.SelectedNode;
+                bool navigated=shell.Navigate(blockedNode);
+                Check(!navigated&&Object.ReferenceEquals(form.sectionTree.SelectedNode,previous),"tier C navigation is blocked");
+                CompatibilityPolicy.Initialize();
             }
             ResetContractPages();
         }
@@ -482,6 +493,9 @@ namespace MP1.ConfigurationStudio
         private sealed class ContractNode : TreeNode
         {
             public Control Section {get;set;}
+        }
+        private sealed class BlockedPage : UserControl
+        {
         }
         private sealed class ContractForm : Form
         {
