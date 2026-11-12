@@ -29,7 +29,7 @@
 | M1-01 Archive alpha | Done | Tag `v0.1.0-alpha.1-archive` pushed |
 | M1-02 Split solution | Done (logical) | `src/Core`, `src/Native`, `src/App`; single deployable assembly retained |
 | M1-03 MSBuild/Roslyn | Done | SDK-style `net48` project; `build.ps1` uses the .NET 8 SDK |
-| M1-04 CI | Done | Hosted runs 1–6 completed successfully |
+| M1-04 CI | Done | Hosted runs 1–8 completed successfully |
 | M1-05 Diagnostics separation | Done | `diagnostics\Studio.Diagnostics.csproj`; shipped app contains no test symbols |
 | M1-06 `NativeContract` | Done | Commit `6a218a0`; contract validation before attach |
 | M1-07 Transactional attach | Done | Commit `6a218a0`; snapshot rollback and eight fault-injection stages |
@@ -39,10 +39,10 @@
 | M1-11 Test runner | Deferred | Custom harness remains; NUnit migration scheduled for M2 |
 | M1-12 Compatibility manifest | Done | 61 section types, embedded default, override file, four checks |
 | M1-13 Appearance schema v2 | Done | Commit `44e8066`; 7 new checks |
-| M1-14 Performance baseline | Partial | Attach measured at 2664–2716 ms vs 2000 ms budget; page/search warnings added |
+| M1-14 Performance baseline | Partial | Attach measured at 2664–2716 ms vs 2000 ms budget; page/search warnings added; optimization in M2 |
 | M1-15 Support bundle | Done | Sanitized ZIP with metadata, policy, sections, appearance, and logs |
 | M1-16 Security/threat model | Done | `SECURITY.md` documents trust boundaries, elevation, plugin code, and data handling |
-| M1-17 First artifact | Partial | CI artifact downloaded: version 1.0.0.0, no test symbols; clean-VM start pending |
+| M1-17 First artifact | Partial | CI artifact downloaded, version 1.0.0.0, no test symbols, started successfully on the isolated runtime; clean-VM start pending |
 
 ## Verification
 
@@ -52,6 +52,7 @@
 - Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime after the source split.
 - Attach baseline: 2664–2716 ms, above the 2000 ms budget; M2 optimization target.
 - Page switches above 300 ms and searches above 150 ms are logged as warnings.
+- The downloaded CI artifact reports version 1.0.0.0, contains no test symbols, and starts with the expected Studio window on the isolated runtime.
 - Logs are written to `%LOCALAPPDATA%\MP1 Configuration Studio\logs\studio.log` and rotate at 2 MB with three files.
 - Fault injection at eight attach stages restores the native control set, form state, and page presentation.
 - The native `Configuration.exe` and production `MediaPortal.xml` hashes are unchanged after the isolated run.
