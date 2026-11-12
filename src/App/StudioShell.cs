@@ -21,6 +21,7 @@ namespace MP1.ConfigurationStudio
         private readonly Appearance appearance;
         private readonly Theme theme;
         private readonly List<Control> sections;
+        private readonly HashSet<Control> preparedPages = new HashSet<Control>();
         private readonly Dictionary<Control, string> baselines = new Dictionary<Control,string>();
         private readonly HashSet<Control> edits = new HashSet<Control>();
         private readonly HashSet<Control> observed = new HashSet<Control>();
@@ -55,6 +56,7 @@ namespace MP1.ConfigurationStudio
         public static StudioShell Attach(Form form,string preferences)
         {
             var stopwatch=Stopwatch.StartNew();
+            if(SystemInformation.HighContrast)StudioLog.Info("Windows High Contrast is active; using system palette");
             if(File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe")))
             {
                 try
@@ -142,20 +144,9 @@ namespace MP1.ConfigurationStudio
             finally { building=false;form.ResumeLayout(true); }
             InjectFault("after-build");
 
-            // Prepare the original pages only after the shell skeleton exists.
-            // A failure here is rolled back by the attach transaction.
-            foreach(Control section in sections)
-            {
-                SectionPolicy policy=CompatibilityPolicy.Resolve(section.GetType().FullName);
-                if(policy.Tier==CompatibilityTier.C)continue;
-                section.Font=section.Font;
-                int contentWidth=section.Controls.Cast<Control>().Select(c=>c.Right).DefaultIfEmpty(section.Width).Max();
-                int contentHeight=section.Controls.Cast<Control>().Select(c=>c.Bottom).DefaultIfEmpty(section.Height).Max();
-                section.MinimumSize=new Size(Math.Max(section.MinimumSize.Width,contentWidth+4),Math.Max(section.MinimumSize.Height,contentHeight+8));
-                Watch(section);
-                if(!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(section);
-                if(policy.Zoom){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
-            }
+            // Prepare the original pages lazily on first activation. Preparing all
+            // 61 pages before the first display is the main startup cost.
+            PreparePage(NativeContract.NodeSection(tree.SelectedNode));
 
             if(tree.SelectedNode!=null&&NativeContract.NodeSection(tree.SelectedNode)!=null&&NativeContract.NodeSection(tree.SelectedNode).GetType().Name=="Project")
             {
@@ -186,13 +177,28 @@ namespace MP1.ConfigurationStudio
                 if(restartClassic){restartClassic=false;Program.StartNative(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);}
             };
             holder.SizeChanged+=delegate{LayoutNativePage();};
-            foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?Color.White:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
+            foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?theme.Colors.PrimaryText:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
             form.KeyPreview=true;
             form.KeyDown+=OnKeyDown;
             }
         }
         private void CompleteSelectionFrame(object sender,EventArgs e)
         {if(selectionFrame!=null){var pending=selectionFrame;selectionFrame=null;pending.Dispose();}}
+        private void PreparePage(Control section)
+        {
+            if(section==null||section.IsDisposed||preparedPages.Contains(section))return;
+            SectionPolicy policy=CompatibilityPolicy.Resolve(section.GetType().FullName);
+            if(policy.Tier==CompatibilityTier.C)return;
+            section.Font=section.Font;
+            int contentWidth=section.Controls.Cast<Control>().Select(c=>c.Right).DefaultIfEmpty(section.Width).Max();
+            int contentHeight=section.Controls.Cast<Control>().Select(c=>c.Bottom).DefaultIfEmpty(section.Height).Max();
+            section.MinimumSize=new Size(Math.Max(section.MinimumSize.Width,contentWidth+4),Math.Max(section.MinimumSize.Height,contentHeight+8));
+            Watch(section);
+            if(!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(section);
+            if(policy.Zoom){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
+            preparedPages.Add(section);
+            StudioLog.Info("Prepared page "+section.GetType().Name+" ("+preparedPages.Count+"/"+sections.Count+")");
+        }
 
         private Button ActionButton(string text,Action action,int width)
         {
@@ -245,9 +251,10 @@ namespace MP1.ConfigurationStudio
             try
             {
                 theme.Apply(form);
-                foreach(Control section in sections)if(!form.Contains(section))theme.Apply(section);
+                foreach(Control section in preparedPages)if(!form.Contains(section))theme.Apply(section);
                 foreach(Form dialog in dialogs.ToArray())if(!dialog.IsDisposed)theme.Apply(dialog);
                 var p=theme.Colors;
+                if(themeChoice!=null){bool highContrast=SystemInformation.HighContrast;themeChoice.Enabled=!highContrast;themeChoice.AccessibleName=highContrast?"Hoher Kontrast aktiv":"Hell oder Dunkel";}
                 center.BackColor=p.Background;holder.BackColor=p.Background;tree.BackColor=p.Panel;tabs.BackColor=p.Background;
                 foreach(Control c in Descendants(form))if(c.Name=="studioMuted")c.ForeColor=p.Muted;
                 title.ForeColor=p.Text;breadcrumb.ForeColor=p.Muted;hint.ForeColor=p.Muted;helpText.ForeColor=p.Muted;changeText.ForeColor=p.Muted;status.ForeColor=p.Muted;
@@ -283,7 +290,7 @@ namespace MP1.ConfigurationStudio
                     else {e.Graphics.DrawLine(pen,x-2,y-4,x+2,y);e.Graphics.DrawLine(pen,x+2,y,x-2,y+4);}
                 }
             }
-            TextRenderer.DrawText(e.Graphics,e.Node.Text,e.Node.Parent==null?treeRootFont:font,bounds,selected?p.Accent:p.Text,TextFormatFlags.VerticalCenter|TextFormatFlags.Left|TextFormatFlags.EndEllipsis);
+            TextRenderer.DrawText(e.Graphics,e.Node.Text,e.Node.Parent==null?treeRootFont:font,bounds,selected?p.SelectionText:p.Text,TextFormatFlags.VerticalCenter|TextFormatFlags.Left|TextFormatFlags.EndEllipsis);
         }
         private void InvalidateSelection(TreeNode node)
         {
@@ -302,6 +309,7 @@ namespace MP1.ConfigurationStudio
                 StudioLog.Warn("Blocked Tier C page: "+(selectedSection==null?"":selectedSection.GetType().FullName));
                 return;
             }
+            PreparePage(selectedSection);
             CorrectStoredSettingDisplay(NativeContract.NodeSection(node));
             navigation.Sync(node,false);RecordHistory(node);
             breadcrumb.Text="Konfiguration  /  "+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node);pageIcon.Invalidate();
@@ -320,7 +328,7 @@ namespace MP1.ConfigurationStudio
             }
             else foreach(Button button in tabs.Controls.OfType<Button>())SetTabColor(button);
             helpTitle.Text=navigation.Label(node);fieldHelp="";helpText.Text=SectionHelp(node);
-            foreach(Control c in holder.Controls){Watch(c);SectionPolicy pagePolicy=CompatibilityPolicy.Resolve(c.GetType().FullName);if(!String.Equals(pagePolicy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(c);}
+            foreach(Control c in holder.Controls){Watch(c);}
             if(holder.Controls.Count>0)pageZoom.EnsureContentFits(holder.Controls[0]);
             LayoutNativePage();
             UpdateStatus();

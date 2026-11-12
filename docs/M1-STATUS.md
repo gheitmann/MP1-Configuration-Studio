@@ -39,7 +39,7 @@
 | M1-11 Test runner | Deferred | Custom harness remains; NUnit migration scheduled for M2 |
 | M1-12 Compatibility manifest | Done | 61 section types, embedded default, override file, four checks |
 | M1-13 Appearance schema v2 | Done | Commit `44e8066`; 7 new checks |
-| M1-14 Performance baseline | Partial | Attach measured at 2664–2716 ms vs 2000 ms budget; page/search warnings added; optimization in M2 |
+| M1-14 Performance baseline | Done | Lazy page preparation reduced attach to 303–320 ms; full 175% review 61/61 with 0 overflow candidates |
 | M1-15 Support bundle | Done | Sanitized ZIP with metadata, policy, sections, appearance, and logs |
 | M1-16 Security/threat model | Done | `SECURITY.md` documents trust boundaries, elevation, plugin code, and data handling |
 | M1-17 First artifact | Partial | CI artifact downloaded, version 1.0.0.0, no test symbols, started successfully on the isolated runtime; clean-VM start pending |
@@ -50,7 +50,8 @@
 - Current branch: 162/162 x64 fixture checks passed from the diagnostics host.
 - The shipped application binary contains no `ShellTests`, audit, review, or persistence symbols.
 - Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime after the source split.
-- Attach baseline: 2664–2716 ms, above the 2000 ms budget; M2 optimization target.
+- Attach baseline: 303–320 ms after lazy page preparation, below the 2000 ms budget.
+- Full 175% review after the change: 61/61 pages, 0 value failures, 0 overflow candidates, 5 plugin dialogs.
 - Page switches above 300 ms and searches above 150 ms are logged as warnings.
 - The downloaded CI artifact reports version 1.0.0.0, contains no test symbols, and starts with the expected Studio window on the isolated runtime.
 - Logs are written to `%LOCALAPPDATA%\MP1 Configuration Studio\logs\studio.log` and rotate at 2 MB with three files.

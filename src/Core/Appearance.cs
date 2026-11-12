@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Windows.Forms;
 using System.Xml;
 
 namespace MP1.ConfigurationStudio
@@ -135,10 +136,30 @@ namespace MP1.ConfigurationStudio
 
     public sealed class Palette
     {
-        public Color Background, Panel, Input, Border, Text, Muted, Accent, Selection, Hover, Primary;
+        public Color Background, Panel, Input, Border, Text, Muted, Accent, Selection, Hover, Primary, SelectionText, PrimaryText;
+        internal static bool ForceHighContrast {get;set;}
 
         public static Palette For(bool dark)
         {
+            if (ForceHighContrast || SystemInformation.HighContrast)
+            {
+                return new Palette
+                {
+                    Background = SystemColors.Window,
+                    Panel = SystemColors.Window,
+                    Input = SystemColors.Window,
+                    Border = SystemColors.WindowFrame,
+                    Text = SystemColors.WindowText,
+                    Muted = SystemColors.GrayText,
+                    Accent = SystemColors.Highlight,
+                    Selection = SystemColors.Highlight,
+                    Hover = SystemColors.Highlight,
+                    Primary = SystemColors.Highlight,
+                    SelectionText = SystemColors.HighlightText,
+                    PrimaryText = SystemColors.HighlightText
+                };
+            }
+
             return dark ? new Palette
             {
                 Background = Color.FromArgb(21, 26, 35),
@@ -150,7 +171,9 @@ namespace MP1.ConfigurationStudio
                 Accent = Color.FromArgb(92, 185, 245),
                 Selection = Color.FromArgb(32, 57, 77),
                 Hover = Color.FromArgb(55, 82, 108),
-                Primary = Color.FromArgb(30, 113, 170)
+                Primary = Color.FromArgb(30, 113, 170),
+                SelectionText = Color.FromArgb(92, 185, 245),
+                PrimaryText = Color.White
             } : new Palette
             {
                 Background = Color.FromArgb(243, 245, 248),
@@ -162,7 +185,9 @@ namespace MP1.ConfigurationStudio
                 Accent = Color.FromArgb(8, 100, 159),
                 Selection = Color.FromArgb(225, 239, 251),
                 Hover = Color.FromArgb(205, 225, 244),
-                Primary = Color.FromArgb(30, 113, 170)
+                Primary = Color.FromArgb(30, 113, 170),
+                SelectionText = Color.FromArgb(8, 100, 159),
+                PrimaryText = Color.White
             };
         }
     }

@@ -296,6 +296,10 @@ namespace MP1.ConfigurationStudio
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
             Check(fileVersion.StartsWith("1.0.0",StringComparison.Ordinal),"file version targets 1.0.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
+            Palette.ForceHighContrast=true;
+            Palette highContrast=Palette.For(true);
+            Check(highContrast.Text==SystemColors.WindowText&&highContrast.Panel==SystemColors.Window&&highContrast.SelectionText==SystemColors.HighlightText&&highContrast.PrimaryText==SystemColors.HighlightText,"high contrast palette uses system colors");
+            Palette.ForceHighContrast=false;
         }
         private static void RunCompatibilityPolicyChecks(string directory)
         {

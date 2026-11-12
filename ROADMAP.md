@@ -68,7 +68,7 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 | Windows | Windows 11 23H2+ | Supported |
 | Windows | Windows 10 22H2 | Best effort, not a 1.0 gate |
 | Runtime | .NET Framework 4.8 | Required |
-| UI scaling | 100, 115, 125, 150% | Supported; 175% is conditional on M2 |
+| UI scaling | 100, 115, 125, 150, 175% | Supported (175% validated 2026-11-13) |
 | OS DPI | 100–200%, single monitor | Supported; mixed multi-monitor best effort |
 | Languages | German, English | Auto-detect from MediaPortal, manual override |
 | Themes | Light, dark | Supported; Windows High Contrast uses system colors |
@@ -282,14 +282,14 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 
 ### M2 Hardening
 
-**Progress (2026-11-13):** classic mode, Tier C blocking, and configuration backup/restore are implemented. Remaining: Tier A validation, High Contrast, 175% decision, attach performance, and the DPI/theme matrix.
+**Progress (2026-11-13):** classic mode, Tier C blocking, configuration backup/restore, High Contrast palette, 175% validation, and lazy page preparation (attach 303–320 ms) are implemented. Remaining: Tier A validation, the DPI/theme matrix, and clean-VM verification.
 
 - Fill `compatibility.xml` for all 61 section types.
 - Implement Tier A/B/C behavior and per-page opt-out.
 - Implement classic mode and unknown-build handling.
 - Add backup/restore and the sanitized support bundle.
 - Implement High Contrast fallback.
-- Validate 175% or remove it.
+- 175% validated in the full review (61/61 pages, 0 overflow candidates).
 - Confirm the x64-only matrix and stop building or shipping x86 binaries.
 - Expand native smoke tests and the DPI/theme matrix.
 - Fix all P1/P2 findings.

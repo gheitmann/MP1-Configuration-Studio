@@ -2,7 +2,7 @@
 
 **Updated:** 2026-11-13
 **Branch:** `m1-foundation` (M2 work continues on the same branch)
-**Last verification:** 171/171 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64.
+**Last verification:** 172/172 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates.
 
 ## Completed
 
@@ -13,7 +13,10 @@
 | Configuration backup | Done | ZIP with `MediaPortal.xml` and manifest; first launch creates an isolated first-run backup |
 | Configuration restore | Done | Validates `<profile>` XML, creates a safety copy, restores, then closes Studio and restarts classic mode |
 | Backup tests | Done | Create, restore, safety copy, missing entry, invalid XML, first-run idempotence |
-| Native verification | Done | 27/27 after backup and tier changes |
+| High Contrast palette | Done | System colors for shell and custom controls; theme selector disabled while active; owner-draw audit still open |
+| 175% scaling | Done | Full review: 61/61 pages, 0 value failures, 0 overflow candidates, 5 plugin dialogs |
+| Attach performance | Done | Lazy page preparation reduced attach from 2.7–3.2 s to 303–320 ms, below the 2.0 s budget |
+| Native verification | Done | 27/27 after classic, tier, backup, High Contrast, and lazy-preparation changes |
 
 ## Decisions
 
@@ -24,13 +27,11 @@
 
 ## Next M2 items
 
-1. High Contrast fallback (system colors, disable custom owner-draw).
-2. 175% scaling decision: keep only if all pages pass.
-3. Attach performance: reduce 2.7–3.2 s toward the 2.0 s budget.
-4. Tier A validation for the core pages.
-5. DPI/theme matrix and expand native smoke coverage.
-6. Clean Windows 11 VM verification of the CI artifact.
-7. NUnit migration for the fixture suite (deferred from M1-11).
+1. Tier A validation for the core pages.
+2. DPI/theme matrix and expand native smoke coverage.
+3. Clean Windows 11 VM verification of the CI artifact.
+4. NUnit migration for the fixture suite (deferred from M1-11).
+5. High Contrast owner-draw audit for native tabs, lists, and sliders.
 
 ## Notes
 
