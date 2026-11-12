@@ -1,3 +1,4 @@
+#if DIAGNOSTICS
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -91,3 +92,4 @@ namespace MP1.ConfigurationStudio
         }
     }
 }
+#endif

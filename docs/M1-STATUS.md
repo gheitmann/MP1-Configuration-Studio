@@ -27,7 +27,7 @@
 | Ticket | Status | Evidence / note |
 | --- | --- | --- |
 | M1-01 Archive alpha | Done | Tag `v0.1.0-alpha.1-archive` pushed |
-| M1-02 Split solution | Partial | Diagnostics project separated; Core/Native/App split remains |
+| M1-02 Split solution | Done (logical) | `src/Core`, `src/Native`, `src/App`; single deployable assembly retained |
 | M1-03 MSBuild/Roslyn | Done | SDK-style `net48` project; `build.ps1` uses the .NET 8 SDK |
 | M1-04 CI | Done | Hosted runs 1 and 2 completed successfully |
 | M1-05 Diagnostics separation | Done | `diagnostics\Studio.Diagnostics.csproj`; shipped app contains no test symbols |
@@ -36,10 +36,10 @@
 | M1-08 Logging/exceptions | Done | Structured rolling log, redaction, crash dialog log path |
 | M1-09 Versioning/About | Done | Product/file version 1.0.0; About entry in the tools menu |
 | M1-10 Governance/docs | Done | Commit `c2d6c43` |
-| M1-11 Test runner | Unblocked | Test framework can be restored with the SDK |
+| M1-11 Test runner | Deferred | Custom harness remains; NUnit migration scheduled for M2 |
 | M1-12 Compatibility manifest | Done | 61 section types, embedded default, override file, four checks |
 | M1-13 Appearance schema v2 | Done | Commit `44e8066`; 7 new checks |
-| M1-14 Performance baseline | Not started | |
+| M1-14 Performance baseline | Partial | Attach measured at 2716 ms vs 2000 ms budget; page/search warnings added |
 | M1-15 Support bundle | Done | Sanitized ZIP with metadata, policy, sections, appearance, and logs |
 | M1-16 Security/threat model | Done | `SECURITY.md` documents trust boundaries, elevation, plugin code, and data handling |
 | M1-17 First artifact | Partial | CI uploads the x64 artifact; clean-VM start and SHA256 verification pending |
@@ -50,16 +50,18 @@
 - Current branch: 162/162 x64 fixture checks passed from the diagnostics host.
 - The shipped application binary contains no `ShellTests`, audit, review, or persistence symbols.
 - Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime.
+- Attach baseline: 2716 ms, above the 2000 ms budget; M2 optimization target.
+- Page switches above 300 ms and searches above 150 ms are logged as warnings.
 - Logs are written to `%LOCALAPPDATA%\MP1 Configuration Studio\logs\studio.log` and rotate at 2 MB with three files.
 - Fault injection at eight attach stages restores the native control set, form state, and page presentation.
 - The native `Configuration.exe` and production `MediaPortal.xml` hashes are unchanged after the isolated run.
 
 ## Next actions
 
-1. Split the remaining application into Core/Native/App (M1-02).
-2. Add the performance baseline (M1-14).
-3. Move fixture tests from the custom harness to a real test runner (M1-11).
-4. Download the CI artifact and verify it on a clean Windows 11 VM (M1-17).
+1. Download the CI artifact and verify it on a clean Windows 11 VM (M1-17).
+2. Optimize the 2716 ms attach path (M2).
+3. Move fixture tests to NUnit in M2 (M1-11 deferred).
+4. Continue with M2 hardening: plugin tiers, classic mode, DPI matrix.
 
 ## Remaining external dependencies
 

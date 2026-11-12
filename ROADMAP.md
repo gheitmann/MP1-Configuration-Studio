@@ -114,22 +114,25 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 
 ## 6. Target architecture
 
-```
-Studio.App (WinExe, ships)
-├── Studio.Core
-└── Studio.Native
+Source layout, compiled into one deployable application assembly:
 
-Studio.Diagnostics (test and review host, does not ship)
-├── Studio.Core
-└── Studio.Native
+```
+src/App        WinExe, ships as MP1ConfigurationStudio.exe
+src/Core       presentation state, compatibility policy, logging
+src/Native     native contract, attach transaction, zoom, theme
+diagnostics/   Studio.Diagnostics.csproj, test and review host
 ```
 
-| Project | Responsibility |
+| Source | Responsibility |
 | --- | --- |
-| `Studio.Core` | Appearance schema and migration, navigation map, search index, localization, change tracking, support-bundle model |
-| `Studio.Native` | `NativeContract`, AppDomain host, transactional attach, page zoom, theme and control chrome, compatibility policy |
-| `Studio.App` | Shell layout, icons, dialogs, About, optional update check, CLI (`--classic`, internal `--diagnostics`) |
-| `Studio.Diagnostics` | Fixture tests, native smoke checks, audit/persistence/save-cycle harnesses, performance harness, screenshot renderer |
+| `src/Core` | Appearance schema and migration, compatibility policy, structured logging |
+| `src/Native` | `NativeContract`, AppDomain host, transactional attach, page zoom, theme and control chrome |
+| `src/App` | Shell layout, navigation, search, support bundle, About, optional update check, CLI (`--classic`) |
+| `diagnostics/` | Fixture tests, native smoke checks, audit/persistence/save-cycle harnesses, performance harness, screenshot renderer |
+
+### Deployment decision
+
+The application compiles Core and Native sources into one assembly. This is deliberate: the app copies itself beside `Configuration.exe`, and a single-file deployment avoids missing-DLL failures for non-technical users. The folders keep the boundaries reviewable. A future split into separate DLLs requires the installer and updater to copy and verify every Studio assembly first.
 
 ### Deployment model
 

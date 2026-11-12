@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -52,6 +53,7 @@ namespace MP1.ConfigurationStudio
 
         public static StudioShell Attach(Form form,string preferences)
         {
+            var stopwatch=Stopwatch.StartNew();
             List<Control> sections=NativeContract.ReadSections(form);
             StudioLog.Info("Attach: read "+sections.Count+" native sections");
             InjectFault("snapshot");
@@ -67,12 +69,14 @@ namespace MP1.ConfigurationStudio
                     NativeContract.Require<ToolStrip>(form,NativeContract.ToolStripField),
                     NativeContract.FindField(form,NativeContract.DonateLinkField) as Control,
                     preferences,sections);
-                StudioLog.Info("Attach transaction completed");
+                long elapsed=stopwatch.ElapsedMilliseconds;
+                StudioLog.Info("Attach transaction completed in "+elapsed+" ms");
+                if(elapsed>2000)StudioLog.Warn("Attach exceeded the 2000 ms budget: "+elapsed+" ms");
                 return shell;
             }
             catch(Exception ex)
             {
-                StudioLog.Error(ex,"Attach transaction failed");
+                StudioLog.Error("Attach transaction failed after "+stopwatch.ElapsedMilliseconds+" ms",ex);
                 if(shell!=null)shell.DisposeFailedAttach();
                 snapshot.Restore();
                 throw;
@@ -269,6 +273,7 @@ namespace MP1.ConfigurationStudio
         }
         private void RefreshPage()
         {
+            var stopwatch=Stopwatch.StartNew();
             TreeNode node=tree.SelectedNode;if(node==null)return;
             CorrectStoredSettingDisplay(NativeContract.NodeSection(node));
             navigation.Sync(node,false);RecordHistory(node);
@@ -292,6 +297,7 @@ namespace MP1.ConfigurationStudio
             if(holder.Controls.Count>0)pageZoom.EnsureContentFits(holder.Controls[0]);
             LayoutNativePage();
             UpdateStatus();
+            if(stopwatch.ElapsedMilliseconds>300)StudioLog.Warn("Page switch exceeded 300 ms: "+node.Text+" ("+stopwatch.ElapsedMilliseconds+" ms)");
         }
         private void AddTab(TreeNode node,TreeNode selected)
         {
@@ -340,6 +346,7 @@ namespace MP1.ConfigurationStudio
         }
         private void UpdateSearch()
         {
+            var stopwatch=Stopwatch.StartNew();
             string query=search.Text.Trim();bool has=query.Length>0;
             tree.Visible=false;navigation.Visible=!has;results.Visible=has;results.Items.Clear();
             if(!has)return;
@@ -370,6 +377,7 @@ namespace MP1.ConfigurationStudio
             }
             if(results.Items.Count==0)results.Items.Add(new SearchResult(null,null,"Keine Treffer in dieser Ansicht"));
             tips.SetToolTip(results,"Doppelklick oder Enter öffnet den Treffer. Für zusätzliche Bereiche oben in den Expertenmodus wechseln.");
+            if(stopwatch.ElapsedMilliseconds>150)StudioLog.Warn("Search exceeded 150 ms: results="+results.Items.Count+" ("+stopwatch.ElapsedMilliseconds+" ms)");
         }
         private void OpenResult()
         {

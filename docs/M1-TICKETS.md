@@ -54,23 +54,21 @@ Each ticket below is written so it can be pasted into GitHub Issues as-is. Recom
 
 ---
 
-### M1-02 — Split the solution into four projects
+### M1-02 — Split the source tree into Core, Native, and App
 
-**Goal:** Replace the monolithic compile set with clear boundaries.
+**Goal:** Replace the monolithic source layout with clear boundaries while keeping one deployable application assembly.
 
 **Work:**
-- Create `Studio.Core`, `Studio.Native`, `Studio.App`, and `Studio.Diagnostics`.
-- Move types to their target project without changing behavior.
-- Keep namespaces stable or add minimal forwarding where necessary.
-- Add project references; no circular dependencies.
-- Update the solution file and build docs.
+- Create `src/Core`, `src/Native`, and `src/App` and move types to their target folder.
+- Keep the application as a single assembly; do not add runtime DLL dependencies to the self-copy deployment.
+- Keep the Diagnostics host as a separate project that compiles all sources with `DIAGNOSTICS`.
+- Document the single-assembly deployment decision.
 
 **Acceptance criteria:**
-- All four projects build from a clean clone.
-- `Studio.App` references Core and Native; Diagnostics references Core and Native.
-- Core has no WinForms dependency where avoidable.
+- All source files are in the correct folder and the build produces one application assembly.
+- The Diagnostics host still compiles all sources and runs the fixture suite.
 - No behavior change in the fixture tests.
-- The dependency graph is documented in the README or architecture doc.
+- The architecture document explains why the product stays single-file.
 
 **Estimate:** 2 d
 
