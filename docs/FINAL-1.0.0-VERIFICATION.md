@@ -13,7 +13,7 @@
 | `MP1-Configuration-Studio-1.0.0-Portable.zip` | 87,501 | `3FA0D4EACF29D3866937F34CA9DA2AAACF0B0278287B18FDC153100CF529FB77` |
 | `MP1-Configuration-Studio-1.0.0-Setup.exe` | 2,181,422 | `EE8BB04C37B23C26097F3DAFD2A90AB6EDC538040ACAC5DFA867A9532889B7E2` |
 
-Both SHA256 sidecars match the downloaded assets. The portable ZIP reports version 1.0.0.0 and contains no `ShellTests`, audit, review, or persistence symbols.
+Both SHA256 sidecars match the downloaded assets. The portable ZIP reports version 1.0.0.0 and contains no `ShellTests`, audit, review, or persistence symbols. The extracted published artifact was started against the isolated MediaPortal 1.39 x64 runtime and showed the expected Studio window; it was closed after the smoke check.
 
 ## Validation
 
