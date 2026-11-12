@@ -27,10 +27,10 @@
 | Ticket | Status | Evidence / note |
 | --- | --- | --- |
 | M1-01 Archive alpha | Done | Tag `v0.1.0-alpha.1-archive` pushed |
-| M1-02 Split solution | Not started | Requires refactoring the `StudioShell` partials |
+| M1-02 Split solution | Partial | Diagnostics project separated; Core/Native/App split remains |
 | M1-03 MSBuild/Roslyn | Done | SDK-style `net48` project; `build.ps1` uses the .NET 8 SDK |
 | M1-04 CI | Done locally | `.github/workflows/build.yml`; first hosted run pending push |
-| M1-05 Diagnostics separation | Not started | Depends on M1-02 |
+| M1-05 Diagnostics separation | Done | `diagnostics\Studio.Diagnostics.csproj`; shipped app contains no test symbols |
 | M1-06 `NativeContract` | Done | Commit `6a218a0`; contract validation before attach |
 | M1-07 Transactional attach | Done | Commit `6a218a0`; snapshot rollback and eight fault-injection stages |
 | M1-08 Logging/exceptions | Not started | |
@@ -47,7 +47,8 @@
 ## Verification
 
 - Baseline `0.1.0-alpha.1`: 95/95 x64 and x86 checks passed before changes.
-- Current branch: 142/142 x64 and x86 fixture checks passed.
+- Current branch: 142/142 x64 fixture checks passed from the diagnostics host.
+- The shipped application binary contains no `ShellTests`, audit, review, or persistence symbols.
 - Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime.
 - Fault injection at eight attach stages restores the native control set, form state, and page presentation.
 - The native `Configuration.exe` and production `MediaPortal.xml` hashes are unchanged after the isolated run.

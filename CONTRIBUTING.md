@@ -24,7 +24,7 @@ Build and run the fixture checks:
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-The build writes outputs and the test log to `dist/`. All 142 fixture checks must pass on x64.
+The build writes the application to `dist\` and the diagnostics host to `dist\diagnostics\`. All 142 fixture checks must pass on x64. Test and review code must stay out of the shipped application.
 
 Native integration checks require a separately staged MediaPortal runtime with the isolation marker. Follow the existing tooling and never point persistence tests at a live profile.
 

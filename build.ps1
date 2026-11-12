@@ -38,23 +38,30 @@ function Find-DotNet {
 
 $dotnet = Find-DotNet
 $project = Join-Path $PSScriptRoot 'MP1.ConfigurationStudio.csproj'
+$diagnosticsProject = Join-Path $PSScriptRoot 'diagnostics\Studio.Diagnostics.csproj'
+$diagnosticsOutput = Join-Path $OutputDirectory 'diagnostics'
 
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 
 Write-Output "Building x64 with $dotnet"
 & $dotnet build $project -c $Configuration -o $OutputDirectory
 if ($LASTEXITCODE -ne 0) {
-    throw "Build failed with exit code $LASTEXITCODE"
+    throw "Application build failed with exit code $LASTEXITCODE"
+}
+
+& $dotnet build $diagnosticsProject -c $Configuration -o $diagnosticsOutput
+if ($LASTEXITCODE -ne 0) {
+    throw "Diagnostics build failed with exit code $LASTEXITCODE"
 }
 
 if (-not $SkipTests) {
-    $app = Join-Path $OutputDirectory 'MP1ConfigurationStudio.exe'
-    if (-not (Test-Path -LiteralPath $app)) {
-        throw "Built application not found: $app"
+    $tests = Join-Path $diagnosticsOutput 'StudioDiagnostics.exe'
+    if (-not (Test-Path -LiteralPath $tests)) {
+        throw "Diagnostics host not found: $tests"
     }
 
     $testLog = Join-Path $OutputDirectory 'test-results.log'
-    & $app --self-test | Tee-Object -FilePath $testLog
+    & $tests --self-test | Tee-Object -FilePath $testLog
     if ($LASTEXITCODE -ne 0) {
         throw 'Preservation checks failed'
     }

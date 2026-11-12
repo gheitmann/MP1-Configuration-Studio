@@ -25,8 +25,10 @@ namespace MP1.ConfigurationStudio
         {
             try
             {
+#if DIAGNOSTICS
                 if (Array.IndexOf(args, "--self-test") >= 0) return ShellTests.Run();
                 if (Array.IndexOf(args, "--design-preview") >= 0) return ShellTests.Preview();
+#endif
                 string runtime = null, preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null;
                 var forwarded = new List<string>();
                 foreach (string arg in args)
@@ -191,11 +193,13 @@ namespace MP1.ConfigurationStudio
                         }
                         shell = StudioShell.Attach(form, preferences);
                         Action ready=delegate{
+#if DIAGNOSTICS
                             if (!String.IsNullOrEmpty(audit)) shell.StartAudit(audit);
                             if (!String.IsNullOrEmpty(verify)) shell.StartNativeChecks(verify);
                             else if (!String.IsNullOrEmpty(review)) shell.StartFullReview(review);
                             else if (!String.IsNullOrEmpty(persistence)) shell.StartPersistenceReview(persistence);
                             else if (!String.IsNullOrEmpty(saveCycle)) shell.StartNativeSaveCycle(saveCycle);
+#endif
                         };
                         if(FrameRendering.IsVisible(form))ready();else form.Shown+=delegate{ready();};
                     }
