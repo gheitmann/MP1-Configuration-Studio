@@ -51,6 +51,14 @@ Build with the .NET 8 SDK:
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-The build targets .NET Framework 4.8 through the `Microsoft.NETFramework.ReferenceAssemblies` package, produces an x64 application, and runs the 142 fixture checks from the separate `dist\diagnostics\StudioDiagnostics.exe`. The diagnostics host is not part of the shipped application. Output and the test log are written to `dist/`. Native integration tests require an isolated MediaPortal 1.39 x64 runtime; never point persistence tests at a live user profile.
+The build targets .NET Framework 4.8 through the `Microsoft.NETFramework.ReferenceAssemblies` package, produces an x64 application, and runs the fixture checks from the separate `dist\diagnostics\StudioDiagnostics.exe`. The diagnostics host is not part of the shipped application. Output and the test log are written to `dist/`. Native integration tests require an isolated MediaPortal 1.39 x64 runtime; never point persistence tests at a live user profile.
+
+Create a portable release ZIP:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\Package-Studio.ps1 -Version 1.0.0
+```
+
+The tag release workflow builds the setup executable with Inno Setup, writes SHA256 sidecars, and publishes a draft GitHub release. Final releases require the signing secrets `SIGNING_PFX_BASE64` and `SIGNING_PFX_PASSWORD`.
 
 Architecture details: [ARCHITEKTUR.md](ARCHITEKTUR.md). Source is licensed under [GNU GPL v3](LICENSE). MediaPortal is a separate project; this repository does not redistribute its runtime, plugins, skins or user configuration.

@@ -53,7 +53,7 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 2. **The worst case is the native UI.** If the shell cannot attach, the original configurator must remain usable.
 3. **Write only to our own files.** `MediaPortal.xml` is written exclusively by native handlers.
 4. **Claim only what is validated.** No scale option, architecture, or plugin promise without a passing gate.
-5. **German and English.** Hardcoded UI strings are a release blocker.
+5. **German UI for 1.0.** Native page labels follow the MediaPortal language. English shell localization is deferred to 1.1.
 6. **Offline by default.** No telemetry, no mandatory network access.
 7. **Small scope, deep verification.** A finished product is allowed to do less.
 
@@ -70,7 +70,7 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 | Runtime | .NET Framework 4.8 | Required |
 | UI scaling | 100, 115, 125, 150, 175% | Supported (175% validated 2026-11-13) |
 | OS DPI | 100–200%, single monitor | Supported; mixed multi-monitor best effort |
-| Languages | German, English | Auto-detect from MediaPortal, manual override |
+| Languages | German shell; native labels follow MediaPortal | No shell language override in 1.0 |
 | Themes | Light, dark | Supported; Windows High Contrast uses system colors |
 | Plugins | Tier A fully tested, Tier B native look, Tier C blocked | Tier B is the default |
 | Other MP versions | None | Refuse with a clear message and classic fallback |
@@ -84,7 +84,7 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 - Grouped navigation with icons, navigation history, keyboard control.
 - Search across page titles, setting labels, check/radio/combo/list options, with ranking and result highlighting.
 - Light/dark shell, validated UI scaling, collapsible help column.
-- German and English UI, language detection from MediaPortal.
+- German shell UI; native pages keep the MediaPortal language.
 - Transactional attach with classic fallback.
 - Compatibility manifest and plugin tiers.
 - Backup and restore of `MediaPortal.xml` (and optionally the full config folder, explicitly opted in).
@@ -105,7 +105,7 @@ MediaPortal 1.39 is frozen. That is an advantage: the integration target does no
 ### Deferred to post-1.0
 
 - MPE1 packaging through the MediaPortal Extension Installer.
-- Additional languages beyond German and English.
+- English shell localization and additional languages.
 - Theme import/export.
 - Deeper plugin-specific theming.
 - Per-page help content beyond links to the official documentation.
@@ -304,7 +304,7 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 
 ### M3 Productization
 
-- Full German and English localization; no hardcoded UI strings.
+- German UI review; English shell localization is deferred.
 - Search v2: pages, labels, check/radio/combo/list options, ranking, highlighting, debounce.
 - Installer, uninstaller, upgrade path, portable ZIP.
 - Code signing and SmartScreen preparation.
@@ -385,7 +385,7 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 1. 61/61 sections activate; 57/57 writable sections save; 68/68 field round trips; two full save/reload cycles on a fresh profile.
 2. Fresh install, upgrade, uninstall, and rollback pass on Windows 11 x64; Windows 10 is best effort if a VM is available.
 3. No open P1/P2 issues for four weeks; all P3 issues have documented workarounds.
-4. No hardcoded UI strings; German and English are complete.
+4. German UI strings are reviewed; English shell localization is deferred to 1.1.
 5. Fault injection at every attach stage leaves the native configurator usable.
 6. Startup, page switch, search, memory, and GDI budgets pass.
 7. Setup and binaries are signed and timestamped; SHA256 published; fresh-VM SmartScreen check recorded.

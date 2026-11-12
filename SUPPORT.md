@@ -9,7 +9,7 @@ This is a community project for MediaPortal 1.39. Support is best effort, not a 
 | MediaPortal | 1.39, x64 (x86 only if shipped and listed in the release notes) |
 | Windows | Windows 10 22H2, Windows 11 23H2 or newer |
 | Runtime | .NET Framework 4.8 |
-| Languages | German, English |
+| Languages | German shell; native labels follow MediaPortal |
 | UI scaling | The scale steps listed in the release notes |
 | Plugins | Tier A fully tested; Tier B opens and saves; Tier C blocked |
 

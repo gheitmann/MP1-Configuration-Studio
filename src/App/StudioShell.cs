@@ -419,6 +419,39 @@ namespace MP1.ConfigurationStudio
                         }
                         continue;
                     }
+                    var combo=c as ComboBox;
+                    if(combo!=null)
+                    {
+                        for(int item=0;item<combo.Items.Count;item++)
+                        {
+                            string option=combo.GetItemText(combo.Items[item]);
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(results.Items.Count>=150)break;
+                        }
+                        continue;
+                    }
+                    var listBox=c as ListBox;
+                    if(listBox!=null)
+                    {
+                        for(int item=0;item<listBox.Items.Count;item++)
+                        {
+                            string option=listBox.GetItemText(listBox.Items[item]);
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(results.Items.Count>=150)break;
+                        }
+                        continue;
+                    }
+                    var listView=c as ListView;
+                    if(listView!=null)
+                    {
+                        for(int item=0;item<listView.Items.Count;item++)
+                        {
+                            string option=listView.Items[item].Text;
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(results.Items.Count>=150)break;
+                        }
+                        continue;
+                    }
                     if(!(c is Label)&&!(c is CheckBox)&&!(c is RadioButton)&&!(c is GroupBox)&&!(c is Button))continue;
                     string text=c.Text.Replace("&","").Trim();
                     if(text.Length>0&&text.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)
@@ -436,7 +469,19 @@ namespace MP1.ConfigurationStudio
             if(Navigate(result.Node))
             {
                 search.Clear();
-                if(result.Control!=null&&!result.Control.IsDisposed){holder.ScrollControlIntoView(result.Control);var checks=result.Control as CheckedListBox;if(checks!=null&&result.ItemIndex>=0&&result.ItemIndex<checks.Items.Count)checks.SelectedIndex=result.ItemIndex;Control target=result.Control.CanFocus?result.Control:result.Control.Parent;target.Focus();helpText.Text="Gefundene Option: "+result.Label+"\r\n\r\n"+SectionHelp(result.Node);}
+                if(result.Control!=null&&!result.Control.IsDisposed)
+                {
+                    holder.ScrollControlIntoView(result.Control);
+                    var checks=result.Control as CheckedListBox;
+                    if(checks!=null&&result.ItemIndex>=0&&result.ItemIndex<checks.Items.Count)checks.SelectedIndex=result.ItemIndex;
+                    var combo=result.Control as ComboBox;
+                    if(combo!=null&&result.ItemIndex>=0&&result.ItemIndex<combo.Items.Count)combo.SelectedIndex=result.ItemIndex;
+                    var listBox=result.Control as ListBox;
+                    if(listBox!=null&&result.ItemIndex>=0&&result.ItemIndex<listBox.Items.Count)listBox.SelectedIndex=result.ItemIndex;
+                    var listView=result.Control as ListView;
+                    if(listView!=null&&result.ItemIndex>=0&&result.ItemIndex<listView.Items.Count){listView.Items[result.ItemIndex].Selected=true;listView.Items[result.ItemIndex].Focused=true;listView.EnsureVisible(result.ItemIndex);}
+                    Control target=result.Control.CanFocus?result.Control:result.Control.Parent;target.Focus();helpText.Text="Gefundene Option: "+result.Label+"\r\n\r\n"+SectionHelp(result.Node);
+                }
             }
         }
         private static string Value(Control c)
@@ -502,7 +547,7 @@ namespace MP1.ConfigurationStudio
             var names=edits.Where(c=>!c.IsDisposed).Select(FieldLabel).Where(s=>!String.IsNullOrWhiteSpace(s)).Distinct().Take(9).ToArray();
             changeText.Text=names.Length==0?"Keine Feldänderungen erkannt.\r\n\r\nPlugin-Dialoge können eigene Speicheraktionen haben.":String.Join("\r\n",names)+"\r\n\r\nSpeichern über OK.";
         }
-        private sealed class SearchResult
+        internal sealed class SearchResult
         {
             public readonly TreeNode Node;public readonly Control Control;public readonly int ItemIndex;public string Label{get;private set;}
             public SearchResult(TreeNode node,Control control,string label,int itemIndex=-1){Node=node;Control=control;Label=label;ItemIndex=itemIndex;}

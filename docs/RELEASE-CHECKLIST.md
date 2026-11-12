@@ -176,9 +176,9 @@ Test every row and record the result. If the 175% option is removed at the M2 ga
 ## 9. Localization and accessibility
 
 - [ ] German UI is complete and reviewed.
-- [ ] English UI is complete and reviewed.
-- [ ] Language auto-detection from MediaPortal works.
-- [ ] Manual language override works and persists.
+- [ ] Native page labels follow the MediaPortal language.
+- [ ] English shell localization is documented as deferred to 1.1.
+- [ ] No shell language override is offered in 1.0.
 - [ ] No text is truncated at any shipped scale.
 - [ ] Shell is fully usable with the keyboard only.
 - [ ] Focus is visible on all custom controls.

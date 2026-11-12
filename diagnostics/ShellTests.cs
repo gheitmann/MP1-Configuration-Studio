@@ -149,7 +149,7 @@ namespace MP1.ConfigurationStudio
                 search.Text="Sound effects";Check(results.Items.Count==1,"search finds option labels without removing pages");
                 search.Text="Bildschirmschoner";Check(results.Items.Count==1,"global search also finds German page aliases");search.Text="Sound effects";
                 Check(tree.Nodes.Count==1&&parent.Nodes.Count==2,"search does not mutate native navigation");
-                search.Text="media sound";Check(results.Items.Count==1,"search finds native checked-list options");search.Clear();
+                search.Text="media sound";Check(results.Items.Count==1,"search finds native checked-list options");search.Text="Other choice";Check(results.Items.Cast<StudioShell.SearchResult>().Any(r=>r.Control is ComboBox),"search finds combo options");search.Clear();
                 int beforeChecks=shell.ChangedCount;checklist.SetItemChecked(1,true);Application.DoEvents();Check(shell.ChangedCount==beforeChecks+1,"native checked-list edits detected after ItemCheck");
                 shell.SetDark(false);Check(checklist.GetItemChecked(0)&&checklist.GetItemChecked(1),"checked-list values survive theme switching");
                 string audit=Path.Combine(directory,"fixture-inventory.xml");shell.StartAudit(audit);Check(File.Exists(audit),"read-only inventory generated");
