@@ -55,6 +55,21 @@ namespace MP1.ConfigurationStudio
         public static StudioShell Attach(Form form,string preferences)
         {
             var stopwatch=Stopwatch.StartNew();
+            if(File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe")))
+            {
+                try
+                {
+                    string backupRoot=null;
+                    if(File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"studio-test-runtime.marker")))
+                        backupRoot=Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"..","backups"));
+                    string firstBackup=ConfigurationBackup.EnsureFirstRunBackup(NativeContract.ConfigFolder("Config"),backupRoot);
+                    if(!String.IsNullOrEmpty(firstBackup))StudioLog.Info("First-run configuration backup: "+firstBackup);
+                }
+                catch(Exception ex)
+                {
+                    StudioLog.Warn("First-run configuration backup failed: "+ex.Message);
+                }
+            }
             List<Control> sections=NativeContract.ReadSections(form);
             StudioLog.Info("Attach: read "+sections.Count+" native sections");
             InjectFault("snapshot");

@@ -137,6 +137,13 @@ namespace MP1.ConfigurationStudio
             Action<ToolStripItemCollection,ToolStripItemCollection> copy=null;copy=delegate(ToolStripItemCollection source,ToolStripItemCollection target){foreach(ToolStripItem original in source){if(original is ToolStripSeparator){target.Add(new ToolStripSeparator());continue;}var proxy=new ToolStripMenuItem(original.Text){Enabled=original.Enabled};var checkedButton=original as ToolStripButton;if(checkedButton!=null)proxy.Checked=checkedButton.Checked;ToolStripItem action=original;target.Add(proxy);var dropdown=original as ToolStripDropDownItem;if(dropdown!=null&&dropdown.DropDownItems.Count>0)copy(dropdown.DropDownItems,proxy.DropDownItems);else proxy.Click+=delegate{ClickNative(action);};}};
             copy(nativeTools.Items,menu.Items);
             menu.Items.Add(new ToolStripSeparator());
+            var backup=new ToolStripMenuItem("Konfiguration sichern…");
+            backup.Click+=delegate{BackupConfiguration();};
+            menu.Items.Add(backup);
+            var restore=new ToolStripMenuItem("Konfiguration wiederherstellen…");
+            restore.Click+=delegate{RestoreConfiguration();};
+            menu.Items.Add(restore);
+            menu.Items.Add(new ToolStripSeparator());
             var classic=new ToolStripMenuItem("Klassische Oberfläche starten");
             classic.Click+=delegate{StartClassic();};
             menu.Items.Add(classic);
@@ -147,6 +154,49 @@ namespace MP1.ConfigurationStudio
             about.Click+=delegate{ShowAbout();};
             menu.Items.Add(about);
             theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
+        }
+        private string MediaPortalConfigPath()
+        {
+            return ConfigurationBackup.ConfigPath(NativeContract.ConfigFolder("Config"));
+        }
+        private void BackupConfiguration()
+        {
+            try
+            {
+                using(var dialog=new SaveFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title="Konfiguration sichern",FileName="MediaPortal-Backup-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".zip"})
+                {
+                    if(dialog.ShowDialog(form)!=DialogResult.OK)return;
+                    string path=ConfigurationBackup.Create(MediaPortalConfigPath(),dialog.FileName);
+                    MessageBox.Show(form,"Konfiguration gesichert:\r\n"+path,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                }
+            }
+            catch(Exception ex)
+            {
+                StudioLog.Error(ex,"Configuration backup failed");
+                MessageBox.Show(form,"Die Konfiguration konnte nicht gesichert werden.\r\n\r\n"+ex.Message+"\r\n\r\nProtokoll: "+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
+        }
+        private void RestoreConfiguration()
+        {
+            try
+            {
+                using(var dialog=new OpenFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title="Konfiguration wiederherstellen",CheckFileExists=true})
+                {
+                    if(dialog.ShowDialog(form)!=DialogResult.OK)return;
+                    if(MessageBox.Show(form,"Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?",
+                        "Konfiguration wiederherstellen",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+                    ConfigurationBackup.Restore(dialog.FileName,MediaPortalConfigPath());
+                    StudioLog.Info("Configuration restored; restarting classic");
+                    restartClassic=true;
+                    nativeCancel.PerformClick();
+                    if(!form.IsDisposed)form.Close();
+                }
+            }
+            catch(Exception ex)
+            {
+                StudioLog.Error(ex,"Configuration restore failed");
+                MessageBox.Show(form,"Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n"+ex.Message+"\r\n\r\nProtokoll: "+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
         }
         private void StartClassic()
         {

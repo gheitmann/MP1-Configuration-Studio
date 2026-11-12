@@ -31,6 +31,7 @@ namespace MP1.ConfigurationStudio
             RunVersionChecks();
             RunCompatibilityPolicyChecks(directory);
             RunSupportBundleChecks(directory);
+            RunBackupChecks(directory);
             RunNativeContractChecks();
             RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
@@ -340,6 +341,55 @@ namespace MP1.ConfigurationStudio
             ZipArchiveEntry entry=archive.GetEntry(name);
             if(entry==null)return String.Empty;
             using(var reader=new StreamReader(entry.Open()))return reader.ReadToEnd();
+        }
+        private static void RunBackupChecks(string directory)
+        {
+            foreach(string pattern in new[]{"restore-target.xml*","invalid-target.xml*","badxml-target.xml*","backup*.zip"})
+            {
+                foreach(string file in Directory.GetFiles(directory,pattern))File.Delete(file);
+            }
+            string source=Path.Combine(directory,"backup-source.xml");
+            File.WriteAllText(source,"<?xml version=\"1.0\"?><profile><section name=\"General\" /></profile>");
+            string backup=Path.Combine(directory,"backup.zip");
+            ConfigurationBackup.Create(source,backup);
+            Check(File.Exists(backup),"configuration backup is created");
+            using(var archive=ZipFile.OpenRead(backup))
+            {
+                Check(archive.GetEntry("MediaPortal.xml")!=null&&archive.GetEntry("backup.txt")!=null,"configuration backup contains manifest and MediaPortal.xml");
+            }
+
+            string target=Path.Combine(directory,"restore-target.xml");
+            File.WriteAllText(target,"<?xml version=\"1.0\"?><profile><section name=\"Previous\" /></profile>");
+            ConfigurationBackup.Restore(backup,target);
+            Check(File.ReadAllText(target).Contains("General"),"configuration restore writes MediaPortal.xml");
+            Check(Directory.GetFiles(directory,"restore-target.xml.before-restore-*.xml").Length==1,"configuration restore creates a safety copy");
+
+            string invalid=Path.Combine(directory,"backup-invalid.zip");
+            CreateZip(invalid,"other.txt","x");
+            bool rejected=false;
+            try{ConfigurationBackup.Restore(invalid,Path.Combine(directory,"invalid-target.xml"));}catch(InvalidDataException){rejected=true;}
+            Check(rejected,"configuration restore rejects a backup without MediaPortal.xml");
+
+            string badXml=Path.Combine(directory,"backup-badxml.zip");
+            CreateZip(badXml,"MediaPortal.xml","<notprofile />");
+            rejected=false;
+            try{ConfigurationBackup.Restore(badXml,Path.Combine(directory,"badxml-target.xml"));}catch(InvalidDataException){rejected=true;}
+            Check(rejected,"configuration restore rejects a non-profile XML document");
+
+            string configFolder=Path.Combine(directory,"first-run-config");
+            Directory.CreateDirectory(configFolder);
+            File.Copy(source,Path.Combine(configFolder,"MediaPortal.xml"),true);
+            string firstRoot=Path.Combine(directory,"first-run-backups");
+            if(Directory.Exists(firstRoot))Directory.Delete(firstRoot,true);
+            string first=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
+            string second=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
+            Check(!String.IsNullOrEmpty(first)&&File.Exists(first)&&second==null&&File.Exists(Path.Combine(firstRoot,"first-run.done")),"first-run configuration backup runs once");
+        }
+        private static void CreateZip(string path,string entryName,string content)
+        {
+            if(File.Exists(path))File.Delete(path);
+            using(var archive=ZipFile.Open(path,ZipArchiveMode.Create))
+            using(var writer=new StreamWriter(archive.CreateEntry(entryName).Open()))writer.Write(content);
         }
         private static void RunNativeContractChecks()
         {

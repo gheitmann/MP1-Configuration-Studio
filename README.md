@@ -25,6 +25,12 @@ The historical alpha requires Windows, .NET Framework 4.7.2 or newer, and an exi
 
 The original `Configuration.exe` and native DLLs are not replaced. Run `Configuration.exe` to use the original interface. To remove Studio, close it and remove only the additional `MP1ConfigurationStudio*` files. Appearance preferences are stored separately under `%LOCALAPPDATA%\MP1 Configuration Studio\appearance.xml`.
 
+## Configuration safety and classic fallback
+
+- The tools menu can create a backup of `MediaPortal.xml` and restore it later. A first-run backup is created automatically.
+- `MP1ConfigurationStudio.exe --classic` or the tools menu starts the original configurator without the Studio shell.
+- Restoring a backup closes Studio, keeps a safety copy of the current file, and restarts the original configurator.
+
 ## Navigation
 
 - Ctrl+F: search pages and settings; Enter opens a result.

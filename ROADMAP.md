@@ -282,6 +282,8 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 
 ### M2 Hardening
 
+**Progress (2026-11-13):** classic mode, Tier C blocking, and configuration backup/restore are implemented. Remaining: Tier A validation, High Contrast, 175% decision, attach performance, and the DPI/theme matrix.
+
 - Fill `compatibility.xml` for all 61 section types.
 - Implement Tier A/B/C behavior and per-page opt-out.
 - Implement classic mode and unknown-build handling.
