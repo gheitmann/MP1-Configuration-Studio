@@ -10,6 +10,10 @@ on:
         description: 'Version without leading v (for example 1.0.0 or 1.0.0-rc.1)'
         required: true
         default: '1.0.0-rc.1'
+      unsigned_waiver:
+        description: 'Publish a final version without code signing (documented waiver)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -48,12 +52,13 @@ jobs:
           SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
         run: |
           $version = '${{ steps.version.outputs.value }}'
+          $allowUnsigned = '${{ inputs.unsigned_waiver }}' -eq 'true' -or '${{ vars.ALLOW_UNSIGNED_FINAL }}' -eq 'true'
           if ($env:SIGNING_PFX_BASE64) {
             .\tools\Sign-Studio.ps1 -Target 'dist\MP1ConfigurationStudio.exe' -RequireSignature
-          } elseif ($version -notmatch '-') {
-            throw 'Final releases require SIGNING_PFX_BASE64 and SIGNING_PFX_PASSWORD.'
+          } elseif ($version -notmatch '-' -and -not $allowUnsigned) {
+            throw 'Final releases require SIGNING_PFX_BASE64 and SIGNING_PFX_PASSWORD, or the documented ALLOW_UNSIGNED_FINAL waiver.'
           } else {
-            Write-Warning 'Unsigned release candidate.'
+            Write-Warning 'UNSIGNED RELEASE: no signing certificate configured. The release notes disclose this.'
           }
 
       - name: Package portable ZIP

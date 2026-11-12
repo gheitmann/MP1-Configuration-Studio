@@ -1,6 +1,6 @@
 # MP1 Configuration Studio 1.0.0
 
-**Status:** Release candidate for MediaPortal 1.39 x64. Final publication requires code signing and clean-VM verification.
+**Status:** 1.0.0 release for MediaPortal 1.39 x64. This build is **unsigned**: no code-signing certificate is configured. Windows SmartScreen may warn; verify the published SHA256 before running.
 
 ## What it is
 
@@ -40,7 +40,7 @@ A modern, readable shell around the original MediaPortal 1.39 configurator. The 
 
 The original `Configuration.exe` and native DLLs are not replaced. Remove the additional `MP1ConfigurationStudio*` files to uninstall the portable build.
 
-## Validation at this candidate
+## Validation at 1.0.0
 
 - 173/173 fixture checks on x64.
 - Native smoke 27/27 on isolated MediaPortal 1.39 x64.
@@ -51,7 +51,8 @@ The original `Configuration.exe` and native DLLs are not replaced. Remove the ad
 
 ## Known limitations
 
-- Code signing and a clean Windows 11 VM run are still required before final publication.
+- This release is unsigned. Verify SHA256 and expect a possible SmartScreen warning.
+- A clean Windows 11 VM install/start was not executed; validation used the development Windows 11 installation and an isolated MediaPortal runtime.
 - OS DPI 150/200% has not been validated in a fresh session.
 - Third-party plugins outside the known set remain Tier B and keep their native look.
 - High Contrast uses system colors, but native owner-drawn tabs/lists/sliders still need an audit.
