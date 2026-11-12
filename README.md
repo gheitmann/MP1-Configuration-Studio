@@ -2,15 +2,23 @@
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
-**First public alpha: v0.1.0-alpha.1 / application build 1.39.0.14.**
+> **Project status:** `0.1.0-alpha.1` is a historical preview. Development follows the [roadmap to 1.0](ROADMAP.md). Version 1.0.0 is the supported target; no further alpha releases are planned.
 
 Studio adds grouped navigation with icons, search, navigation history, light/dark themes, adjustable text and page scaling (100–175%, default 125%), and a collapsible help column. The original MediaPortal pages, controls and save handlers remain in use.
+
+## Roadmap and support
+
+- [Roadmap to 1.0](ROADMAP.md)
+- [Release checklist](docs/RELEASE-CHECKLIST.md)
+- [Support matrix and reporting](SUPPORT.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## Install and run
 
 Requires Windows, .NET Framework 4.7.2 or newer, and an existing MediaPortal 1.39 installation. The full native integration was tested on x64. x86 fixture tests pass, but native x86 integration is not yet validated.
 
-1. Back up your MediaPortal configuration before trying this alpha.
+1. Back up your MediaPortal configuration before trying this historical preview.
 2. Download the release ZIP and extract all files together.
 3. Run `MP1ConfigurationStudio.exe`. Keep the x64/x86 executables and their configuration files alongside it.
 4. On first launch, Studio adds its own files beside the installed `Configuration.exe`; Windows may request administrator approval for this copy.
@@ -27,7 +35,7 @@ The original `Configuration.exe` and native DLLs are not replaced. Run `Configur
 
 ## Validation and limits
 
-See [VALIDATION.md](VALIDATION.md) for the measured results and remaining coverage. This is an unsigned prerelease for testing. Hardware-dependent features, every third-party plugin, every Windows display configuration and full native x86 integration still require broader testing. Some native page labels remain English. Standalone plugin and Windows dialogs retain their own layout.
+See [VALIDATION.md](VALIDATION.md) for the measured results and remaining coverage. The `0.1.0-alpha.1` build is an unsigned historical preview. Hardware-dependent features, every third-party plugin, every Windows display configuration and full native x86 integration still require broader testing. Some native page labels remain English. Standalone plugin and Windows dialogs retain their own layout. Final validation evidence will be published with 1.0.0.
 
 ## Build
 
