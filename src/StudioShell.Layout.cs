@@ -137,10 +137,29 @@ namespace MP1.ConfigurationStudio
             Action<ToolStripItemCollection,ToolStripItemCollection> copy=null;copy=delegate(ToolStripItemCollection source,ToolStripItemCollection target){foreach(ToolStripItem original in source){if(original is ToolStripSeparator){target.Add(new ToolStripSeparator());continue;}var proxy=new ToolStripMenuItem(original.Text){Enabled=original.Enabled};var checkedButton=original as ToolStripButton;if(checkedButton!=null)proxy.Checked=checkedButton.Checked;ToolStripItem action=original;target.Add(proxy);var dropdown=original as ToolStripDropDownItem;if(dropdown!=null&&dropdown.DropDownItems.Count>0)copy(dropdown.DropDownItems,proxy.DropDownItems);else proxy.Click+=delegate{ClickNative(action);};}};
             copy(nativeTools.Items,menu.Items);
             menu.Items.Add(new ToolStripSeparator());
+            var support=new ToolStripMenuItem("Support-Bundle erzeugen…");
+            support.Click+=delegate{CreateSupportBundle();};
+            menu.Items.Add(support);
             var about=new ToolStripMenuItem("Über MP1 Configuration Studio");
             about.Click+=delegate{ShowAbout();};
             menu.Items.Add(about);
             theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
+        }
+        private void CreateSupportBundle()
+        {
+            using(var dialog=new SaveFileDialog {Filter="ZIP-Archiv (*.zip)|*.zip",Title="Support-Bundle speichern",FileName="MP1-Configuration-Studio-Support-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".zip"})
+            {
+                if(dialog.ShowDialog(form)!=DialogResult.OK)return;
+                string path=SupportBundle.Create(dialog.FileName,appearance.PathName,sections);
+                if(!String.IsNullOrEmpty(path))
+                {
+                    MessageBox.Show(form,"Support-Bundle erstellt:\r\n"+path,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show(form,"Das Support-Bundle konnte nicht erstellt werden. Details stehen im Protokoll:\r\n"+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                }
+            }
         }
         private void ShowAbout()
         {

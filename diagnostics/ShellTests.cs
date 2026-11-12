@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -29,6 +30,7 @@ namespace MP1.ConfigurationStudio
             RunLoggingChecks(directory);
             RunVersionChecks();
             RunCompatibilityPolicyChecks(directory);
+            RunSupportBundleChecks(directory);
             RunNativeContractChecks();
             RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
@@ -308,6 +310,35 @@ namespace MP1.ConfigurationStudio
             SectionPolicy overridden=CompatibilityPolicy.Resolve("MediaPortal.Configuration.Sections.General");
             Check(overridden.Tier==CompatibilityTier.A&&!overridden.Zoom&&!overridden.Search&&overridden.ThemeMode=="full","compatibility override applies");
             CompatibilityPolicy.Initialize();
+        }
+        private static void RunSupportBundleChecks(string directory)
+        {
+            StudioLog.Initialize(Path.Combine(directory,"logs-support"));
+            StudioLog.Info("support bundle test");
+            string appearancePath=Path.Combine(directory,"support-appearance.xml");
+            var appearance=new Appearance(appearancePath){Dark=false,TextScale=125,Width=1280,Height=720};
+            appearance.Save();
+            var sections=new List<Control>{new UserControl{Text="General"}};
+            string bundle=SupportBundle.Create(Path.Combine(directory,"support.zip"),appearancePath,sections);
+            Check(!String.IsNullOrEmpty(bundle)&&File.Exists(bundle),"support bundle is created");
+            using(var archive=ZipFile.OpenRead(bundle))
+            {
+                string[] names=archive.Entries.Select(entry=>entry.FullName).ToArray();
+                Check(names.Contains("README.txt")&&names.Contains("version.txt")&&names.Contains("environment.txt")&&names.Contains("compatibility.txt")&&names.Contains("sections.txt"),"support bundle contains metadata");
+                Check(names.Contains("logs/studio.log"),"support bundle contains logs");
+                Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
+                Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
+                Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
+                Check(ReadEntry(archive,"version.txt").Contains("1.0.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
+            }
+            StudioLog.Initialize(Path.Combine(directory,"logs-test"));
+        }
+        private static string ReadEntry(ZipArchive archive,string name)
+        {
+            ZipArchiveEntry entry=archive.GetEntry(name);
+            if(entry==null)return String.Empty;
+            using(var reader=new StreamReader(entry.Open()))return reader.ReadToEnd();
         }
         private static void RunNativeContractChecks()
         {

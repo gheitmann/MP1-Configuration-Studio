@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Xml;
 
@@ -64,6 +65,11 @@ namespace MP1.ConfigurationStudio
 
             SectionPolicy policy;
             return Sections.TryGetValue(typeName, out policy) ? policy : Unknown;
+        }
+
+        public static IEnumerable<SectionPolicy> All()
+        {
+            return Sections.Values.OrderBy(policy => policy.TypeName, StringComparer.OrdinalIgnoreCase).ToArray();
         }
 
         private static void LoadEmbedded()

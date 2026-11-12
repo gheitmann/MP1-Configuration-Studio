@@ -40,14 +40,14 @@
 | M1-12 Compatibility manifest | Done | 61 section types, embedded default, override file, four checks |
 | M1-13 Appearance schema v2 | Done | Commit `44e8066`; 7 new checks |
 | M1-14 Performance baseline | Not started | |
-| M1-15 Support bundle | Not started | |
-| M1-16 Security/threat model | Partial | `SECURITY.md` written; detailed threat model still open |
-| M1-17 First artifact | Not started | Depends on M1-03/04 |
+| M1-15 Support bundle | Done | Sanitized ZIP with metadata, policy, sections, appearance, and logs |
+| M1-16 Security/threat model | Done | `SECURITY.md` documents trust boundaries, elevation, plugin code, and data handling |
+| M1-17 First artifact | Partial | CI uploads the x64 artifact; clean-VM start and SHA256 verification pending |
 
 ## Verification
 
 - Baseline `0.1.0-alpha.1`: 95/95 x64 and x86 checks passed before changes.
-- Current branch: 154/154 x64 fixture checks passed from the diagnostics host.
+- Current branch: 162/162 x64 fixture checks passed from the diagnostics host.
 - The shipped application binary contains no `ShellTests`, audit, review, or persistence symbols.
 - Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime.
 - Logs are written to `%LOCALAPPDATA%\MP1 Configuration Studio\logs\studio.log` and rotate at 2 MB with three files.
@@ -57,9 +57,9 @@
 ## Next actions
 
 1. Split the remaining application into Core/Native/App (M1-02).
-2. Add the support bundle and performance baseline (M1-14, M1-15).
-3. Produce and verify the first CI-built x64 artifact (M1-17).
-4. Verify the native smoke after the version and logging changes.
+2. Add the performance baseline (M1-14).
+3. Move fixture tests from the custom harness to a real test runner (M1-11).
+4. Download the CI artifact and verify it on a clean Windows 11 VM (M1-17).
 
 ## Remaining external dependencies
 
