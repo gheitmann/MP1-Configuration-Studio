@@ -3,7 +3,7 @@
 **Updated:** 2026-11-12
 **Branch:** `m1-foundation`
 **Baseline:** `7a00043` (`main`)
-**Last verification:** `build.ps1 -TestX86` → 102/102 fixture checks on x64 and x86.
+**Last verification:** `build.ps1 -TestX86` → 142/142 fixture checks on x64 and x86; native smoke 27/27 on isolated MediaPortal 1.39 x64.
 
 ## Environment
 
@@ -31,8 +31,8 @@
 | M1-03 MSBuild/Roslyn | Unblocked | .NET SDK 8.0.428 installed; migration is next |
 | M1-04 CI | Unblocked | Workflow can now target the SDK |
 | M1-05 Diagnostics separation | Not started | Depends on M1-02 |
-| M1-06 `NativeContract` | Next | Critical path |
-| M1-07 Transactional attach | Next | Depends on M1-06 |
+| M1-06 `NativeContract` | Done | Commit `6a218a0`; contract validation before attach |
+| M1-07 Transactional attach | Done | Commit `6a218a0`; snapshot rollback and eight fault-injection stages |
 | M1-08 Logging/exceptions | Not started | |
 | M1-09 Versioning/About | Not started | |
 | M1-10 Governance/docs | Done | Commit `c2d6c43` |
@@ -47,17 +47,18 @@
 ## Verification
 
 - Baseline `0.1.0-alpha.1`: 95/95 x64 and x86 checks passed before changes.
-- Current branch: 102/102 x64 and x86 checks passed.
-- No native smoke run yet on this branch.
-- No files were written to the live MediaPortal configuration during build or fixture tests.
+- Current branch: 142/142 x64 and x86 fixture checks passed.
+- Native smoke: 27/27 checks passed on an isolated MediaPortal 1.39 x64 runtime.
+- Fault injection at eight attach stages restores the native control set, form state, and page presentation.
+- The native `Configuration.exe` and production `MediaPortal.xml` hashes are unchanged after the isolated run.
 
 ## Next actions
 
 1. Add the SDK-based build and GitHub Actions workflow (M1-03, M1-04).
-2. Implement `NativeContract` and replace scattered reflection lookups (M1-06).
-3. Make attach transactional with fault injection (M1-07).
-4. Split the solution and move diagnostics out of the app (M1-02, M1-05).
-5. Add logging, version identity, and the compatibility manifest (M1-08, M1-09, M1-12).
+2. Split the solution and move diagnostics out of the app (M1-02, M1-05).
+3. Add logging, version identity, and the compatibility manifest (M1-08, M1-09, M1-12).
+4. Add the support bundle and performance baseline (M1-14, M1-15).
+5. Produce the first CI-built x64 artifact (M1-17).
 
 ## Remaining external dependencies
 
