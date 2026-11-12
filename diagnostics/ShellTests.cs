@@ -1,7 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -22,6 +26,15 @@ namespace MP1.ConfigurationStudio
             string prefs=Path.Combine(directory,"appearance-test.xml");
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
             var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.Save();
+            RunAppearanceSchemaChecks(directory);
+            RunLoggingChecks(directory);
+            RunVersionChecks();
+            RunCompatibilityPolicyChecks(directory);
+            RunSupportBundleChecks(directory);
+            RunBackupChecks(directory);
+            RunNativeContractChecks();
+            RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
+            InitializeFixturePolicy(directory);
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
             {
                 var tree=new TreeView();var holder=new Panel {Size=new Size(502,455)};var ok=new Button();var cancel=new Button();
@@ -136,7 +149,7 @@ namespace MP1.ConfigurationStudio
                 search.Text="Sound effects";Check(results.Items.Count==1,"search finds option labels without removing pages");
                 search.Text="Bildschirmschoner";Check(results.Items.Count==1,"global search also finds German page aliases");search.Text="Sound effects";
                 Check(tree.Nodes.Count==1&&parent.Nodes.Count==2,"search does not mutate native navigation");
-                search.Text="media sound";Check(results.Items.Count==1,"search finds native checked-list options");search.Clear();
+                search.Text="media sound";Check(results.Items.Count==1,"search finds native checked-list options");search.Text="Other choice";Check(results.Items.Cast<StudioShell.SearchResult>().Any(r=>r.Control is ComboBox),"search finds combo options");search.Clear();
                 int beforeChecks=shell.ChangedCount;checklist.SetItemChecked(1,true);Application.DoEvents();Check(shell.ChangedCount==beforeChecks+1,"native checked-list edits detected after ItemCheck");
                 shell.SetDark(false);Check(checklist.GetItemChecked(0)&&checklist.GetItemChecked(1),"checked-list values survive theme switching");
                 string audit=Path.Combine(directory,"fixture-inventory.xml");shell.StartAudit(audit);Check(File.Exists(audit),"read-only inventory generated");
@@ -226,6 +239,272 @@ namespace MP1.ConfigurationStudio
             VerifyStartup(prefs);
             Console.WriteLine(passed+" checks passed.");return 0;
         }
+        private static void RunAppearanceSchemaChecks(string directory)
+        {
+            string legacyPath=Path.Combine(directory,"appearance-legacy.xml");
+            File.WriteAllText(legacyPath,"<?xml version=\"1.0\"?><appearance theme=\"Hell\" context=\"false\" width=\"1200\" height=\"800\" textScale=\"150\" />");
+            var legacy=new Appearance(legacyPath);
+            Check(legacy.SchemaVersion==1,"legacy appearance reports schema version 1");
+            Check(legacy.ThemeMode=="Hell"&&!legacy.Dark&&!legacy.ContextVisible&&legacy.TextScale==150&&legacy.Width==1200&&legacy.Height==800,"legacy appearance values load");
+
+            string versionTwoPath=Path.Combine(directory,"appearance-v2.xml");
+            var saved=new Appearance(versionTwoPath);
+            saved.Dark=false;
+            saved.ContextVisible=false;
+            saved.TextScale=115;
+            saved.Width=1280;
+            saved.Height=720;
+            saved.Save();
+            Check(saved.SchemaVersion==2&&File.ReadAllText(versionTwoPath).Contains("schema=\"2\""),"appearance save writes schema version 2");
+            var reloaded=new Appearance(versionTwoPath);
+            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720,"schema version 2 round trip preserves values");
+
+            string corruptPath=Path.Combine(directory,"appearance-corrupt.xml");
+            File.WriteAllText(corruptPath,"<appearance theme=\"Hell\" textScale=\"oops\"><broken>");
+            var fallback=new Appearance(corruptPath);
+            Check(!String.IsNullOrEmpty(fallback.LastError),"corrupted appearance reports an error");
+            Check(fallback.Dark&&fallback.ThemeMode=="Dunkel"&&fallback.TextScale==125&&fallback.Width==1360,"corrupted appearance falls back to defaults");
+
+            string futurePath=Path.Combine(directory,"appearance-future.xml");
+            File.WriteAllText(futurePath,"<appearance schema=\"99\" theme=\"Hell\" textScale=\"150\" />");
+            var future=new Appearance(futurePath);
+            future.Save();
+            Check(future.SchemaVersion==99&&File.ReadAllText(futurePath).Contains("schema=\"99\"")&&!String.IsNullOrEmpty(future.LastError),"newer appearance schema is not overwritten");
+        }
+        private static void RunLoggingChecks(string directory)
+        {
+            string logDirectory=Path.Combine(directory,"logs-test");
+            if(Directory.Exists(logDirectory))Directory.Delete(logDirectory,true);
+            StudioLog.Initialize(logDirectory);
+            StudioLog.Info("attach test info");
+            StudioLog.Warn("theme warning");
+            StudioLog.Error(new InvalidOperationException("injected failure"),"logging test");
+            Check(File.Exists(StudioLog.FilePath),"logging creates a log file");
+            string text=File.ReadAllText(StudioLog.FilePath);
+            Check(text.Contains("INFO")&&text.Contains("WARN")&&text.Contains("ERROR"),"logging writes levels");
+            Check(text.Contains("injected failure"),"logging writes exception details");
+            string redacted=StudioLog.Redact("token=ghp_abcdefghijklmnopqrstuvwxyz123456 password=hunter2");
+            Check(!redacted.Contains("ghp_abcdefghijklmnopqrstuvwxyz123456")&&!redacted.Contains("hunter2")&&redacted.Contains("***"),"logging redacts secrets");
+            StudioLog.Info(new string('x',2*1024*1024+1024));
+            StudioLog.Info("after rotation");
+            Check(File.Exists(StudioLog.FilePath),"logging keeps the current file after rotation");
+            Check(Directory.GetFiles(logDirectory,"studio*.log").Length<=3,"logging rotation keeps at most three files");
+        }
+        private static void RunVersionChecks()
+        {
+            Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==0&&assemblyVersion.Build==0,"assembly version targets 1.0.0.0");
+            string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+            Check(fileVersion.StartsWith("1.0.0",StringComparison.Ordinal),"file version targets 1.0.0");
+            Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
+            Palette.ForceHighContrast=true;
+            Palette highContrast=Palette.For(true);
+            Check(highContrast.Text==SystemColors.WindowText&&highContrast.Panel==SystemColors.Window&&highContrast.SelectionText==SystemColors.HighlightText&&highContrast.PrimaryText==SystemColors.HighlightText,"high contrast palette uses system colors");
+            Palette.ForceHighContrast=false;
+        }
+        private static void RunCompatibilityPolicyChecks(string directory)
+        {
+            CompatibilityPolicy.Initialize();
+            Check(CompatibilityPolicy.Count>=61,"compatibility policy loads all known sections");
+            SectionPolicy general=CompatibilityPolicy.Resolve("MediaPortal.Configuration.Sections.General");
+            Check(general.Tier==CompatibilityTier.A&&general.Zoom&&general.Search&&general.ThemeMode=="full","validated native sections are tier A");
+            SectionPolicy unknown=CompatibilityPolicy.Resolve("Example.Unknown");
+            Check(unknown.Tier==CompatibilityTier.B&&!unknown.Zoom&&unknown.ThemeMode=="native","unknown plugin sections default to native tier B");
+            using(var host=new Form())
+            {
+                var nativePage=new Panel {BackColor=Color.Magenta};
+                host.Controls.Add(nativePage);
+                var theme=new Theme(true);
+                theme.Skip(nativePage);
+                theme.Apply(host);
+                Check(nativePage.BackColor==Color.Magenta,"tier B page subtree is excluded from theming");
+            }
+
+            string overridePath=Path.Combine(directory,"compatibility-override.xml");
+            File.WriteAllText(overridePath,"<compatibility><section type=\"MediaPortal.Configuration.Sections.General\" tier=\"A\" zoom=\"false\" theme=\"full\" search=\"false\" /></compatibility>");
+            CompatibilityPolicy.Initialize(overridePath);
+            SectionPolicy overridden=CompatibilityPolicy.Resolve("MediaPortal.Configuration.Sections.General");
+            Check(overridden.Tier==CompatibilityTier.A&&!overridden.Zoom&&!overridden.Search&&overridden.ThemeMode=="full","compatibility override applies");
+            CompatibilityPolicy.Initialize();
+        }
+        private static void RunSupportBundleChecks(string directory)
+        {
+            StudioLog.Initialize(Path.Combine(directory,"logs-support"));
+            StudioLog.Info("support bundle test");
+            string appearancePath=Path.Combine(directory,"support-appearance.xml");
+            var appearance=new Appearance(appearancePath){Dark=false,TextScale=125,Width=1280,Height=720};
+            appearance.Save();
+            var sections=new List<Control>{new UserControl{Text="General"}};
+            string bundle=SupportBundle.Create(Path.Combine(directory,"support.zip"),appearancePath,sections);
+            Check(!String.IsNullOrEmpty(bundle)&&File.Exists(bundle),"support bundle is created");
+            using(var archive=ZipFile.OpenRead(bundle))
+            {
+                string[] names=archive.Entries.Select(entry=>entry.FullName).ToArray();
+                Check(names.Contains("README.txt")&&names.Contains("version.txt")&&names.Contains("environment.txt")&&names.Contains("compatibility.txt")&&names.Contains("sections.txt"),"support bundle contains metadata");
+                Check(names.Contains("logs/studio.log"),"support bundle contains logs");
+                Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
+                Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
+                Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
+                Check(ReadEntry(archive,"version.txt").Contains("1.0.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
+            }
+            StudioLog.Initialize(Path.Combine(directory,"logs-test"));
+        }
+        private static string ReadEntry(ZipArchive archive,string name)
+        {
+            ZipArchiveEntry entry=archive.GetEntry(name);
+            if(entry==null)return String.Empty;
+            using(var reader=new StreamReader(entry.Open()))return reader.ReadToEnd();
+        }
+        private static void RunBackupChecks(string directory)
+        {
+            foreach(string pattern in new[]{"restore-target.xml*","invalid-target.xml*","badxml-target.xml*","backup*.zip"})
+            {
+                foreach(string file in Directory.GetFiles(directory,pattern))File.Delete(file);
+            }
+            string source=Path.Combine(directory,"backup-source.xml");
+            File.WriteAllText(source,"<?xml version=\"1.0\"?><profile><section name=\"General\" /></profile>");
+            string backup=Path.Combine(directory,"backup.zip");
+            ConfigurationBackup.Create(source,backup);
+            Check(File.Exists(backup),"configuration backup is created");
+            using(var archive=ZipFile.OpenRead(backup))
+            {
+                Check(archive.GetEntry("MediaPortal.xml")!=null&&archive.GetEntry("backup.txt")!=null,"configuration backup contains manifest and MediaPortal.xml");
+            }
+
+            string target=Path.Combine(directory,"restore-target.xml");
+            File.WriteAllText(target,"<?xml version=\"1.0\"?><profile><section name=\"Previous\" /></profile>");
+            ConfigurationBackup.Restore(backup,target);
+            Check(File.ReadAllText(target).Contains("General"),"configuration restore writes MediaPortal.xml");
+            Check(Directory.GetFiles(directory,"restore-target.xml.before-restore-*.xml").Length==1,"configuration restore creates a safety copy");
+
+            string invalid=Path.Combine(directory,"backup-invalid.zip");
+            CreateZip(invalid,"other.txt","x");
+            bool rejected=false;
+            try{ConfigurationBackup.Restore(invalid,Path.Combine(directory,"invalid-target.xml"));}catch(InvalidDataException){rejected=true;}
+            Check(rejected,"configuration restore rejects a backup without MediaPortal.xml");
+
+            string badXml=Path.Combine(directory,"backup-badxml.zip");
+            CreateZip(badXml,"MediaPortal.xml","<notprofile />");
+            rejected=false;
+            try{ConfigurationBackup.Restore(badXml,Path.Combine(directory,"badxml-target.xml"));}catch(InvalidDataException){rejected=true;}
+            Check(rejected,"configuration restore rejects a non-profile XML document");
+
+            string configFolder=Path.Combine(directory,"first-run-config");
+            Directory.CreateDirectory(configFolder);
+            File.Copy(source,Path.Combine(configFolder,"MediaPortal.xml"),true);
+            string firstRoot=Path.Combine(directory,"first-run-backups");
+            if(Directory.Exists(firstRoot))Directory.Delete(firstRoot,true);
+            string first=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
+            string second=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
+            Check(!String.IsNullOrEmpty(first)&&File.Exists(first)&&second==null&&File.Exists(Path.Combine(firstRoot,"first-run.done")),"first-run configuration backup runs once");
+        }
+        private static void CreateZip(string path,string entryName,string content)
+        {
+            if(File.Exists(path))File.Delete(path);
+            using(var archive=ZipFile.Open(path,ZipArchiveMode.Create))
+            using(var writer=new StreamWriter(archive.CreateEntry(entryName).Open()))writer.Write(content);
+        }
+        private static void RunNativeContractChecks()
+        {
+            using(var form=new ContractForm())
+            {
+                NativeContractReport report=NativeContract.Validate(form);
+                Check(report.IsValid&&report.SectionCount==2,"native contract validates required fields and sections");
+            }
+            using(var form=new Form())
+            {
+                NativeContractReport report=NativeContract.Validate(form);
+                Check(!report.IsValid&&report.Missing.Any(m=>m.IndexOf("sectionTree",StringComparison.Ordinal)>=0),"native contract reports a missing tree field");
+                bool threw=false;
+                try{NativeContract.Require<TreeView>(form,NativeContract.SectionTreeField);}
+                catch(NotSupportedException){threw=true;}
+                Check(threw,"native contract throws a controlled error for a missing member");
+            }
+            var tagged=new TreeNode("page");var taggedPage=new UserControl();tagged.Tag=taggedPage;
+            Check(Object.ReferenceEquals(NativeContract.NodeSection(tagged),taggedPage),"native contract reads a section from the node tag");
+            var typed=new ContractNode {Section=new UserControl()};
+            Check(Object.ReferenceEquals(NativeContract.NodeSection(typed),typed.Section),"native contract reads a section from the node property");
+            NativeContractReport missingSections=NativeContract.Validate(new MissingSectionsForm());
+            Check(!missingSections.IsValid&&missingSections.SectionCount==0,"native contract reports missing sections");
+        }
+        private static void RunAttachTransactionChecks(string preferences)
+        {
+            string[] stages={"before-build","build-cleared","build-backend","build-reparented","build-complete","after-build","before-refresh","wire-events"};
+            foreach(string stage in stages)
+            {
+                ResetContractPages();
+                Control page=ContractPage("General");
+                var font=new Font("Segoe UI",10f);
+                var minimum=new Size(320,240);
+                page.Font=font;
+                page.MinimumSize=minimum;
+                using(var form=new ContractForm())
+                {
+                    Control[] top=form.Controls.Cast<Control>().ToArray();
+                    bool treeVisible=form.sectionTree.Visible;
+                    string text=form.Text;
+                    IButtonControl accept=form.AcceptButton;
+                    bool failed=false;
+                    StudioShell.FaultHook=delegate(string name){if(name==stage)throw new InvalidOperationException("fault:"+name);};
+                    try
+                    {
+                        StudioShell.Attach(form,preferences);
+                    }
+                    catch(InvalidOperationException)
+                    {
+                        failed=true;
+                    }
+                    finally
+                    {
+                        StudioShell.FaultHook=null;
+                    }
+                    Check(failed,"attach fault is raised at "+stage);
+                    Control[] restored=form.Controls.Cast<Control>().ToArray();
+                    Check(restored.Length==top.Length&&top.All(c=>restored.Contains(c)),"attach rollback restores the native control set at "+stage);
+                    Check(form.sectionTree.Visible==treeVisible&&form.Text==text&&Object.ReferenceEquals(form.AcceptButton,accept),"attach rollback restores form state at "+stage);
+                    Check(page.Font.Name==font.Name&&page.Font.SizeInPoints==font.SizeInPoints&&page.Font.Style==font.Style&&page.MinimumSize==minimum,"attach rollback restores page presentation at "+stage);
+                }
+            }
+
+            ResetContractPages();
+            using(var form=new ContractForm())
+            {
+                StudioShell shell=StudioShell.Attach(form,preferences);
+                Check(shell!=null&&!form.sectionTree.Visible,"successful attach replaces the visible native tree");
+                Check(form.Controls.Find("studioRoot",true).Length==1,"successful attach adds the studio shell");
+                string overridePath=Path.Combine(Path.GetDirectoryName(preferences),"tier-c.xml");
+                string blockedType=typeof(BlockedPage).FullName;
+                File.WriteAllText(overridePath,"<compatibility><section type=\""+blockedType+"\" tier=\"C\" zoom=\"false\" theme=\"native\" search=\"false\" /></compatibility>");
+                CompatibilityPolicy.Initialize(overridePath);
+                var blockedNode=new TreeNode("Blocked"){Tag=new BlockedPage()};
+                form.sectionTree.Nodes.Add(blockedNode);
+                TreeNode previous=form.sectionTree.SelectedNode;
+                bool navigated=shell.Navigate(blockedNode);
+                Check(!navigated&&Object.ReferenceEquals(form.sectionTree.SelectedNode,previous),"tier C navigation is blocked");
+                CompatibilityPolicy.Initialize();
+            }
+            ResetContractPages();
+        }
+        private static void InitializeFixturePolicy(string directory)
+        {
+            string path=Path.Combine(directory,"fixture-policy.xml");
+            File.WriteAllText(path,"<compatibility><section type=\"System.Windows.Forms.UserControl\" tier=\"A\" zoom=\"true\" theme=\"full\" search=\"true\" /></compatibility>");
+            CompatibilityPolicy.Initialize(path);
+        }
+        private static Control ContractPage(string name)
+        {
+            return ((ContractSectionEntry)ContractForm.SettingSections[name]).ConfigSection;
+        }
+        private static void ResetContractPages()
+        {
+            foreach(DictionaryEntry entry in ContractForm.SettingSections)
+            {
+                Control page=((ContractSectionEntry)entry.Value).ConfigSection;
+                page.Parent=null;
+                page.MinimumSize=Size.Empty;
+            }
+        }
         private static void VerifyStartup(string prefs)
         {
             using(var hidden=new Form())
@@ -276,6 +555,50 @@ namespace MP1.ConfigurationStudio
             form.Controls.AddRange(new Control[]{tree,holder,ok,cancel,tools});cancel.Click+=delegate{form.Close();};
             form.Load+=delegate{StudioShell.AttachFixture(form,tree,holder,ok,cancel,tools,Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"design-preview.xml"),pages);form.Text+=" · DESIGN-VORSCHAU MIT TESTFELDERN";};
             Application.Run(form);return 0;
+        }
+        private sealed class ContractSectionEntry
+        {
+            public Control ConfigSection {get;set;}
+        }
+        private sealed class ContractNode : TreeNode
+        {
+            public Control Section {get;set;}
+        }
+        private sealed class BlockedPage : UserControl
+        {
+        }
+        private sealed class ContractForm : Form
+        {
+            internal readonly TreeView sectionTree=new TreeView();
+            internal readonly Panel holderPanel=new Panel();
+            internal readonly Button okButton=new Button();
+            internal readonly Button cancelButton=new Button();
+            internal readonly ToolStrip toolStrip1=new ToolStrip();
+            internal readonly Button applyButton=new Button();
+            internal readonly Label linkLabel1=new Label();
+            private static readonly Dictionary<string,ContractSectionEntry> sections=new Dictionary<string,ContractSectionEntry>
+            {
+                {"General",new ContractSectionEntry{ConfigSection=new UserControl{Text="General"}}},
+                {"Gui",new ContractSectionEntry{ConfigSection=new UserControl{Text="Gui"}}}
+            };
+            public static IDictionary SettingSections {get{return sections;}}
+            public ContractForm()
+            {
+                Controls.AddRange(new Control[]{sectionTree,holderPanel,okButton,cancelButton,toolStrip1});
+                var general=new TreeNode("General"){Tag=((ContractSectionEntry)sections["General"]).ConfigSection};
+                var gui=new TreeNode("Gui"){Tag=((ContractSectionEntry)sections["Gui"]).ConfigSection};
+                sectionTree.Nodes.Add(general);
+                sectionTree.Nodes.Add(gui);
+                sectionTree.SelectedNode=general;
+            }
+        }
+        private sealed class MissingSectionsForm : Form
+        {
+            private readonly TreeView sectionTree=new TreeView();
+            private readonly Panel holderPanel=new Panel();
+            private readonly Button okButton=new Button();
+            private readonly Button cancelButton=new Button();
+            private readonly ToolStrip toolStrip1=new ToolStrip();
         }
         private sealed class PaintProbeCombo : ComboBox
         {

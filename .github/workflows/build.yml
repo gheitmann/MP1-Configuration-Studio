@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - m1-foundation
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build and run fixture tests
+        shell: powershell
+        run: .\build.ps1
+
+      - name: Upload x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MP1ConfigurationStudio-x64
+          path: |
+            dist/MP1ConfigurationStudio.exe
+            dist/MP1ConfigurationStudio.exe.config
+            dist/MP1ConfigurationStudio.pdb
+            dist/test-results.log
+          retention-days: 14

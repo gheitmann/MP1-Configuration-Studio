@@ -47,7 +47,7 @@ namespace MP1.ConfigurationStudio
             var p=Colors==null?Palette.For(true):Colors();e.Graphics.Clear(BackColor);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;
             if(Selected||hover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(hover?p.Hover:p.Selection))e.Graphics.FillPath(b,shape);}
             if(Selected&&Navigation)using(var b=new SolidBrush(p.Accent))e.Graphics.FillRectangle(b,0,7,3,Height-14);
-            Color ink=!Enabled?p.Muted:hover?p.Text:Selected?p.Accent:Secondary?p.Muted:p.Text;
+            Color ink=!Enabled?p.Muted:hover?p.Text:Selected?p.SelectionText:Secondary?p.Muted:p.Text;
             int iconSize=Math.Min(23,Font.Height+2),left=Navigation?15:10;
             if(!String.IsNullOrEmpty(IconName)){StudioIcons.Draw(e.Graphics,IconName,new Rectangle(left,(Height-iconSize)/2,iconSize,iconSize),ink);left+=iconSize+12;}
             var flags=TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix;

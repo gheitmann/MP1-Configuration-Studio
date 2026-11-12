@@ -13,8 +13,10 @@ using Microsoft.Win32;
 
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
-[assembly: AssemblyVersion("1.39.0.0")]
-[assembly: AssemblyFileVersion("1.39.0.14")]
+[assembly: AssemblyProduct("MP1 Configuration Studio")]
+[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
 
 namespace MP1.ConfigurationStudio
 {
@@ -23,10 +25,15 @@ namespace MP1.ConfigurationStudio
         [STAThread]
         public static int Main(string[] args)
         {
+            StudioLog.Initialize();
+            StudioLog.Info("MP1 Configuration Studio starting");
+            CompatibilityPolicy.Initialize(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"compatibility.xml"));
             try
             {
+#if DIAGNOSTICS
                 if (Array.IndexOf(args, "--self-test") >= 0) return ShellTests.Run();
                 if (Array.IndexOf(args, "--design-preview") >= 0) return ShellTests.Preview();
+#endif
                 string runtime = null, preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null;
                 var forwarded = new List<string>();
                 foreach (string arg in args)
@@ -43,9 +50,29 @@ namespace MP1.ConfigurationStudio
                 runtime = FindRuntime(runtime);
                 string native = Path.Combine(runtime, "Configuration.exe");
                 var version = FileVersionInfo.GetVersionInfo(native);
+                if (IsClassic(args))
+                {
+                    StartNative(native, runtime);
+                    return 0;
+                }
                 if (version.FileMajorPart != 1 || version.FileMinorPart != 39)
-                    throw new InvalidOperationException("Diese Ausgabe unterstützt MediaPortal 1.39. Gefunden: " + version.FileVersion + ". Das Original wurde nicht verändert.");
+                {
+                    StudioLog.Warn("Unsupported MediaPortal version: " + version.FileVersion);
+                    DialogResult answer = MessageBox.Show(
+                        "Diese Studio-Ausgabe unterstützt MediaPortal 1.39.\r\n\r\nGefunden: " + version.FileVersion + "\r\n\r\nDie originale Oberfläche kann trotzdem gestartet werden. Fortfahren?",
+                        "MP1 Configuration Studio",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button1);
+                    if (answer == DialogResult.Yes)
+                    {
+                        StartNative(native, runtime);
+                        return 0;
+                    }
+                    return 1;
+                }
                 var architecture=AssemblyName.GetAssemblyName(Path.Combine(runtime,"Core.dll")).ProcessorArchitecture;
+                StudioLog.Info("Native runtime="+runtime+" version="+version.FileVersion+" architecture="+architecture);
                 bool requires32=architecture==ProcessorArchitecture.X86,requires64=architecture==ProcessorArchitecture.Amd64;
                 if((requires32&&Environment.Is64BitProcess)||(requires64&&!Environment.Is64BitProcess))
                 {
@@ -76,10 +103,31 @@ namespace MP1.ConfigurationStudio
             catch (Exception ex)
             {
                 while (ex is TargetInvocationException && ex.InnerException != null) ex = ex.InnerException;
-                string error = "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.";
+                StudioLog.Error(ex,"Startup failed");
+                string error = "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.\r\n\r\nProtokoll: " + StudioLog.FilePath;
                 if (Array.IndexOf(args, "--self-test") >= 0) Console.Error.WriteLine(ex);
                 else MessageBox.Show(error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
+            }
+        }
+
+        internal static bool IsClassic(string[] args)
+        {
+            return args != null && Array.IndexOf(args, "--classic") >= 0;
+        }
+
+        internal static void StartNative(string native, string runtime)
+        {
+            try
+            {
+                StudioLog.Info("Starting classic native configurator");
+                Process.Start(new ProcessStartInfo(native) { WorkingDirectory = runtime, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                StudioLog.Error(ex, "Classic start failed");
+                MessageBox.Show("Die originale Configuration.exe konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nProtokoll: " + StudioLog.FilePath,
+                    "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -164,6 +212,9 @@ namespace MP1.ConfigurationStudio
 
         public void Prepare(string preferencesPath, string auditPath, string verifyPath, string reviewPath, string persistencePath, string saveCyclePath)
         {
+            StudioLog.Initialize();
+            CompatibilityPolicy.Initialize(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"compatibility.xml"));
+            StudioLog.Info("Native bridge prepared; compatibility sections="+CompatibilityPolicy.Count);
             IsolatedRuntime.RedirectDebugMarkers();
             preferences = preferencesPath; audit = auditPath;verify=verifyPath;review=reviewPath;persistence=persistencePath;saveCycle=saveCyclePath;
             // Observe the very first show request, not the first Idle after a
@@ -177,24 +228,37 @@ namespace MP1.ConfigurationStudio
         {
                 if(form.IsDisposed||seen.Contains(form))return;
                 FrameRendering.EnableComposition(form);
-                if (form.GetType().FullName == "MediaPortal.Configuration.SettingsForm")
+                if (form.GetType().FullName == NativeContract.SettingsFormTypeName)
                 {
                     seen.Add(form);
                     try
                     {
+                        NativeContractReport report=NativeContract.Validate(form);
+                        StudioLog.Info(report.Summary());
+                        if(!report.IsValid)
+                        {
+                            StudioLog.Error("Native contract validation failed: "+report.Summary());
+                            MessageBox.Show(form,"Die installierte MediaPortal-Oberfläche entspricht nicht dem erwarteten 1.39-Vertrag.\r\n\r\n"+report.Summary()+"\r\n\r\nDas originale Konfigurationsfenster bleibt unverändert. Bitte Configuration.exe verwenden.",
+                                "Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                            return;
+                        }
                         shell = StudioShell.Attach(form, preferences);
+                        StudioLog.Info("Studio shell attached");
                         Action ready=delegate{
+#if DIAGNOSTICS
                             if (!String.IsNullOrEmpty(audit)) shell.StartAudit(audit);
                             if (!String.IsNullOrEmpty(verify)) shell.StartNativeChecks(verify);
                             else if (!String.IsNullOrEmpty(review)) shell.StartFullReview(review);
                             else if (!String.IsNullOrEmpty(persistence)) shell.StartPersistenceReview(persistence);
                             else if (!String.IsNullOrEmpty(saveCycle)) shell.StartNativeSaveCycle(saveCycle);
+#endif
                         };
                         if(FrameRendering.IsVisible(form))ready();else form.Shown+=delegate{ready();};
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(form, "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und Configuration.exe verwenden.\r\n\r\n" + ex.Message,
+                        StudioLog.Error(ex,"Studio shell attach failed");
+                        MessageBox.Show(form, "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und Configuration.exe verwenden.\r\n\r\n" + ex.Message + "\r\n\r\nProtokoll: " + StudioLog.FilePath,
                             "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }

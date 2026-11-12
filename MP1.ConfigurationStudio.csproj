@@ -1,31 +1,45 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
-    <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>MP1.ConfigurationStudio</RootNamespace>
+    <TargetFramework>net48</TargetFramework>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
     <AssemblyName>MP1ConfigurationStudio</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <PlatformTarget>$(Platform)</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
-    <OutputPath>dist\$(Platform)\</OutputPath>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RootNamespace>MP1.ConfigurationStudio</RootNamespace>
     <StartupObject>MP1.ConfigurationStudio.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AppConfig>app.config</AppConfig>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+    <Optimize>true</Optimize>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>dist\sdk\</OutputPath>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="diagnostics/**/*.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Compile Include="src\*.cs" />
-    <None Include="app.config" />
-    <None Include="app.manifest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="config\compatibility.xml" LogicalName="MP1.ConfigurationStudio.compatibility.xml" />
     <None Include="LICENSE" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

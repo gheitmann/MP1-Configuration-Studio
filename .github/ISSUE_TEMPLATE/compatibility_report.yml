@@ -1,0 +1,89 @@
+name: Compatibility report
+description: Report a plugin or native page that does not behave correctly.
+title: "[Compatibility]: "
+labels: ["compatibility", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for plugin pages, unusual layouts, and native pages that break under zoom or theme changes.
+  - type: input
+    id: plugin
+    attributes:
+      label: Plugin or section name
+      placeholder: "Plugin name and version, or native section"
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Expected tier
+      options:
+        - Tier A (fully tested)
+        - Tier B (opens and saves, native look)
+        - Tier C (blocked)
+        - Unknown
+  - type: dropdown
+    id: category
+    attributes:
+      label: Problem category
+      options:
+        - Page does not open
+        - Page opens but layout is broken
+        - Values change or are lost
+        - Save or cancel fails
+        - Theme is unreadable
+        - Zoom clips or overlaps controls
+        - Crash
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: studio-version
+    attributes:
+      label: Studio version and architecture
+      placeholder: "1.0.0 x64"
+    validations:
+      required: true
+  - type: input
+    id: mediaportal
+    attributes:
+      label: MediaPortal version and architecture
+      placeholder: "1.39 x64"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version, DPI, and Studio scale
+      placeholder: "Windows 11, 150% DPI, Studio 125%"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Support bundle, sanitized log excerpt, or screenshot.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I backed up my configuration.
+          required: true
+        - label: I tried classic mode and recorded the result.
+          required: true
+        - label: This is not a security issue.
+          required: true

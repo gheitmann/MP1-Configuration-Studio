@@ -24,6 +24,7 @@ namespace MP1.ConfigurationStudio
         private readonly Dictionary<ListView,IntPtr> themedHeaders=new Dictionary<ListView,IntPtr>();
         private readonly Dictionary<ListView,bool> headerDark=new Dictionary<ListView,bool>();
         private readonly Dictionary<TreeView,NavigationChrome> navigation=new Dictionary<TreeView,NavigationChrome>();
+        private readonly HashSet<Control> skippedRoots=new HashSet<Control>();
         public Palette Colors { get; private set; }
         public bool Dark { get; private set; }
         public Theme(bool dark) { Set(dark); }
@@ -33,9 +34,16 @@ namespace MP1.ConfigurationStudio
         [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr h,int message,IntPtr w,IntPtr l);
         // Navigation reuses existing controls. Do not reset native themes or redraw an
         // entire page again merely because the original holder reparents it.
+        internal void Skip(Control root){if(root!=null)skippedRoots.Add(root);}
+        internal void Include(Control root){if(root!=null)skippedRoots.Remove(root);}
+        private bool IsSkipped(Control c)
+        {
+            for(Control current=c;current!=null;current=current.Parent)if(skippedRoots.Contains(current))return true;
+            return false;
+        }
         public void Prepare(Control c)
         {
-            if(c==null||c.IsDisposed)return;
+            if(c==null||c.IsDisposed||IsSkipped(c))return;
             if(!watched.Contains(c)){Apply(c);return;}
             var list=c as ListView;if(list!=null)ColorItems(list);
             foreach(Control child in c.Controls)Prepare(child);
@@ -55,7 +63,7 @@ namespace MP1.ConfigurationStudio
         private static IEnumerable<Control> AllControls(Control c){yield return c;foreach(Control child in c.Controls)foreach(Control descendant in AllControls(child))yield return descendant;}
         private void ApplyCore(Control c)
         {
-            if (c == null || c.IsDisposed) return;
+            if (c == null || c.IsDisposed || IsSkipped(c)) return;
             if (!originalBack.ContainsKey(c)) originalBack[c] = c.BackColor;
             if (watched.Add(c))
             {

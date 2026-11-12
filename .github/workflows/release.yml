@@ -1,0 +1,110 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version without leading v (for example 1.0.0 or 1.0.0-rc.1)'
+        required: true
+        default: '1.0.0-rc.1'
+      unsigned_waiver:
+        description: 'Publish a final version without code signing (documented waiver)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version
+        id: version
+        shell: powershell
+        run: |
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $version = '${{ inputs.version }}'.TrimStart('v')
+          } else {
+            $version = '${{ github.ref_name }}'.TrimStart('v')
+          }
+          "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Build and test
+        shell: powershell
+        run: .\build.ps1
+
+      - name: Sign application
+        shell: powershell
+        env:
+          SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+          SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $allowUnsigned = '${{ inputs.unsigned_waiver }}' -eq 'true' -or '${{ vars.ALLOW_UNSIGNED_FINAL }}' -eq 'true'
+          if ($env:SIGNING_PFX_BASE64) {
+            .\tools\Sign-Studio.ps1 -Target 'dist\MP1ConfigurationStudio.exe' -RequireSignature
+          } elseif ($version -notmatch '-' -and -not $allowUnsigned) {
+            throw 'Final releases require SIGNING_PFX_BASE64 and SIGNING_PFX_PASSWORD, or the documented ALLOW_UNSIGNED_FINAL waiver.'
+          } else {
+            Write-Warning 'UNSIGNED RELEASE: no signing certificate configured. The release notes disclose this.'
+          }
+
+      - name: Package portable ZIP
+        shell: powershell
+        run: .\tools\Package-Studio.ps1 -Version '${{ steps.version.outputs.value }}'
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --no-progress -y
+
+      - name: Build setup executable
+        shell: powershell
+        run: |
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          & $iscc "/DAppVersion=${{ steps.version.outputs.value }}" 'packaging\MP1ConfigurationStudio.iss'
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+
+      - name: Sign setup executable
+        shell: powershell
+        env:
+          SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+          SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
+        run: |
+          $setup = "dist\package\MP1-Configuration-Studio-${{ steps.version.outputs.value }}-Setup.exe"
+          if ($env:SIGNING_PFX_BASE64) {
+            .\tools\Sign-Studio.ps1 -Target $setup -RequireSignature
+          }
+
+      - name: Write checksums
+        shell: powershell
+        run: |
+          Get-ChildItem 'dist\package' -File | Where-Object { $_.Extension -in '.zip', '.exe' } | ForEach-Object {
+            $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+            "$hash  $($_.Name)" | Set-Content -LiteralPath ($_.FullName + '.sha256') -Encoding ASCII
+          }
+
+      - name: Publish draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
+          name: MP1 Configuration Studio ${{ steps.version.outputs.value }}
+          body_path: docs/RELEASE-1.0.0.md
+          draft: true
+          prerelease: ${{ contains(steps.version.outputs.value, '-') }}
+          files: |
+            dist/package/*.zip
+            dist/package/*.zip.sha256
+            dist/package/*Setup.exe
+            dist/package/*Setup.exe.sha256
