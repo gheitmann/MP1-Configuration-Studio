@@ -282,7 +282,7 @@ Detailed tickets: [docs/M1-TICKETS.md](docs/M1-TICKETS.md).
 
 ### M2 Hardening
 
-**Progress (2026-11-13):** classic mode, Tier C blocking, configuration backup/restore, High Contrast palette, 175% validation, and lazy page preparation (attach 303–320 ms) are implemented. Remaining: Tier A validation, the DPI/theme matrix, and clean-VM verification.
+**Progress (2026-11-13):** classic mode, Tier A/B/C policy, configuration backup/restore, High Contrast palette, 175% validation, and lazy page preparation (attach 303–320 ms) are implemented. Remaining: DPI/theme matrix, clean-VM verification, and the High Contrast owner-draw audit.
 
 - Fill `compatibility.xml` for all 61 section types.
 - Implement Tier A/B/C behavior and per-page opt-out.

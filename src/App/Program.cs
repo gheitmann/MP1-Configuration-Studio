@@ -212,6 +212,9 @@ namespace MP1.ConfigurationStudio
 
         public void Prepare(string preferencesPath, string auditPath, string verifyPath, string reviewPath, string persistencePath, string saveCyclePath)
         {
+            StudioLog.Initialize();
+            CompatibilityPolicy.Initialize(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"compatibility.xml"));
+            StudioLog.Info("Native bridge prepared; compatibility sections="+CompatibilityPolicy.Count);
             IsolatedRuntime.RedirectDebugMarkers();
             preferences = preferencesPath; audit = auditPath;verify=verifyPath;review=reviewPath;persistence=persistencePath;saveCycle=saveCyclePath;
             // Observe the very first show request, not the first Idle after a

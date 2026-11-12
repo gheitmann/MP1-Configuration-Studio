@@ -34,6 +34,7 @@ namespace MP1.ConfigurationStudio
             RunBackupChecks(directory);
             RunNativeContractChecks();
             RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
+            InitializeFixturePolicy(directory);
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
             {
                 var tree=new TreeView();var holder=new Panel {Size=new Size(502,455)};var ok=new Button();var cancel=new Button();
@@ -306,9 +307,18 @@ namespace MP1.ConfigurationStudio
             CompatibilityPolicy.Initialize();
             Check(CompatibilityPolicy.Count>=61,"compatibility policy loads all known sections");
             SectionPolicy general=CompatibilityPolicy.Resolve("MediaPortal.Configuration.Sections.General");
-            Check(general.Tier==CompatibilityTier.B&&general.Zoom&&general.Search,"compatibility policy defaults to tier B");
+            Check(general.Tier==CompatibilityTier.A&&general.Zoom&&general.Search&&general.ThemeMode=="full","validated native sections are tier A");
             SectionPolicy unknown=CompatibilityPolicy.Resolve("Example.Unknown");
-            Check(unknown.Tier==CompatibilityTier.B&&unknown.Zoom,"compatibility policy defaults unknown sections to tier B");
+            Check(unknown.Tier==CompatibilityTier.B&&!unknown.Zoom&&unknown.ThemeMode=="native","unknown plugin sections default to native tier B");
+            using(var host=new Form())
+            {
+                var nativePage=new Panel {BackColor=Color.Magenta};
+                host.Controls.Add(nativePage);
+                var theme=new Theme(true);
+                theme.Skip(nativePage);
+                theme.Apply(host);
+                Check(nativePage.BackColor==Color.Magenta,"tier B page subtree is excluded from theming");
+            }
 
             string overridePath=Path.Combine(directory,"compatibility-override.xml");
             File.WriteAllText(overridePath,"<compatibility><section type=\"MediaPortal.Configuration.Sections.General\" tier=\"A\" zoom=\"false\" theme=\"full\" search=\"false\" /></compatibility>");
@@ -475,6 +485,12 @@ namespace MP1.ConfigurationStudio
                 CompatibilityPolicy.Initialize();
             }
             ResetContractPages();
+        }
+        private static void InitializeFixturePolicy(string directory)
+        {
+            string path=Path.Combine(directory,"fixture-policy.xml");
+            File.WriteAllText(path,"<compatibility><section type=\"System.Windows.Forms.UserControl\" tier=\"A\" zoom=\"true\" theme=\"full\" search=\"true\" /></compatibility>");
+            CompatibilityPolicy.Initialize(path);
         }
         private static Control ContractPage(string name)
         {

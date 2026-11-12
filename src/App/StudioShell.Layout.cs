@@ -251,7 +251,7 @@ namespace MP1.ConfigurationStudio
                 foreach(Control c in new Control[]{header,toolbar,sidebar,context,footer})c.Scale(new SizeF(ratio,ratio));
                 center.Padding=new Padding(Px(24),Px(21),Px(24),Px(14));
                 foreach(Control c in center.Controls)if(c.Dock==DockStyle.Top)c.Height=(int)Math.Round(c.Height*ratio);
-                pageIcon.Width=Px(42);navigation.Font=font;navigation.Sync(tree.SelectedNode,true);foreach(Control page in preparedPages)pageZoom.Apply(page,PageScale);
+                pageIcon.Width=Px(42);navigation.Font=font;navigation.Sync(tree.SelectedNode,true);foreach(Control page in preparedPages)if(CompatibilityPolicy.Resolve(page.GetType().FullName).Zoom)pageZoom.Apply(page,PageScale);
                 int selected=Array.IndexOf(new[]{100,115,125,150,175},percent);if(selected>=0)sizeChoice.SelectedIndex=selected;appearance.Save();RefreshPage();form.PerformLayout();LayoutToolbar();LayoutHelp();
             }}finally{settingSize=false;}
         }

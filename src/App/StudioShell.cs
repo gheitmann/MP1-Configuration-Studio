@@ -73,7 +73,7 @@ namespace MP1.ConfigurationStudio
                 }
             }
             List<Control> sections=NativeContract.ReadSections(form);
-            StudioLog.Info("Attach: read "+sections.Count+" native sections");
+            StudioLog.Info("Attach: read "+sections.Count+" native sections; compatibility sections="+CompatibilityPolicy.Count);
             InjectFault("snapshot");
             var snapshot=new NativeUiSnapshot(form,sections);
             StudioShell shell=null;
@@ -169,7 +169,7 @@ namespace MP1.ConfigurationStudio
                 edits.Clear();userTouched.Clear();initializing=false;UpdateStatus();
             };
             nativeTools.ItemClicked+=delegate { if(form.IsHandleCreated)form.BeginInvoke((Action)delegate{RefreshPage();UpdateSearch();}); };
-            holder.ControlAdded+=delegate(object sender,ControlEventArgs e){Watch(e.Control);theme.Prepare(e.Control);LayoutNativePage();};
+            holder.ControlAdded+=delegate(object sender,ControlEventArgs e){Control added=e.Control;Watch(added);SectionPolicy addedPolicy=CompatibilityPolicy.Resolve(added.GetType().FullName);if(!String.Equals(addedPolicy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(added);else theme.Skip(added);LayoutNativePage();};
             form.FormClosed+=delegate{
                 Application.Idle-=CompleteSelectionFrame;CompleteSelectionFrame(null,EventArgs.Empty);
                 if(form.WindowState==FormWindowState.Normal){appearance.Width=form.Width;appearance.Height=form.Height;}
@@ -189,15 +189,20 @@ namespace MP1.ConfigurationStudio
             if(section==null||section.IsDisposed||preparedPages.Contains(section))return;
             SectionPolicy policy=CompatibilityPolicy.Resolve(section.GetType().FullName);
             if(policy.Tier==CompatibilityTier.C)return;
-            section.Font=section.Font;
-            int contentWidth=section.Controls.Cast<Control>().Select(c=>c.Right).DefaultIfEmpty(section.Width).Max();
-            int contentHeight=section.Controls.Cast<Control>().Select(c=>c.Bottom).DefaultIfEmpty(section.Height).Max();
-            section.MinimumSize=new Size(Math.Max(section.MinimumSize.Width,contentWidth+4),Math.Max(section.MinimumSize.Height,contentHeight+8));
+            bool themed=!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase);
+            if(themed)theme.Include(section);else theme.Skip(section);
+            if(policy.Zoom||policy.Tier==CompatibilityTier.A)
+            {
+                section.Font=section.Font;
+                int contentWidth=section.Controls.Cast<Control>().Select(c=>c.Right).DefaultIfEmpty(section.Width).Max();
+                int contentHeight=section.Controls.Cast<Control>().Select(c=>c.Bottom).DefaultIfEmpty(section.Height).Max();
+                section.MinimumSize=new Size(Math.Max(section.MinimumSize.Width,contentWidth+4),Math.Max(section.MinimumSize.Height,contentHeight+8));
+            }
             Watch(section);
-            if(!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(section);
+            if(themed)theme.Prepare(section);
             if(policy.Zoom){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
             preparedPages.Add(section);
-            StudioLog.Info("Prepared page "+section.GetType().Name+" ("+preparedPages.Count+"/"+sections.Count+")");
+            StudioLog.Info("Prepared page "+section.GetType().FullName+" tier="+policy.Tier+" ("+preparedPages.Count+"/"+sections.Count+")");
         }
 
         private Button ActionButton(string text,Action action,int width)
@@ -329,7 +334,7 @@ namespace MP1.ConfigurationStudio
             else foreach(Button button in tabs.Controls.OfType<Button>())SetTabColor(button);
             helpTitle.Text=navigation.Label(node);fieldHelp="";helpText.Text=SectionHelp(node);
             foreach(Control c in holder.Controls){Watch(c);}
-            if(holder.Controls.Count>0)pageZoom.EnsureContentFits(holder.Controls[0]);
+            if(holder.Controls.Count>0&&CompatibilityPolicy.Resolve(holder.Controls[0].GetType().FullName).Zoom)pageZoom.EnsureContentFits(holder.Controls[0]);
             LayoutNativePage();
             UpdateStatus();
             if(stopwatch.ElapsedMilliseconds>300)StudioLog.Warn("Page switch exceeded 300 ms: "+node.Text+" ("+stopwatch.ElapsedMilliseconds+" ms)");

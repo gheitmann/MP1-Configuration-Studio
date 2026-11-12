@@ -38,7 +38,7 @@ namespace MP1.ConfigurationStudio
     {
         private const string ResourceName = "MP1.ConfigurationStudio.compatibility.xml";
         private static readonly Dictionary<string, SectionPolicy> Sections = new Dictionary<string, SectionPolicy>(StringComparer.OrdinalIgnoreCase);
-        private static readonly SectionPolicy Unknown = new SectionPolicy("", CompatibilityTier.B, true, "base", true);
+        private static readonly SectionPolicy Unknown = new SectionPolicy("", CompatibilityTier.B, false, "native", true);
 
         public static int Count
         {
