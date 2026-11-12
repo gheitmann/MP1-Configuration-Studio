@@ -22,6 +22,7 @@ namespace MP1.ConfigurationStudio
             string prefs=Path.Combine(directory,"appearance-test.xml");
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
             var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.Save();
+            RunAppearanceSchemaChecks(directory);
             using(var form=new Form { Size=new Size(1360,900),Text="Fixture" })
             {
                 var tree=new TreeView();var holder=new Panel {Size=new Size(502,455)};var ok=new Button();var cancel=new Button();
@@ -225,6 +226,38 @@ namespace MP1.ConfigurationStudio
             }
             VerifyStartup(prefs);
             Console.WriteLine(passed+" checks passed.");return 0;
+        }
+        private static void RunAppearanceSchemaChecks(string directory)
+        {
+            string legacyPath=Path.Combine(directory,"appearance-legacy.xml");
+            File.WriteAllText(legacyPath,"<?xml version=\"1.0\"?><appearance theme=\"Hell\" context=\"false\" width=\"1200\" height=\"800\" textScale=\"150\" />");
+            var legacy=new Appearance(legacyPath);
+            Check(legacy.SchemaVersion==1,"legacy appearance reports schema version 1");
+            Check(legacy.ThemeMode=="Hell"&&!legacy.Dark&&!legacy.ContextVisible&&legacy.TextScale==150&&legacy.Width==1200&&legacy.Height==800,"legacy appearance values load");
+
+            string versionTwoPath=Path.Combine(directory,"appearance-v2.xml");
+            var saved=new Appearance(versionTwoPath);
+            saved.Dark=false;
+            saved.ContextVisible=false;
+            saved.TextScale=115;
+            saved.Width=1280;
+            saved.Height=720;
+            saved.Save();
+            Check(saved.SchemaVersion==2&&File.ReadAllText(versionTwoPath).Contains("schema=\"2\""),"appearance save writes schema version 2");
+            var reloaded=new Appearance(versionTwoPath);
+            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720,"schema version 2 round trip preserves values");
+
+            string corruptPath=Path.Combine(directory,"appearance-corrupt.xml");
+            File.WriteAllText(corruptPath,"<appearance theme=\"Hell\" textScale=\"oops\"><broken>");
+            var fallback=new Appearance(corruptPath);
+            Check(!String.IsNullOrEmpty(fallback.LastError),"corrupted appearance reports an error");
+            Check(fallback.Dark&&fallback.ThemeMode=="Dunkel"&&fallback.TextScale==125&&fallback.Width==1360,"corrupted appearance falls back to defaults");
+
+            string futurePath=Path.Combine(directory,"appearance-future.xml");
+            File.WriteAllText(futurePath,"<appearance schema=\"99\" theme=\"Hell\" textScale=\"150\" />");
+            var future=new Appearance(futurePath);
+            future.Save();
+            Check(future.SchemaVersion==99&&File.ReadAllText(futurePath).Contains("schema=\"99\"")&&!String.IsNullOrEmpty(future.LastError),"newer appearance schema is not overwritten");
         }
         private static void VerifyStartup(string prefs)
         {
