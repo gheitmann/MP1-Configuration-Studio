@@ -24,7 +24,7 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 - Approvers: [@gheitmann](https://github.com/gheitmann)
 - Privacy policy: [PRIVACY.md](PRIVACY.md)
 
-The published 1.0.0 build predates the SignPath application and is unsigned. A signed 1.0.x re-release will use the prepared SignPath workflow once the foundation approves the project. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
+The published 1.0.0 build predates the SignPath application and is unsigned. The SignPath application will be submitted after the planned repository move toward the official MediaPortal organization, so that the project is bound to its final URL. A signed 1.0.x re-release will then use the prepared workflow. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
 
 ## Install and run
 

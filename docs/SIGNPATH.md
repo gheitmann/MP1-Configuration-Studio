@@ -1,5 +1,7 @@
 # SignPath Foundation — free code signing
 
+> **Repository move pending:** The final repository is planned to move toward the official MediaPortal organization. Do not submit the SignPath application until the final repository URL is known. SignPath binds projects, origin verification, and signing policies to the repository URL; applying before the move would require reconfiguring the project afterwards. Tags and releases normally follow a GitHub repository transfer. After the move, update this document, the README policy links, the release URLs, and the SignPath project repository URL, then apply. See [REPOSITORY-MOVE.md](REPOSITORY-MOVE.md).
+
 The only free route that produces a **Windows-trusted** signature is the SignPath Foundation program:
 
 - Website: https://signpath.org/
