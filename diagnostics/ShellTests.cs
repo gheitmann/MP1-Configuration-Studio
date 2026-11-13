@@ -25,7 +25,7 @@ namespace MP1.ConfigurationStudio
             string directory=Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"test-results");Directory.CreateDirectory(directory);
             string prefs=Path.Combine(directory,"appearance-test.xml");
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
-            var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.Save();
+            var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.OnboardingSeen=true;initial.Save();
             RunAppearanceSchemaChecks(directory);
             RunLoggingChecks(directory);
             RunVersionChecks();
@@ -67,6 +67,8 @@ namespace MP1.ConfigurationStudio
                 bool persistenceRefused=false;try{shell.StartPersistenceReview(Path.Combine(directory,"refused-persistence.xml"));}catch(InvalidOperationException){persistenceRefused=true;}Check(persistenceRefused,"native file persistence review refuses an unmarked production runtime");
                 var navigation=form.Controls.Find("studioNavigation",true).OfType<StudioNavigation>().Single();
                 Check(!tree.Visible&&navigation.Width>=260,"grouped icon navigation replaces the visible native tree with a readable wider sidebar");
+                var pageLead=form.Controls.Find("studioPageLead",true).OfType<Label>().Single();
+                Check(pageLead.Text.Contains("Tier A"),"compatibility tier is visible on the page");
                 Check(All(navigation).OfType<StudioAction>().Any(b=>b.IconName=="surface"&&b.Text=="Oberfläche"),"mockup navigation has a German surface category with a vector icon");
                 All(navigation).OfType<StudioAction>().Single(b=>b.Text=="Konfigurationsdateien").PerformClick();All(navigation).OfType<StudioAction>().Single(b=>b.Text=="Protokolle").PerformClick();Check(configCalls==1&&logCalls==1,"sidebar tools invoke the original native folder and log handlers");
                 var mode=form.Controls.Find("studioMode",true).OfType<ComboBox>().Single();mode.SelectedIndex=1;Check(expertTool.Checked&&modeCalls==1,"expert selector invokes the original native mode toggle");mode.SelectedIndex=0;
@@ -254,10 +256,11 @@ namespace MP1.ConfigurationStudio
             saved.TextScale=115;
             saved.Width=1280;
             saved.Height=720;
+            saved.OnboardingSeen=true;
             saved.Save();
             Check(saved.SchemaVersion==2&&File.ReadAllText(versionTwoPath).Contains("schema=\"2\""),"appearance save writes schema version 2");
             var reloaded=new Appearance(versionTwoPath);
-            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720,"schema version 2 round trip preserves values");
+            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen,"schema version 2 round trip preserves values");
 
             string corruptPath=Path.Combine(directory,"appearance-corrupt.xml");
             File.WriteAllText(corruptPath,"<appearance theme=\"Hell\" textScale=\"oops\"><broken>");
@@ -293,9 +296,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==0&&assemblyVersion.Build==1,"assembly version targets 1.0.1.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==1&&assemblyVersion.Build==0,"assembly version targets 1.1.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.0.1",StringComparison.Ordinal),"file version targets 1.0.1");
+            Check(fileVersion.StartsWith("1.1.0",StringComparison.Ordinal),"file version targets 1.1.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -304,6 +307,14 @@ namespace MP1.ConfigurationStudio
             using(var errorDialog=new ErrorDialog("test",null,null))
             {
                 Check(errorDialog.Text=="MP1 Configuration Studio","error dialog can be constructed");
+            }
+            using(var firstRun=new FirstRunDialog())
+            {
+                Check(firstRun.Text.Contains("Willkommen"),"first-run dialog can be constructed");
+            }
+            using(var keyboardHelp=new KeyboardHelpDialog())
+            {
+                Check(keyboardHelp.Text=="Tastenkürzel","keyboard help dialog can be constructed");
             }
             Check(Appearance.DefaultTextScaleForDpi(96)==125&&Appearance.DefaultTextScaleForDpi(144)==100,"high-DPI default scale avoids double scaling");
             Palette.ForceHighContrast=true;
@@ -363,7 +374,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.0.1"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.1.0"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
             }
             StudioLog.Initialize(Path.Combine(directory,"logs-test"));
