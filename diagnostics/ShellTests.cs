@@ -297,6 +297,14 @@ namespace MP1.ConfigurationStudio
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
             Check(fileVersion.StartsWith("1.0.1",StringComparison.Ordinal),"file version targets 1.0.1");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
+            string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
+            Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
+            Check(!SingleInstance.TryAcquire(mutexName),"single instance rejects a second acquisition");
+            SingleInstance.Release();
+            using(var errorDialog=new ErrorDialog("test",null,null))
+            {
+                Check(errorDialog.Text=="MP1 Configuration Studio","error dialog can be constructed");
+            }
             Check(Appearance.DefaultTextScaleForDpi(96)==125&&Appearance.DefaultTextScaleForDpi(144)==100,"high-DPI default scale avoids double scaling");
             Palette.ForceHighContrast=true;
             Palette highContrast=Palette.For(true);
@@ -408,6 +416,20 @@ namespace MP1.ConfigurationStudio
             string first=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
             string second=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
             Check(!String.IsNullOrEmpty(first)&&File.Exists(first)&&second==null&&File.Exists(Path.Combine(firstRoot,"first-run.done")),"first-run configuration backup runs once");
+
+            string manageRoot=Path.Combine(directory,"manage-backups");
+            if(Directory.Exists(manageRoot))Directory.Delete(manageRoot,true);
+            Directory.CreateDirectory(manageRoot);
+            ConfigurationBackup.Create(source,Path.Combine(manageRoot,"first-run-test.zip"));
+            ConfigurationBackup.Create(source,Path.Combine(manageRoot,"manual-test.zip"));
+            var backups=ConfigurationBackup.ListBackups(manageRoot);
+            Check(backups.Count==2&&backups.Any(item=>item.FirstRun)&&backups.Any(item=>!item.FirstRun),"backup manager lists valid backups");
+            ConfigurationBackup.DeleteBackup(backups[0].Path);
+            Check(ConfigurationBackup.ListBackups(manageRoot).Count==1,"backup manager deletes a backup");
+            using(var manager=new BackupManagerDialog(manageRoot))
+            {
+                Check(manager.Text=="Konfigurations-Backups","backup manager dialog constructs");
+            }
         }
         private static void CreateZip(string path,string entryName,string content)
         {

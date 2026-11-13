@@ -6,15 +6,19 @@
 
 - **High-DPI default:** On a new installation with OS DPI at 125% or higher, the internal scale now defaults to 100% and native page zoom is not applied a second time. This avoids compounding Windows scaling and the Studio's own scaling on 4K displays.
 - **High Contrast:** Custom native theming and owner-draw chrome are disabled while Windows High Contrast is active. Native controls keep their system theme; the shell uses system colors.
+- **Preflight:** Studio warns when MediaPortal or the original configurator is still running and asks before continuing.
+- **Single instance:** A second Studio instance in the same session is refused with a clear message.
+- **Error dialog:** Startup and attach failures offer classic mode, a support bundle, and opening the log, instead of a plain message box.
+- **Backup manager:** Lists first-run and manual backups, supports restore and delete, and opens the backup folder.
 - **Search:** Result labels use the Studio page names, and combo/list/list-view options remain searchable and selectable.
 - **Release packaging:** The package and release workflows select release notes by version instead of hardcoding `1.0.0`.
 
 ## Validation
 
-- Fixture checks: 177/177 on x64.
+- Fixture checks: 183/183 on x64.
 - Native smoke: 27/27 on isolated MediaPortal 1.39 x64.
 - Full 175% review: 61/61 pages, 0 value failures, 0 overflow candidates, 5 plugin dialogs.
-- Attach time: 322 ms after lazy page preparation.
+- Attach time: 338 ms after lazy page preparation.
 - Original `Configuration.exe` and production `MediaPortal.xml` hashes unchanged after isolated runs.
 
 ## Supported matrix
