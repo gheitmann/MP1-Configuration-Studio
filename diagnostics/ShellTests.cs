@@ -293,13 +293,23 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==0&&assemblyVersion.Build==0,"assembly version targets 1.0.0.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==0&&assemblyVersion.Build==1,"assembly version targets 1.0.1.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.0.0",StringComparison.Ordinal),"file version targets 1.0.0");
+            Check(fileVersion.StartsWith("1.0.1",StringComparison.Ordinal),"file version targets 1.0.1");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
+            Check(Appearance.DefaultTextScaleForDpi(96)==125&&Appearance.DefaultTextScaleForDpi(144)==100,"high-DPI default scale avoids double scaling");
             Palette.ForceHighContrast=true;
             Palette highContrast=Palette.For(true);
             Check(highContrast.Text==SystemColors.WindowText&&highContrast.Panel==SystemColors.Window&&highContrast.SelectionText==SystemColors.HighlightText&&highContrast.PrimaryText==SystemColors.HighlightText,"high contrast palette uses system colors");
+            var highContrastTheme=new Theme(true);
+            Check(highContrastTheme.HighContrast,"high contrast disables custom native theming");
+            using(var host=new Form())
+            {
+                var nativePage=new Panel {BackColor=Color.Magenta};
+                host.Controls.Add(nativePage);
+                highContrastTheme.Apply(host);
+                Check(nativePage.BackColor==Color.Magenta,"high contrast leaves native controls unthemed");
+            }
             Palette.ForceHighContrast=false;
         }
         private static void RunCompatibilityPolicyChecks(string directory)
@@ -345,7 +355,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.0.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.0.1"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
             }
             StudioLog.Initialize(Path.Combine(directory,"logs-test"));

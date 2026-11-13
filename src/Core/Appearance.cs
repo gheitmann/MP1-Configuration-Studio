@@ -29,6 +29,11 @@ namespace MP1.ConfigurationStudio
             Load();
         }
 
+        public static int DefaultTextScaleForDpi(int dpi)
+        {
+            return dpi >= 120 ? 100 : 125;
+        }
+
         private void Reset()
         {
             Dark = true;
@@ -139,9 +144,14 @@ namespace MP1.ConfigurationStudio
         public Color Background, Panel, Input, Border, Text, Muted, Accent, Selection, Hover, Primary, SelectionText, PrimaryText;
         internal static bool ForceHighContrast {get;set;}
 
+        internal static bool HighContrastActive
+        {
+            get { return ForceHighContrast || SystemInformation.HighContrast; }
+        }
+
         public static Palette For(bool dark)
         {
-            if (ForceHighContrast || SystemInformation.HighContrast)
+            if (HighContrastActive)
             {
                 return new Palette
                 {

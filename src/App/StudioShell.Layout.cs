@@ -28,7 +28,7 @@ namespace MP1.ConfigurationStudio
         private FlowLayoutPanel helpFlow;
         private StudioScrollHost helpScroll;
         private float UiScale {get{return appearance.TextScale/100f;}}
-        private float PageScale {get{return UiScale*9.5f/8.25f;}}
+        private float PageScale {get{int dpi=96;try{dpi=form.DeviceDpi;}catch(Exception){}return dpi>=120?1f:UiScale*9.5f/8.25f;}}
         private int Px(float value){return (int)Math.Round(value*UiScale);}
         private Font MakeFont(float size,FontStyle style){var result=new Font("Segoe UI",size,style);shellFonts.Add(result);return result;}
         private void InitializeTypography()
