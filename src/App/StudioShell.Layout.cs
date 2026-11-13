@@ -100,8 +100,8 @@ namespace MP1.ConfigurationStudio
             InjectFault("build-reparented");
             status=new Label {Dock=DockStyle.Fill,AutoEllipsis=true,TextAlign=ContentAlignment.MiddleLeft,Font=labelFont,Name="studioStatus",AccessibleName="Änderungsstatus"};footer.Controls.Add(status);footer.Controls.Add(actions);root.Controls.Add(footer,0,3);
             form.AcceptButton=nativeOk;form.CancelButton=nativeCancel;SetContext(appearance.ContextVisible,false);count=new Label();LayoutToolbar();
-            nativeOk.MouseDown+=delegate(object sender,MouseEventArgs e){if(e.Button==MouseButtons.Left)PreSaveBackup();};
-            nativeOk.KeyDown+=delegate(object sender,KeyEventArgs e){if(e.KeyCode==Keys.Enter||e.KeyCode==Keys.Space)PreSaveBackup();};
+            nativeOk.MouseDown+=delegate(object sender,MouseEventArgs e){if(e.Button==MouseButtons.Left){MarkSaveRequested();PreSaveBackup();}};
+            nativeOk.KeyDown+=delegate(object sender,KeyEventArgs e){if(e.KeyCode==Keys.Enter||e.KeyCode==Keys.Space){MarkSaveRequested();PreSaveBackup();}};
             if(nativeApply!=null)
             {
                 nativeApply.MouseDown+=delegate(object sender,MouseEventArgs e){if(e.Button==MouseButtons.Left)PreSaveBackup();};

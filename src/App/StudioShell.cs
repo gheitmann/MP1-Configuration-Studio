@@ -46,6 +46,7 @@ namespace MP1.ConfigurationStudio
         private bool dpiNoticeShown;
         private Timer dpiWatch;
         private DateTime lastPreSaveBackup;
+        private DateTime saveRequestedUntil;
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
@@ -128,6 +129,14 @@ namespace MP1.ConfigurationStudio
         {
             Action<string> hook=FaultHook;
             if(hook!=null)hook(stage);
+        }
+        private void MarkSaveRequested()
+        {
+            saveRequestedUntil=DateTime.UtcNow.AddSeconds(2);
+        }
+        private bool SaveRequested
+        {
+            get{return DateTime.UtcNow<=saveRequestedUntil;}
         }
         private void PreSaveBackup()
         {
@@ -260,6 +269,7 @@ namespace MP1.ConfigurationStudio
                 else if(restartStudio){restartStudio=false;SingleInstance.Release();StartStudioProcess();}
             };
             form.FormClosing+=delegate(object sender,FormClosingEventArgs e){
+                if(SaveRequested)return;
                 if(!CloseGuard.ShouldPrompt(e.CloseReason,edits.Count,restartClassic||restartStudio,SuppressCloseGuard))return;
                 if(MessageBox.Show(form,CloseGuard.Prompt(edits.Count,Localization.IsEnglish),Localization.T("Ungespeicherte Änderungen"),
                     MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)e.Cancel=true;
@@ -310,7 +320,7 @@ namespace MP1.ConfigurationStudio
         }
         private void OnKeyDown(object sender,KeyEventArgs e)
         {
-            if(e.KeyCode==Keys.Enter&&!e.Shift&&!e.Control&&!e.Alt&&!search.Focused&&!results.Focused)PreSaveBackup();
+            if(e.KeyCode==Keys.Enter&&!e.Shift&&!e.Control&&!e.Alt&&!search.Focused&&!results.Focused){MarkSaveRequested();PreSaveBackup();}
             if(e.Control&&e.KeyCode==Keys.F){search.Focus();search.SelectAll();e.SuppressKeyPress=true;}
             else if(e.Alt&&e.KeyCode==Keys.Left){TraverseHistory(-1);e.SuppressKeyPress=true;}
             else if(e.Alt&&e.KeyCode==Keys.Right){TraverseHistory(1);e.SuppressKeyPress=true;}
