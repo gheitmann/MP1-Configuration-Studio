@@ -8,7 +8,9 @@ namespace MP1.ConfigurationStudio
 {
     internal sealed class StudioNavigation : UserControl
     {
-        internal static readonly string[] Groups={"Allgemein","Oberfläche","Wiedergabe","Medienordner","Bedienung","Plugins","System & Diagnose"};
+        private static readonly string[] GermanGroups={"Allgemein","Oberfläche","Wiedergabe","Medienordner","Bedienung","Plugins","System & Diagnose"};
+        private static readonly string[] EnglishGroups={"General","Interface","Playback","Media folders","Input","Plugins","System & diagnostics"};
+        internal static string[] Groups{get{return Localization.IsEnglish?EnglishGroups:GermanGroups;}}
         internal static readonly string[] Icons={"settings","surface","play","folder","keyboard","plugin","system"};
         private readonly TreeView source;private readonly Func<TreeNode,Control> resolve;private readonly Func<TreeNode,bool> navigate;private readonly Func<Palette> colors;private readonly Action<string> tool;
         private readonly FlowLayoutPanel rows=new FlowLayoutPanel {Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=true};
@@ -28,6 +30,7 @@ namespace MP1.ConfigurationStudio
         }
         internal string Label(TreeNode node)
         {
+            if(Localization.IsEnglish)return node.Text;
             switch(Kind(node)){
             case "Project":return "Über MediaPortal";case "General":return "Allgemein";case "Gui":case "GUI":return "Skin & Oberfläche";case "GuiLanguage":return "Sprache";case "GuiControls":return "Bedienelemente";case "GuiThumbs":return "Vorschaubilder";case "GuiScreensaver":case "Screensaver":return "Bildschirmschoner";case "GuiFileMenu":return "Dateimenü";case "GuiOSD":return "Bildschirmanzeige";case "GuiSkipSteps":return "Sprungweiten";case "Movies":return "Videos";case "MoviePlayer":return "Video-Player";case "MovieShares":return "Videoordner";case "MusicShares":return "Musikordner";case "MovieDatabase":return "Videodatenbank";case "MusicDatabase":return "Musikdatenbank";case "Music":return "Musik";case "Pictures":return "Bilder";case "Remote":return "Fernbedienung & Eingabe";case "FiltersSection":return "Codecs & Renderer";case "GeneralVolume":return "Lautstärke";case "GeneralKeyboardControl":return "Tastaturkürzel";case "Keys":return "Tasten & Klänge";case "GeneralStartupResume":return "Start & Fortsetzen";case "GeneralDynamicRefreshRate":return "Bildwiederholrate";case "GeneralDaemonTools":return "Virtuelles Laufwerk";case "GeneralAutoplay":return "Automatische Wiedergabe";case "PluginsNew":return "Plugins";case "MediaInfo":return "Medieninformationen";case "ThirdPartyChecks":return "Systemprüfung";default:return node.Text;}
         }
@@ -39,7 +42,7 @@ namespace MP1.ConfigurationStudio
             {
                 using(FrameRendering.Suspend(this)){
                 rows.SuspendLayout();foreach(Control c in rows.Controls.Cast<Control>().ToArray())c.Dispose();known=all;active=category;
-                AddCaption("KONFIGURATION");
+                AddCaption(Localization.T("KONFIGURATION"));
                 for(int i=0;i<Groups.Length;i++)
                 {
                     string group=Groups[i];TreeNode[] pages=all.Where(n=>Group(n)==group).ToArray();if(pages.Length==0)continue;
@@ -51,7 +54,7 @@ namespace MP1.ConfigurationStudio
                         if(shortcuts.Length>1)foreach(TreeNode page in shortcuts){TreeNode destination=page;var sub=AddButton(Label(page),null,delegate{navigate(destination);},true);sub.Tag=page;sub.Selected=Object.ReferenceEquals(selected,page);}
                     }
                 }
-                AddCaption("WERKZEUGE");AddButton("Konfigurationsdateien","folder",delegate{tool("config");},false);AddButton("Protokolle","file",delegate{tool("logs");},false);
+                AddCaption(Localization.T("WERKZEUGE"));AddButton(Localization.T("Konfigurationsdateien"),"folder",delegate{tool("config");},false);AddButton(Localization.T("Protokolle"),"file",delegate{tool("logs");},false);
                 rows.ResumeLayout(true);SizeRows();scroll.Arrange();}
             }
             foreach(StudioAction button in rows.Controls.OfType<StudioAction>()){button.BackColor=colors().Panel;button.ForeColor=colors().Text;if(button.Tag is TreeNode)button.Selected=Object.ReferenceEquals(button.Tag,selected);button.Invalidate();}

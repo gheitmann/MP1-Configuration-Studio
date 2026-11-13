@@ -148,6 +148,7 @@ namespace MP1.ConfigurationStudio
                     StudioLog.Info("High-DPI display detected ("+dpi+" dpi); default internal scale="+defaultScale+"%");
                 }
             }
+            Localization.Set(appearance.Language);
             theme=new Theme(appearance.Dark);
             InitializeTypography();
             FrameRendering.EnableComposition(form);
@@ -252,7 +253,7 @@ namespace MP1.ConfigurationStudio
             {
             appearance.ContextVisible=visible;context.Visible=visible;
             body.ColumnStyles[2].Width=visible?Px(225):0;
-            contextButton.Text="";contextButton.AccessibleName=visible?"Hilfe ausblenden":"Hilfe einblenden";tips.SetToolTip(contextButton,contextButton.AccessibleName);
+            contextButton.Text="";contextButton.AccessibleName=Localization.T(visible?"Hilfe ausblenden":"Hilfe einblenden");tips.SetToolTip(contextButton,contextButton.AccessibleName);
             if(save){appearance.Save();UpdateStatus();}
             body.PerformLayout();
             }
@@ -335,14 +336,14 @@ namespace MP1.ConfigurationStudio
             SectionPolicy selectedPolicy=CompatibilityPolicy.Resolve(selectedSection==null?"":selectedSection.GetType().FullName);
             if(selectedPolicy.Tier==CompatibilityTier.C)
             {
-                if(status!=null)status.Text="Dieser Bereich ist in Studio nicht unterstützt. Bitte die klassische Oberfläche verwenden.";
+                if(status!=null)status.Text=Localization.T("Dieser Bereich ist in Studio nicht unterstützt. Bitte die klassische Oberfläche verwenden.");
                 StudioLog.Warn("Blocked Tier C page: "+(selectedSection==null?"":selectedSection.GetType().FullName));
                 return;
             }
             PreparePage(selectedSection);
             CorrectStoredSettingDisplay(NativeContract.NodeSection(node));
             navigation.Sync(node,false);RecordHistory(node);
-            breadcrumb.Text="Konfiguration  /  "+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node)+"  ·  "+TierLabel(selectedPolicy);pageIcon.Invalidate();
+            breadcrumb.Text=Localization.T("Konfiguration  /  ")+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node)+"  ·  "+TierLabel(selectedPolicy);pageIcon.Invalidate();
             TreeNode group=node.Parent??node;
             TreeNode[] requestedTabs=(new[]{group}).Concat(group.Nodes.Cast<TreeNode>()).ToArray();
             if(!requestedTabs.SequenceEqual(displayedTabs))
@@ -384,7 +385,7 @@ namespace MP1.ConfigurationStudio
                 SectionPolicy policy=CompatibilityPolicy.Resolve(page.GetType().FullName);
                 if(policy.Tier==CompatibilityTier.C)
                 {
-                    if(status!=null)status.Text="Dieser Bereich ist in Studio nicht unterstützt. Bitte die klassische Oberfläche verwenden.";
+                    if(status!=null)status.Text=Localization.T("Dieser Bereich ist in Studio nicht unterstützt. Bitte die klassische Oberfläche verwenden.");
                     StudioLog.Warn("Blocked Tier C navigation: "+page.GetType().FullName);
                     return false;
                 }
@@ -398,13 +399,24 @@ namespace MP1.ConfigurationStudio
         private static string TierLabel(SectionPolicy policy)
         {
             if(policy==null)return "Tier B";
-            if(policy.Tier==CompatibilityTier.A)return "Tier A · voll unterstützt";
-            if(policy.Tier==CompatibilityTier.C)return "Tier C · nicht unterstützt";
-            return "Tier B · nativer Look";
+            if(policy.Tier==CompatibilityTier.A)return Localization.T("Tier A · voll unterstützt");
+            if(policy.Tier==CompatibilityTier.C)return Localization.T("Tier C · nicht unterstützt");
+            return Localization.T("Tier B · nativer Look");
         }
         private static string SectionHelp(TreeNode node)
         {
             string root=node.FullPath.ToLowerInvariant();
+            if(Localization.IsEnglish)
+            {
+                if(root.Contains("codec")||root.Contains("renderer"))return "Choose the installed decoders and the video and audio output. F1 opens the documentation for this section.";
+                if(root.Contains("plugin"))return "Select an extension to enable it or open its configuration. Some plugins save directly in their own dialog.";
+                if(root.Contains("gui")||root.Contains("skin"))return "Choose the MediaPortal interface and behavior. Light/dark changes only this configuration window, not the media interface.";
+                if(root.Contains("tv")||root.Contains("radio"))return "The TV/radio client settings remain available here. The separate TV Server configuration still belongs to TV Server.";
+                if(root.Contains("keyboard")||root.Contains("remote")||root.Contains("keys"))return "Set up keyboard shortcuts and the remote control. Search finds key bindings and individual options faster.";
+                if(root.Contains("folder")||root.Contains("picture"))return "Manage media sources and pictures. Folder and library changes apply to the selected media type.";
+                if(root.Contains("general"))return "The tabs cover volume, keyboard shortcuts, refresh rate, and startup behavior. Ctrl+F searches individual settings.";
+                return "Select a subsection or use Ctrl+F to search for a setting. F1 opens the matching documentation.";
+            }
             if(root.Contains("codec")||root.Contains("renderer"))return "Wähle die installierten Decoder und die Bild- und Tonausgabe. F1 öffnet die Dokumentation für den gewählten Bereich.";
             if(root.Contains("plugin"))return "Wähle eine Erweiterung aus, um sie zu aktivieren oder ihre Konfiguration zu öffnen. Einzelne Plugins speichern direkt in ihrem eigenen Dialog.";
             if(root.Contains("gui")||root.Contains("skin"))return "Wähle die Oberfläche und das Verhalten von MediaPortal. Hell/Dunkel oben rechts ändert nur dieses Konfigurationsfenster. Die Medienoberfläche wird davon nicht umgestellt.";
@@ -499,8 +511,8 @@ namespace MP1.ConfigurationStudio
                 }
                 if(results.Items.Count>=150)break;
             }
-            if(results.Items.Count==0)results.Items.Add(new SearchResult(null,null,"Keine Treffer in dieser Ansicht"));
-            tips.SetToolTip(results,"Doppelklick oder Enter öffnet den Treffer. Für zusätzliche Bereiche oben in den Expertenmodus wechseln.");
+            if(results.Items.Count==0)results.Items.Add(new SearchResult(null,null,Localization.T("Keine Treffer in dieser Ansicht")));
+            tips.SetToolTip(results,Localization.T("Doppelklick oder Enter öffnet den Treffer. Für zusätzliche Bereiche oben in den Expertenmodus wechseln."));
             if(stopwatch.ElapsedMilliseconds>150)StudioLog.Warn("Search exceeded 150 ms: results="+results.Items.Count+" ("+stopwatch.ElapsedMilliseconds+" ms)");
         }
         private void OpenResult()
@@ -520,7 +532,7 @@ namespace MP1.ConfigurationStudio
                     if(listBox!=null&&result.ItemIndex>=0&&result.ItemIndex<listBox.Items.Count)listBox.SelectedIndex=result.ItemIndex;
                     var listView=result.Control as ListView;
                     if(listView!=null&&result.ItemIndex>=0&&result.ItemIndex<listView.Items.Count){listView.Items[result.ItemIndex].Selected=true;listView.Items[result.ItemIndex].Focused=true;listView.EnsureVisible(result.ItemIndex);}
-                    Control target=result.Control.CanFocus?result.Control:result.Control.Parent;target.Focus();helpText.Text="Gefundene Option: "+result.Label+"\r\n\r\n"+SectionHelp(result.Node);
+                    Control target=result.Control.CanFocus?result.Control:result.Control.Parent;target.Focus();helpText.Text=Localization.T("Gefundene Option: ")+result.Label+"\r\n\r\n"+SectionHelp(result.Node);
                 }
             }
         }
@@ -581,11 +593,11 @@ namespace MP1.ConfigurationStudio
         private void UpdateStatus()
         {
             if(status==null)return;
-            string info=edits.Count==0?"Bereit · Keine offenen Änderungen":edits.Count+" ungespeicherte Änderungen";
+            string info=edits.Count==0?Localization.T("Bereit · Keine offenen Änderungen"):Localization.T("{0} ungespeicherte Änderungen",edits.Count);
             status.Text=info;
-            if(!String.IsNullOrEmpty(appearance.LastError))status.Text="Darstellung konnte nicht gespeichert werden: "+appearance.LastError;
+            if(!String.IsNullOrEmpty(appearance.LastError))status.Text=Localization.T("Darstellung konnte nicht gespeichert werden: ")+appearance.LastError;
             var names=edits.Where(c=>!c.IsDisposed).Select(FieldLabel).Where(s=>!String.IsNullOrWhiteSpace(s)).Distinct().Take(9).ToArray();
-            changeText.Text=names.Length==0?"Keine Feldänderungen erkannt.\r\n\r\nPlugin-Dialoge können eigene Speicheraktionen haben.":String.Join("\r\n",names)+"\r\n\r\nSpeichern über OK.";
+            changeText.Text=names.Length==0?Localization.T("Keine Feldänderungen erkannt.\r\n\r\nPlugin-Dialoge können eigene Speicheraktionen haben."):String.Join("\r\n",names)+"\r\n\r\n"+Localization.T("Speichern über OK.");
         }
         internal sealed class SearchResult
         {

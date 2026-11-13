@@ -25,7 +25,7 @@ namespace MP1.ConfigurationStudio
             string directory=Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"test-results");Directory.CreateDirectory(directory);
             string prefs=Path.Combine(directory,"appearance-test.xml");
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
-            var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.OnboardingSeen=true;initial.Save();
+            var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.OnboardingSeen=true;initial.Language="de";initial.Save();
             RunAppearanceSchemaChecks(directory);
             RunLoggingChecks(directory);
             RunVersionChecks();
@@ -257,10 +257,11 @@ namespace MP1.ConfigurationStudio
             saved.Width=1280;
             saved.Height=720;
             saved.OnboardingSeen=true;
+            saved.Language="en";
             saved.Save();
             Check(saved.SchemaVersion==2&&File.ReadAllText(versionTwoPath).Contains("schema=\"2\""),"appearance save writes schema version 2");
             var reloaded=new Appearance(versionTwoPath);
-            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen,"schema version 2 round trip preserves values");
+            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen&&reloaded.Language=="en","schema version 2 round trip preserves values");
 
             string corruptPath=Path.Combine(directory,"appearance-corrupt.xml");
             File.WriteAllText(corruptPath,"<appearance theme=\"Hell\" textScale=\"oops\"><broken>");
@@ -296,9 +297,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==1&&assemblyVersion.Build==0,"assembly version targets 1.1.0.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==2&&assemblyVersion.Build==0,"assembly version targets 1.2.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.1.0",StringComparison.Ordinal),"file version targets 1.1.0");
+            Check(fileVersion.StartsWith("1.2.0",StringComparison.Ordinal),"file version targets 1.2.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -317,6 +318,10 @@ namespace MP1.ConfigurationStudio
                 Check(keyboardHelp.Text=="Tastenkürzel","keyboard help dialog can be constructed");
             }
             Check(Appearance.DefaultTextScaleForDpi(96)==125&&Appearance.DefaultTextScaleForDpi(144)==100,"high-DPI default scale avoids double scaling");
+            Localization.Set(UiLanguage.English);
+            Check(Localization.T("Allgemein")=="General"&&Localization.T("&OK – Speichern")=="&OK – Save","English main-shell strings are available");
+            Localization.Set(UiLanguage.German);
+            Check(Localization.T("Allgemein")=="Allgemein","German strings fall back to the literal");
             Palette.ForceHighContrast=true;
             Palette highContrast=Palette.For(true);
             Check(highContrast.Text==SystemColors.WindowText&&highContrast.Panel==SystemColors.Window&&highContrast.SelectionText==SystemColors.HighlightText&&highContrast.PrimaryText==SystemColors.HighlightText,"high contrast palette uses system colors");
@@ -374,7 +379,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.1.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.2.0"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
             }
             StudioLog.Initialize(Path.Combine(directory,"logs-test"));
