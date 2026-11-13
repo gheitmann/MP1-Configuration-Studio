@@ -97,6 +97,13 @@ namespace MP1.ConfigurationStudio
             InjectFault("build-reparented");
             status=new Label {Dock=DockStyle.Fill,AutoEllipsis=true,TextAlign=ContentAlignment.MiddleLeft,Font=labelFont,Name="studioStatus",AccessibleName="Änderungsstatus"};footer.Controls.Add(status);footer.Controls.Add(actions);root.Controls.Add(footer,0,3);
             form.AcceptButton=nativeOk;form.CancelButton=nativeCancel;SetContext(appearance.ContextVisible,false);count=new Label();LayoutToolbar();
+            nativeOk.MouseDown+=delegate(object sender,MouseEventArgs e){if(e.Button==MouseButtons.Left)PreSaveBackup();};
+            nativeOk.KeyDown+=delegate(object sender,KeyEventArgs e){if(e.KeyCode==Keys.Enter||e.KeyCode==Keys.Space)PreSaveBackup();};
+            if(nativeApply!=null)
+            {
+                nativeApply.MouseDown+=delegate(object sender,MouseEventArgs e){if(e.Button==MouseButtons.Left)PreSaveBackup();};
+                nativeApply.KeyDown+=delegate(object sender,KeyEventArgs e){if(e.KeyCode==Keys.Enter||e.KeyCode==Keys.Space)PreSaveBackup();};
+            }
             InjectFault("build-complete");
         }
         private void LayoutToolbar()
@@ -147,6 +154,9 @@ namespace MP1.ConfigurationStudio
             var manageBackups=new ToolStripMenuItem(Localization.T("Backups verwalten…"));
             manageBackups.Click+=delegate{ManageBackups();};
             menu.Items.Add(manageBackups);
+            var autoBackup=new ToolStripMenuItem(Localization.T("Vor dem Speichern automatisch sichern")){Checked=appearance.PreSaveBackup,CheckOnClick=true};
+            autoBackup.Click+=delegate{appearance.PreSaveBackup=autoBackup.Checked;appearance.Save();StudioLog.Info("Pre-save backup "+(appearance.PreSaveBackup?"enabled":"disabled"));};
+            menu.Items.Add(autoBackup);
             var nativeSize=new ToolStripMenuItem(Localization.T("Seite in Originalgröße"));
             nativeSize.Click+=delegate{UseNativePageSize();};
             menu.Items.Add(nativeSize);

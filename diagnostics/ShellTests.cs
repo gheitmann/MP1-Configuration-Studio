@@ -248,7 +248,7 @@ namespace MP1.ConfigurationStudio
             File.WriteAllText(legacyPath,"<?xml version=\"1.0\"?><appearance theme=\"Hell\" context=\"false\" width=\"1200\" height=\"800\" textScale=\"150\" />");
             var legacy=new Appearance(legacyPath);
             Check(legacy.SchemaVersion==1,"legacy appearance reports schema version 1");
-            Check(legacy.ThemeMode=="Hell"&&!legacy.Dark&&!legacy.ContextVisible&&legacy.TextScale==150&&legacy.Width==1200&&legacy.Height==800,"legacy appearance values load");
+            Check(legacy.ThemeMode=="Hell"&&!legacy.Dark&&!legacy.ContextVisible&&legacy.TextScale==150&&legacy.Width==1200&&legacy.Height==800&&legacy.PreSaveBackup,"legacy appearance values load with pre-save backups enabled");
 
             string versionTwoPath=Path.Combine(directory,"appearance-v2.xml");
             var saved=new Appearance(versionTwoPath);
@@ -259,16 +259,17 @@ namespace MP1.ConfigurationStudio
             saved.Height=720;
             saved.OnboardingSeen=true;
             saved.Language="en";
+            saved.PreSaveBackup=false;
             saved.Save();
             Check(saved.SchemaVersion==2&&File.ReadAllText(versionTwoPath).Contains("schema=\"2\""),"appearance save writes schema version 2");
             var reloaded=new Appearance(versionTwoPath);
-            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen&&reloaded.Language=="en","schema version 2 round trip preserves values");
+            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen&&reloaded.Language=="en"&&!reloaded.PreSaveBackup,"schema version 2 round trip preserves values and the pre-save backup setting");
 
             string corruptPath=Path.Combine(directory,"appearance-corrupt.xml");
             File.WriteAllText(corruptPath,"<appearance theme=\"Hell\" textScale=\"oops\"><broken>");
             var fallback=new Appearance(corruptPath);
             Check(!String.IsNullOrEmpty(fallback.LastError),"corrupted appearance reports an error");
-            Check(fallback.Dark&&fallback.ThemeMode=="Dunkel"&&fallback.TextScale==125&&fallback.Width==1360,"corrupted appearance falls back to defaults");
+            Check(fallback.Dark&&fallback.ThemeMode=="Dunkel"&&fallback.TextScale==125&&fallback.Width==1360&&fallback.PreSaveBackup,"corrupted appearance falls back to defaults with pre-save backups enabled");
 
             string futurePath=Path.Combine(directory,"appearance-future.xml");
             File.WriteAllText(futurePath,"<appearance schema=\"99\" theme=\"Hell\" textScale=\"150\" />");
@@ -298,9 +299,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==5&&assemblyVersion.Build==0,"assembly version targets 1.5.0.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==6&&assemblyVersion.Build==0,"assembly version targets 1.6.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.5.0",StringComparison.Ordinal),"file version targets 1.5.0");
+            Check(fileVersion.StartsWith("1.6.0",StringComparison.Ordinal),"file version targets 1.6.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -353,7 +354,7 @@ namespace MP1.ConfigurationStudio
             Check(CloseGuard.RestartPrompt(0,true)=="Restart Studio now?"&&CloseGuard.RestartPrompt(2,false).Contains("2 ungespeicherte"),"restart prompt reflects the unsaved count");
             Check(Localization.T("Studio neu starten")=="Studio neu starten","restart label falls back to German");
             Localization.Set(UiLanguage.English);
-            Check(Localization.T("Studio neu starten")=="Restart Studio"&&Localization.T("Ungespeicherte Änderungen")=="Unsaved changes","restart and close labels are localized");
+            Check(Localization.T("Studio neu starten")=="Restart Studio"&&Localization.T("Ungespeicherte Änderungen")=="Unsaved changes"&&Localization.T("Vor dem Speichern automatisch sichern")=="Back up automatically before saving","restart, close, and backup labels are localized");
             Localization.Set(UiLanguage.German);
         }
         private static void RunCompatibilityPolicyChecks(string directory)
@@ -399,7 +400,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.5.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.6.0"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -453,6 +454,24 @@ namespace MP1.ConfigurationStudio
             string first=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
             string second=ConfigurationBackup.EnsureFirstRunBackup(configFolder,firstRoot);
             Check(!String.IsNullOrEmpty(first)&&File.Exists(first)&&second==null&&File.Exists(Path.Combine(firstRoot,"first-run.done")),"first-run configuration backup runs once");
+
+            string preRoot=Path.Combine(directory,"pre-save-backups");
+            if(Directory.Exists(preRoot))Directory.Delete(preRoot,true);
+            string preSave=ConfigurationBackup.CreatePreSaveBackup(configFolder,preRoot);
+            Check(!String.IsNullOrEmpty(preSave)&&File.Exists(preSave)&&Path.GetFileName(preSave).StartsWith("pre-save-",StringComparison.Ordinal),"automatic pre-save backup is created");
+            string pruneRoot=Path.Combine(directory,"prune-backups");
+            if(Directory.Exists(pruneRoot))Directory.Delete(pruneRoot,true);
+            Directory.CreateDirectory(pruneRoot);
+            for(int index=0;index<12;index++)
+            {
+                string path=Path.Combine(pruneRoot,"pre-save-"+index.ToString("00")+".zip");
+                CreateZip(path,"MediaPortal.xml","<profile />");
+                File.SetLastWriteTimeUtc(path,DateTime.UtcNow.AddMinutes(index));
+            }
+            string manualPath=Path.Combine(pruneRoot,"manual-keep.zip");
+            CreateZip(manualPath,"MediaPortal.xml","<profile />");
+            int pruned=ConfigurationBackup.PrunePreSaveBackups(pruneRoot,10);
+            Check(pruned==2&&Directory.GetFiles(pruneRoot,"pre-save-*.zip").Length==10&&File.Exists(manualPath),"pre-save retention keeps the newest ten and leaves manual backups alone");
 
             string manageRoot=Path.Combine(directory,"manage-backups");
             if(Directory.Exists(manageRoot))Directory.Delete(manageRoot,true);

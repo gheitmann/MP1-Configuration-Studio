@@ -45,6 +45,7 @@ namespace MP1.ConfigurationStudio
         private bool restartStudio;
         private bool dpiNoticeShown;
         private Timer dpiWatch;
+        private DateTime lastPreSaveBackup;
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
@@ -127,6 +128,21 @@ namespace MP1.ConfigurationStudio
         {
             Action<string> hook=FaultHook;
             if(hook!=null)hook(stage);
+        }
+        private void PreSaveBackup()
+        {
+            if(!appearance.PreSaveBackup)return;
+            if((DateTime.UtcNow-lastPreSaveBackup).TotalSeconds<1)return;
+            lastPreSaveBackup=DateTime.UtcNow;
+            try
+            {
+                string backup=ConfigurationBackup.CreatePreSaveBackup(NativeContract.ConfigFolder("Config"));
+                if(!String.IsNullOrEmpty(backup))StudioLog.Info("Pre-save configuration backup: "+backup);
+            }
+            catch(Exception ex)
+            {
+                StudioLog.Warn("Pre-save configuration backup failed: "+ex.Message);
+            }
         }
         private void OfferDpiRestart(string reason)
         {
@@ -293,6 +309,7 @@ namespace MP1.ConfigurationStudio
         }
         private void OnKeyDown(object sender,KeyEventArgs e)
         {
+            if(e.KeyCode==Keys.Enter&&!e.Shift&&!e.Control&&!e.Alt&&!search.Focused&&!results.Focused)PreSaveBackup();
             if(e.Control&&e.KeyCode==Keys.F){search.Focus();search.SelectAll();e.SuppressKeyPress=true;}
             else if(e.Alt&&e.KeyCode==Keys.Left){TraverseHistory(-1);e.SuppressKeyPress=true;}
             else if(e.Alt&&e.KeyCode==Keys.Right){TraverseHistory(1);e.SuppressKeyPress=true;}

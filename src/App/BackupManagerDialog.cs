@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace MP1.ConfigurationStudio
@@ -12,6 +13,7 @@ namespace MP1.ConfigurationStudio
         private readonly Button restore = new Button();
         private readonly Button delete = new Button();
         private readonly Label empty = new Label();
+        private readonly Label header = new Label();
 
         public string SelectedBackupPath { get; private set; }
 
@@ -28,16 +30,12 @@ namespace MP1.ConfigurationStudio
 
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(12) };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
 
-            var header = new Label
-            {
-                Dock = DockStyle.Fill,
-                Text = Localization.T("Sicherungen unter:") + "\r\n" + this.backupRoot,
-                AutoEllipsis = true
-            };
+            header.Dock = DockStyle.Fill;
+            header.AutoEllipsis = true;
             layout.Controls.Add(header, 0, 0);
 
             list.Dock = DockStyle.Fill;
@@ -69,6 +67,9 @@ namespace MP1.ConfigurationStudio
             restore.Height = 28;
             restore.Click += delegate { RestoreSelected(); };
             buttons.Controls.Add(restore);
+            var prune = new Button { Text = Localization.T("Aufräumen"), Width = 100, Height = 28 };
+            prune.Click += delegate { PruneBackups(); };
+            buttons.Controls.Add(prune);
             layout.Controls.Add(buttons, 0, 2);
 
             Controls.Add(layout);
@@ -79,11 +80,12 @@ namespace MP1.ConfigurationStudio
 
         private void Reload()
         {
+            var items = ConfigurationBackup.ListBackups(backupRoot);
             list.BeginUpdate();
             try
             {
                 list.Items.Clear();
-                foreach (BackupInfo info in ConfigurationBackup.ListBackups(backupRoot))
+                foreach (BackupInfo info in items)
                 {
                     list.Items.Add(info);
                 }
@@ -93,6 +95,10 @@ namespace MP1.ConfigurationStudio
                 list.EndUpdate();
             }
 
+            long total = items.Sum(item => item.Size);
+            header.Text = Localization.T("Sicherungen unter:")
+                + "\r\n" + backupRoot
+                + "\r\n" + Localization.T("{0} Sicherungen · {1} KB", items.Count, total / 1024);
             bool hasItems = list.Items.Count > 0;
             list.Visible = hasItems;
             empty.Visible = !hasItems;
@@ -131,6 +137,31 @@ namespace MP1.ConfigurationStudio
             SelectedBackupPath = info.Path;
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private void PruneBackups()
+        {
+            if (MessageBox.Show(
+                    this,
+                    Localization.IsEnglish
+                        ? "Delete old automatic pre-save backups and keep the newest 10?\r\n\r\nManual and first-run backups are kept."
+                        : "Alte automatische Vor-Sicherungen löschen und die neuesten 10 behalten?\r\n\r\nManuelle und First-Run-Sicherungen bleiben erhalten.",
+                    Localization.T("Aufräumen"),
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question,
+                    MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            {
+                return;
+            }
+
+            int deleted = ConfigurationBackup.PrunePreSaveBackups(backupRoot);
+            Reload();
+            MessageBox.Show(
+                this,
+                deleted == 0 ? Localization.T("Keine alten Vor-Sicherungen gefunden.") : Localization.T("{0} Sicherungen gelöscht.", deleted),
+                Localization.T("Aufräumen"),
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
         private void DeleteSelected()

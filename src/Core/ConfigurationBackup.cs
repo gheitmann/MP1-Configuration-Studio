@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
 using System.Xml;
 
@@ -37,6 +38,7 @@ namespace MP1.ConfigurationStudio
     internal static class ConfigurationBackup
     {
         public const string MediaPortalFileName = "MediaPortal.xml";
+        public const int PreSaveRetention = 10;
 
         public static string DefaultBackupDirectory
         {
@@ -202,6 +204,54 @@ namespace MP1.ConfigurationStudio
                 File.Delete(path);
                 StudioLog.Info("Configuration backup deleted: " + Path.GetFileName(path));
             }
+        }
+
+        public static string CreatePreSaveBackup(string configFolder, string backupRoot = null)
+        {
+            string source = ConfigPath(configFolder);
+            if (!File.Exists(source))
+            {
+                return null;
+            }
+
+            string root = String.IsNullOrWhiteSpace(backupRoot) ? DefaultBackupDirectory : backupRoot;
+            Directory.CreateDirectory(root);
+            string target = Path.Combine(root, "pre-save-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".zip");
+            Create(source, target);
+            PrunePreSaveBackups(root);
+            return target;
+        }
+
+        public static int PrunePreSaveBackups(string backupRoot = null, int keep = PreSaveRetention)
+        {
+            string root = String.IsNullOrWhiteSpace(backupRoot) ? DefaultBackupDirectory : backupRoot;
+            if (!Directory.Exists(root))
+            {
+                return 0;
+            }
+
+            int maximum = Math.Max(1, keep);
+            string[] files = Directory.GetFiles(root, "pre-save-*.zip")
+                .OrderByDescending(file => File.GetLastWriteTimeUtc(file))
+                .ToArray();
+            int deleted = 0;
+            for (int index = maximum; index < files.Length; index++)
+            {
+                try
+                {
+                    DeleteBackup(files[index]);
+                    deleted++;
+                }
+                catch (Exception ex)
+                {
+                    StudioLog.Warn("Pre-save backup could not be pruned: " + ex.Message);
+                }
+            }
+            if (deleted > 0)
+            {
+                StudioLog.Info("Pre-save backups pruned: " + deleted.ToString(CultureInfo.InvariantCulture));
+            }
+            return deleted;
         }
 
         public static string EnsureFirstRunBackup(string configFolder, string backupRoot = null)
