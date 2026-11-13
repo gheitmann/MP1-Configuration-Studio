@@ -14,9 +14,9 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("1.0.0")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.1")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 
 namespace MP1.ConfigurationStudio
 {
@@ -28,13 +28,15 @@ namespace MP1.ConfigurationStudio
             StudioLog.Initialize();
             StudioLog.Info("MP1 Configuration Studio starting");
             CompatibilityPolicy.Initialize(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"compatibility.xml"));
+            string runtime = null;
+            string native = null;
             try
             {
 #if DIAGNOSTICS
                 if (Array.IndexOf(args, "--self-test") >= 0) return ShellTests.Run();
                 if (Array.IndexOf(args, "--design-preview") >= 0) return ShellTests.Preview();
 #endif
-                string runtime = null, preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null;
+                string preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null;
                 var forwarded = new List<string>();
                 foreach (string arg in args)
                 {
@@ -48,10 +50,11 @@ namespace MP1.ConfigurationStudio
                     else forwarded.Add(arg);
                 }
                 runtime = FindRuntime(runtime);
-                string native = Path.Combine(runtime, "Configuration.exe");
+                native = Path.Combine(runtime, "Configuration.exe");
                 var version = FileVersionInfo.GetVersionInfo(native);
                 if (IsClassic(args))
                 {
+                    if (!Preflight.ConfirmMediaPortalClosed()) return 1;
                     StartNative(native, runtime);
                     return 0;
                 }
@@ -66,6 +69,7 @@ namespace MP1.ConfigurationStudio
                         MessageBoxDefaultButton.Button1);
                     if (answer == DialogResult.Yes)
                     {
+                        if (!Preflight.ConfirmMediaPortalClosed()) return 1;
                         StartNative(native, runtime);
                         return 0;
                     }
@@ -86,27 +90,45 @@ namespace MP1.ConfigurationStudio
                 // An AppDomain alone cannot preserve this path for BASS and external plugin tools.
                 if (!String.Equals(Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory).TrimEnd('\\'), runtime.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
                     return LaunchBesideNative(runtime, args);
-                if (preferences == null)
-                    preferences = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MP1 Configuration Studio", "appearance.xml");
-                var setup = new AppDomainSetup { ApplicationBase = runtime, ConfigurationFile = native + ".config", PrivateBinPath = @"plugins\ExternalPlayers;plugins\process;plugins\subtitle;plugins\windows" };
-                var domain = AppDomain.CreateDomain("MediaPortal Configuration Studio", null, setup);
-                NativeBridge bridge=null;
+                bool testMode = verify != null || audit != null || review != null || persistence != null || saveCycle != null;
+                if (!testMode)
+                {
+                    if (!SingleInstance.TryAcquire("MP1ConfigurationStudio-SingleInstance"))
+                    {
+                        MessageBox.Show("MP1 Configuration Studio läuft bereits in dieser Sitzung. Bitte verwenden Sie das vorhandene Fenster.",
+                            "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return 0;
+                    }
+                }
                 try
                 {
-                    bridge = (NativeBridge)domain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, typeof(NativeBridge).FullName);
-                    bridge.Prepare(preferences, audit, verify, review, persistence, saveCycle);
-                    Directory.SetCurrentDirectory(runtime);
-                    return domain.ExecuteAssembly(native, forwarded.ToArray());
+                    if (!testMode && !Preflight.ConfirmMediaPortalClosed()) return 1;
+                    if (preferences == null)
+                        preferences = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MP1 Configuration Studio", "appearance.xml");
+                    var setup = new AppDomainSetup { ApplicationBase = runtime, ConfigurationFile = native + ".config", PrivateBinPath = @"plugins\ExternalPlayers;plugins\process;plugins\subtitle;plugins\windows" };
+                    var domain = AppDomain.CreateDomain("MediaPortal Configuration Studio", null, setup);
+                    NativeBridge bridge=null;
+                    try
+                    {
+                        bridge = (NativeBridge)domain.CreateInstanceFromAndUnwrap(Assembly.GetExecutingAssembly().Location, typeof(NativeBridge).FullName);
+                        bridge.Prepare(preferences, audit, verify, review, persistence, saveCycle);
+                        Directory.SetCurrentDirectory(runtime);
+                        return domain.ExecuteAssembly(native, forwarded.ToArray());
+                    }
+                    finally {try{if(bridge!=null)bridge.Stop();}finally{AppDomain.Unload(domain);} }
                 }
-                finally {try{if(bridge!=null)bridge.Stop();}finally{AppDomain.Unload(domain);} }
+                finally
+                {
+                    if (!testMode) SingleInstance.Release();
+                }
             }
             catch (Exception ex)
             {
                 while (ex is TargetInvocationException && ex.InnerException != null) ex = ex.InnerException;
                 StudioLog.Error(ex,"Startup failed");
-                string error = "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.\r\n\r\nProtokoll: " + StudioLog.FilePath;
+                string error = "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.";
                 if (Array.IndexOf(args, "--self-test") >= 0) Console.Error.WriteLine(ex);
-                else MessageBox.Show(error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else ErrorDialog.Show(null, error, native, runtime);
                 return 1;
             }
         }
@@ -258,8 +280,11 @@ namespace MP1.ConfigurationStudio
                     catch (Exception ex)
                     {
                         StudioLog.Error(ex,"Studio shell attach failed");
-                        MessageBox.Show(form, "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und Configuration.exe verwenden.\r\n\r\n" + ex.Message + "\r\n\r\nProtokoll: " + StudioLog.FilePath,
-                            "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        string native = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration.exe");
+                        ErrorDialog.Show(form,
+                            "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und die klassische Oberfläche verwenden.\r\n\r\n" + ex.Message,
+                            native,
+                            AppDomain.CurrentDomain.BaseDirectory);
                     }
                 }
                 else if (shell != null)

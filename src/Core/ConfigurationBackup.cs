@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
@@ -7,6 +8,32 @@ using System.Xml;
 
 namespace MP1.ConfigurationStudio
 {
+    internal sealed class BackupInfo
+    {
+        public string Path { get; private set; }
+        public DateTime Created { get; private set; }
+        public long Size { get; private set; }
+        public bool FirstRun { get; private set; }
+
+        public string Display
+        {
+            get
+            {
+                return Created.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+                    + "  " + (FirstRun ? "First-Run" : "Manuell")
+                    + "  " + (Size / 1024).ToString(CultureInfo.InvariantCulture) + " KB";
+            }
+        }
+
+        public BackupInfo(string path, DateTime created, long size, bool firstRun)
+        {
+            Path = path;
+            Created = created;
+            Size = size;
+            FirstRun = firstRun;
+        }
+    }
+
     internal static class ConfigurationBackup
     {
         public const string MediaPortalFileName = "MediaPortal.xml";
@@ -129,6 +156,52 @@ namespace MP1.ConfigurationStudio
             }
 
             StudioLog.Info("Configuration restored; safety copy: " + Path.GetFileName(safety));
+        }
+
+        public static List<BackupInfo> ListBackups(string backupRoot = null)
+        {
+            string root = String.IsNullOrWhiteSpace(backupRoot) ? DefaultBackupDirectory : backupRoot;
+            var result = new List<BackupInfo>();
+            if (!Directory.Exists(root))
+            {
+                return result;
+            }
+
+            foreach (string file in Directory.GetFiles(root, "*.zip"))
+            {
+                try
+                {
+                    using (ZipArchive archive = ZipFile.OpenRead(file))
+                    {
+                        if (archive.GetEntry(MediaPortalFileName) == null)
+                        {
+                            continue;
+                        }
+                    }
+                    var info = new FileInfo(file);
+                    result.Add(new BackupInfo(
+                        info.FullName,
+                        info.LastWriteTime,
+                        info.Length,
+                        info.Name.StartsWith("first-run-", StringComparison.OrdinalIgnoreCase)));
+                }
+                catch (Exception ex)
+                {
+                    StudioLog.Warn("Backup could not be inspected: " + ex.Message);
+                }
+            }
+
+            result.Sort(delegate(BackupInfo left, BackupInfo right) { return right.Created.CompareTo(left.Created); });
+            return result;
+        }
+
+        public static void DeleteBackup(string path)
+        {
+            if (!String.IsNullOrWhiteSpace(path) && File.Exists(path))
+            {
+                File.Delete(path);
+                StudioLog.Info("Configuration backup deleted: " + Path.GetFileName(path));
+            }
         }
 
         public static string EnsureFirstRunBackup(string configFolder, string backupRoot = null)

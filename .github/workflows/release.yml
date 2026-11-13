@@ -42,6 +42,16 @@ jobs:
           }
           "value=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
+      - name: Select release notes
+        id: notes
+        shell: powershell
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $path = "docs/RELEASE-$version.md"
+          if (-not (Test-Path -LiteralPath $path)) { $path = 'docs/RELEASE-1.0.1.md' }
+          if (-not (Test-Path -LiteralPath $path)) { $path = 'docs/RELEASE-1.0.0.md' }
+          "path=$path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Build and test
         shell: powershell
         run: .\build.ps1
@@ -205,7 +215,7 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
           name: MP1 Configuration Studio ${{ steps.version.outputs.value }}
-          body_path: docs/RELEASE-1.0.0.md
+          body_path: ${{ steps.notes.outputs.path }}
           draft: true
           prerelease: ${{ contains(steps.version.outputs.value, '-') }}
           files: |

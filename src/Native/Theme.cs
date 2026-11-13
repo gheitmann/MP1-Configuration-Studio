@@ -27,8 +27,9 @@ namespace MP1.ConfigurationStudio
         private readonly HashSet<Control> skippedRoots=new HashSet<Control>();
         public Palette Colors { get; private set; }
         public bool Dark { get; private set; }
+        public bool HighContrast { get; private set; }
         public Theme(bool dark) { Set(dark); }
-        public void Set(bool dark) { Dark = dark; Colors = Palette.For(dark); }
+        public void Set(bool dark) { Dark = dark; HighContrast = Palette.HighContrastActive; Colors = Palette.For(dark); }
         [DllImport("uxtheme.dll", CharSet=CharSet.Unicode)] private static extern int SetWindowTheme(IntPtr h, string app, string id);
         [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr h, int attribute, ref int value, int size);
         [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr h,int message,IntPtr w,IntPtr l);
@@ -43,7 +44,7 @@ namespace MP1.ConfigurationStudio
         }
         public void Prepare(Control c)
         {
-            if(c==null||c.IsDisposed||IsSkipped(c))return;
+            if(c==null||c.IsDisposed||HighContrast||IsSkipped(c))return;
             if(!watched.Contains(c)){Apply(c);return;}
             var list=c as ListView;if(list!=null)ColorItems(list);
             foreach(Control child in c.Controls)Prepare(child);
@@ -56,7 +57,7 @@ namespace MP1.ConfigurationStudio
         }
         public void Apply(Control c)
         {
-            if(c==null||c.IsDisposed)return;
+            if(c==null||c.IsDisposed||HighContrast)return;
             var states=AllControls(c).Where(control=>control is ComboBox||control is TrackBar).OrderBy(control=>control is TrackBar?1:0).Select(control=>new NativePresentationState(control)).ToArray();
             try{ApplyCore(c);}finally{foreach(var state in states)state.Dispose();}
         }

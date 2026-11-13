@@ -133,7 +133,20 @@ namespace MP1.ConfigurationStudio
             form=f;tree=originalTree;holder=originalHolder;nativeOk=ok;nativeCancel=cancel;nativeApply=apply;nativeTools=tools;donate=donateLink;sections=originalSections;
             PreparedBeforeFirstDisplay=!FrameRendering.IsVisible(form);
             initializing=PreparedBeforeFirstDisplay;
-            appearance=new Appearance(preferencePath);theme=new Theme(appearance.Dark);
+            bool newAppearance=!File.Exists(preferencePath);
+            appearance=new Appearance(preferencePath);
+            if(newAppearance)
+            {
+                int dpi=96;
+                try{dpi=form.DeviceDpi;}catch(Exception){}
+                int defaultScale=Appearance.DefaultTextScaleForDpi(dpi);
+                if(appearance.TextScale!=defaultScale)
+                {
+                    appearance.TextScale=defaultScale;
+                    StudioLog.Info("High-DPI display detected ("+dpi+" dpi); default internal scale="+defaultScale+"%");
+                }
+            }
+            theme=new Theme(appearance.Dark);
             InitializeTypography();
             FrameRendering.EnableComposition(form);
             using(FrameRendering.Suspend(form))
@@ -414,7 +427,7 @@ namespace MP1.ConfigurationStudio
                         for(int item=0;item<checks.Items.Count;item++)
                         {
                             string option=checks.GetItemText(checks.Items[item]);
-                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,navigation.Label(node)+" · "+option,item));
                             if(results.Items.Count>=150)break;
                         }
                         continue;
@@ -425,7 +438,7 @@ namespace MP1.ConfigurationStudio
                         for(int item=0;item<combo.Items.Count;item++)
                         {
                             string option=combo.GetItemText(combo.Items[item]);
-                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,navigation.Label(node)+" · "+option,item));
                             if(results.Items.Count>=150)break;
                         }
                         continue;
@@ -436,7 +449,7 @@ namespace MP1.ConfigurationStudio
                         for(int item=0;item<listBox.Items.Count;item++)
                         {
                             string option=listBox.GetItemText(listBox.Items[item]);
-                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,navigation.Label(node)+" · "+option,item));
                             if(results.Items.Count>=150)break;
                         }
                         continue;
@@ -447,7 +460,7 @@ namespace MP1.ConfigurationStudio
                         for(int item=0;item<listView.Items.Count;item++)
                         {
                             string option=listView.Items[item].Text;
-                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,node.Text+" · "+option,item));
+                            if(option.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)results.Items.Add(new SearchResult(node,c,navigation.Label(node)+" · "+option,item));
                             if(results.Items.Count>=150)break;
                         }
                         continue;
@@ -455,7 +468,7 @@ namespace MP1.ConfigurationStudio
                     if(!(c is Label)&&!(c is CheckBox)&&!(c is RadioButton)&&!(c is GroupBox)&&!(c is Button))continue;
                     string text=c.Text.Replace("&","").Trim();
                     if(text.Length>0&&text.IndexOf(query,StringComparison.CurrentCultureIgnoreCase)>=0)
-                    {results.Items.Add(new SearchResult(node,c,node.Text+" · "+text));if(results.Items.Count>=150)break;}
+                    {results.Items.Add(new SearchResult(node,c,navigation.Label(node)+" · "+text));if(results.Items.Count>=150)break;}
                 }
                 if(results.Items.Count>=150)break;
             }

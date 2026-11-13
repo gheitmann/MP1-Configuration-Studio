@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -28,7 +29,7 @@ namespace MP1.ConfigurationStudio
         private FlowLayoutPanel helpFlow;
         private StudioScrollHost helpScroll;
         private float UiScale {get{return appearance.TextScale/100f;}}
-        private float PageScale {get{return UiScale*9.5f/8.25f;}}
+        private float PageScale {get{int dpi=96;try{dpi=form.DeviceDpi;}catch(Exception){}return dpi>=120?1f:UiScale*9.5f/8.25f;}}
         private int Px(float value){return (int)Math.Round(value*UiScale);}
         private Font MakeFont(float size,FontStyle style){var result=new Font("Segoe UI",size,style);shellFonts.Add(result);return result;}
         private void InitializeTypography()
@@ -143,6 +144,9 @@ namespace MP1.ConfigurationStudio
             var restore=new ToolStripMenuItem("Konfiguration wiederherstellen…");
             restore.Click+=delegate{RestoreConfiguration();};
             menu.Items.Add(restore);
+            var manageBackups=new ToolStripMenuItem("Backups verwalten…");
+            manageBackups.Click+=delegate{ManageBackups();};
+            menu.Items.Add(manageBackups);
             menu.Items.Add(new ToolStripSeparator());
             var classic=new ToolStripMenuItem("Klassische Oberfläche starten");
             classic.Click+=delegate{StartClassic();};
@@ -174,6 +178,28 @@ namespace MP1.ConfigurationStudio
             {
                 StudioLog.Error(ex,"Configuration backup failed");
                 MessageBox.Show(form,"Die Konfiguration konnte nicht gesichert werden.\r\n\r\n"+ex.Message+"\r\n\r\nProtokoll: "+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
+        }
+        private void ManageBackups()
+        {
+            try
+            {
+                using(var dialog=new BackupManagerDialog())
+                {
+                    if(dialog.ShowDialog(form)!=DialogResult.OK)return;
+                    if(String.IsNullOrEmpty(dialog.SelectedBackupPath))return;
+                    ConfigurationBackup.Restore(dialog.SelectedBackupPath,MediaPortalConfigPath());
+                    StudioLog.Info("Configuration restored from backup manager; restarting classic");
+                    restartClassic=true;
+                    nativeCancel.PerformClick();
+                    if(!form.IsDisposed)form.Close();
+                }
+            }
+            catch(Exception ex)
+            {
+                StudioLog.Error(ex,"Backup manager restore failed");
+                ErrorDialog.Show(form,"Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n"+ex.Message,
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);
             }
         }
         private void RestoreConfiguration()

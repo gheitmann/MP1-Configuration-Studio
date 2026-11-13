@@ -38,6 +38,7 @@ Source: "{#ProjectRoot}\dist\{#AppExe}.config"; DestDir: "{app}"; Flags: ignorev
 Source: "{#ProjectRoot}\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\SECURITY.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\SUPPORT.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ProjectRoot}\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\docs\RELEASE-1.0.0.md"; DestDir: "{app}"; DestName: "RELEASE-NOTES.md"; Flags: ignoreversion
 Source: "{#ProjectRoot}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
@@ -55,6 +56,7 @@ Type: files; Name: "{app}\{#AppExe}.config"
 Type: files; Name: "{app}\README.md"
 Type: files; Name: "{app}\SECURITY.md"
 Type: files; Name: "{app}\SUPPORT.md"
+Type: files; Name: "{app}\PRIVACY.md"
 Type: files; Name: "{app}\RELEASE-NOTES.md"
 Type: files; Name: "{app}\LICENSE"
 

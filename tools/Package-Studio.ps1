@@ -20,7 +20,14 @@ $version = $Version.TrimStart('v')
 $name = "MP1-Configuration-Studio-$version"
 $stage = Join-Path $OutputDirectory $name
 $zip = Join-Path $OutputDirectory "$name-Portable.zip"
-$notes = Join-Path $root 'docs\RELEASE-1.0.0.md'
+$baseVersion = ($version -split '-')[0]
+$notes = Join-Path $root "docs\RELEASE-$version.md"
+if (-not (Test-Path -LiteralPath $notes)) {
+    $notes = Join-Path $root "docs\RELEASE-$baseVersion.md"
+}
+if (-not (Test-Path -LiteralPath $notes)) {
+    $notes = Join-Path $root 'docs\RELEASE-1.0.0.md'
+}
 if (-not (Test-Path -LiteralPath $notes)) {
     $notes = Join-Path $root 'RELEASE-NOTES.md'
 }
@@ -39,6 +46,7 @@ Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'README.md') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'SECURITY.md') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'SUPPORT.md') -Destination $stage
+Copy-Item -LiteralPath (Join-Path $root 'PRIVACY.md') -Destination $stage
 if (Test-Path -LiteralPath $notes) {
     Copy-Item -LiteralPath $notes -Destination (Join-Path $stage 'RELEASE-NOTES.md')
 }
