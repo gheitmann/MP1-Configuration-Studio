@@ -1,4 +1,4 @@
-﻿# MP1 Configuration Studio 1.7.0
+# MP1 Configuration Studio 1.7.0
 
 **Status:** Readability and visual-consistency release for MediaPortal 1.39 x64. Unsigned until the planned repository move and SignPath Foundation approval; SHA256 sidecars are published.
 
