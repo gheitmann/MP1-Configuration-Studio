@@ -37,25 +37,25 @@ namespace MP1.ConfigurationStudio
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Both,
                 WordWrap = true,
-                Text = (message ?? String.Empty) + "\r\n\r\nProtokoll: " + StudioLog.FilePath
+                Text = (message ?? String.Empty) + "\r\n\r\n" + Localization.T("Protokoll: ") + StudioLog.FilePath
             };
             layout.Controls.Add(details, 0, 0);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = "Schließen", Width = 95, Height = 28, DialogResult = DialogResult.Cancel };
+            var close = new Button { Text = Localization.T("Schließen"), Width = 95, Height = 28, DialogResult = DialogResult.Cancel };
             buttons.Controls.Add(close);
 
-            var log = new Button { Text = "Protokoll öffnen", Width = 125, Height = 28 };
+            var log = new Button { Text = Localization.T("Protokoll öffnen"), Width = 125, Height = 28 };
             log.Click += delegate { OpenLog(); };
             buttons.Controls.Add(log);
 
-            var bundle = new Button { Text = "Support-Bundle…", Width = 130, Height = 28 };
+            var bundle = new Button { Text = Localization.T("Support-Bundle…"), Width = 130, Height = 28 };
             bundle.Click += delegate { CreateSupportBundle(); };
             buttons.Controls.Add(bundle);
 
             if (!String.IsNullOrEmpty(nativePath) && File.Exists(nativePath))
             {
-                var classic = new Button { Text = "Klassisch starten", Width = 130, Height = 28 };
+                var classic = new Button { Text = Localization.T("Klassisch starten"), Width = 130, Height = 28 };
                 classic.Click += delegate
                 {
                     Program.StartNative(nativePath, runtime);
@@ -134,11 +134,11 @@ namespace MP1.ConfigurationStudio
                     string path = SupportBundle.Create(dialog.FileName, null, null);
                     if (!String.IsNullOrEmpty(path))
                     {
-                        MessageBox.Show(this, "Support-Bundle erstellt:\r\n" + path, "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(this, Localization.T("Support-Bundle erstellt:\r\n") + path, "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        MessageBox.Show(this, "Das Support-Bundle konnte nicht erstellt werden. Details stehen im Protokoll.", "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Localization.T("Das Support-Bundle konnte nicht erstellt werden. Details stehen im Protokoll."), "Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
                 finally

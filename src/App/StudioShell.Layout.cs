@@ -189,17 +189,17 @@ namespace MP1.ConfigurationStudio
         {
             try
             {
-                using(var dialog=new SaveFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title="Konfiguration sichern",FileName="MediaPortal-Backup-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".zip"})
+                using(var dialog=new SaveFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title=Localization.T("Konfiguration sichern"),FileName="MediaPortal-Backup-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".zip"})
                 {
                     if(dialog.ShowDialog(form)!=DialogResult.OK)return;
                     string path=ConfigurationBackup.Create(MediaPortalConfigPath(),dialog.FileName);
-                    MessageBox.Show(form,"Konfiguration gesichert:\r\n"+path,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                    MessageBox.Show(form,Localization.T("Konfiguration gesichert:\r\n")+path,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
                 }
             }
             catch(Exception ex)
             {
                 StudioLog.Error(ex,"Configuration backup failed");
-                MessageBox.Show(form,"Die Konfiguration konnte nicht gesichert werden.\r\n\r\n"+ex.Message+"\r\n\r\nProtokoll: "+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                MessageBox.Show(form,Localization.T("Die Konfiguration konnte nicht gesichert werden.\r\n\r\n")+ex.Message+"\r\n\r\n"+Localization.T("Protokoll: ")+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
         }
         private void SetLanguage(string code)
@@ -229,7 +229,7 @@ namespace MP1.ConfigurationStudio
             catch(Exception ex)
             {
                 StudioLog.Error(ex,"Backup manager restore failed");
-                ErrorDialog.Show(form,"Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n"+ex.Message,
+                ErrorDialog.Show(form,Localization.T("Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n")+ex.Message,
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);
             }
         }
@@ -237,11 +237,13 @@ namespace MP1.ConfigurationStudio
         {
             try
             {
-                using(var dialog=new OpenFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title="Konfiguration wiederherstellen",CheckFileExists=true})
+                using(var dialog=new OpenFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title=Localization.T("Konfiguration wiederherstellen"),CheckFileExists=true})
                 {
                     if(dialog.ShowDialog(form)!=DialogResult.OK)return;
-                    if(MessageBox.Show(form,"Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?",
-                        "Konfiguration wiederherstellen",MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+                    if(MessageBox.Show(form,Localization.IsEnglish
+                            ? "The current MediaPortal.xml is backed up first. Studio then closes and the original interface starts with the restored configuration.\r\n\r\nUnsaved changes will be lost. Continue?"
+                            : "Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?",
+                        Localization.T("Konfiguration wiederherstellen"),MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
                     ConfigurationBackup.Restore(dialog.FileName,MediaPortalConfigPath());
                     StudioLog.Info("Configuration restored; restarting classic");
                     restartClassic=true;
@@ -252,13 +254,15 @@ namespace MP1.ConfigurationStudio
             catch(Exception ex)
             {
                 StudioLog.Error(ex,"Configuration restore failed");
-                MessageBox.Show(form,"Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n"+ex.Message+"\r\n\r\nProtokoll: "+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                MessageBox.Show(form,Localization.T("Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n")+ex.Message+"\r\n\r\n"+Localization.T("Protokoll: ")+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
         }
         private void StartClassic()
         {
-            if(MessageBox.Show(form,"Das Studio-Fenster wird geschlossen. Nicht gespeicherte Änderungen gehen verloren.\r\n\r\nDie originale Oberfläche wird anschließend gestartet. Fortfahren?",
-                "Klassische Oberfläche",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+            if(MessageBox.Show(form,Localization.IsEnglish
+                    ? "The Studio window will close. Unsaved changes will be lost.\r\n\r\nThe original interface will then start. Continue?"
+                    : "Das Studio-Fenster wird geschlossen. Nicht gespeicherte Änderungen gehen verloren.\r\n\r\nDie originale Oberfläche wird anschließend gestartet. Fortfahren?",
+                Localization.T("Klassische Oberfläche"),MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
             restartClassic=true;
             StudioLog.Info("Classic restart requested");
             nativeCancel.PerformClick();
@@ -266,17 +270,17 @@ namespace MP1.ConfigurationStudio
         }
         private void CreateSupportBundle()
         {
-            using(var dialog=new SaveFileDialog {Filter="ZIP-Archiv (*.zip)|*.zip",Title="Support-Bundle speichern",FileName="MP1-Configuration-Studio-Support-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".zip"})
+            using(var dialog=new SaveFileDialog {Filter=Localization.T("ZIP-Archiv (*.zip)|*.zip"),Title=Localization.T("Support-Bundle speichern"),FileName="MP1-Configuration-Studio-Support-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+".zip"})
             {
                 if(dialog.ShowDialog(form)!=DialogResult.OK)return;
                 string path=SupportBundle.Create(dialog.FileName,appearance.PathName,sections);
                 if(!String.IsNullOrEmpty(path))
                 {
-                    MessageBox.Show(form,"Support-Bundle erstellt:\r\n"+path,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                    MessageBox.Show(form,Localization.T("Support-Bundle erstellt:\r\n")+path,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
                 }
                 else
                 {
-                    MessageBox.Show(form,"Das Support-Bundle konnte nicht erstellt werden. Details stehen im Protokoll:\r\n"+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                    MessageBox.Show(form,Localization.T("Das Support-Bundle konnte nicht erstellt werden. Details stehen im Protokoll.")+"\r\n"+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
                 }
             }
         }
@@ -284,11 +288,11 @@ namespace MP1.ConfigurationStudio
         {
             string version=System.Diagnostics.FileVersionInfo.GetVersionInfo(Application.ExecutablePath).FileVersion;
             string text="MP1 Configuration Studio "+version+"\r\n\r\n"
-                +"Für MediaPortal 1.39 x64.\r\n\r\n"
-                +"Inoffizielles Projekt, nicht mit Team MediaPortal verbunden.\r\n"
-                +"Lizenz: GPL-3.0-or-later.\r\n\r\n"
-                +"Protokoll: "+StudioLog.FilePath+"\r\n"
-                +"Projekt: https://github.com/gheitmann/MP1-Configuration-Studio";
+                +(Localization.IsEnglish?"For MediaPortal 1.39 x64.\r\n\r\n":"Für MediaPortal 1.39 x64.\r\n\r\n")
+                +(Localization.IsEnglish?"Unofficial project, not affiliated with Team MediaPortal.\r\n":"Inoffizielles Projekt, nicht mit Team MediaPortal verbunden.\r\n")
+                +"License: GPL-3.0-or-later.\r\n\r\n"
+                +(Localization.IsEnglish?"Log: ":"Protokoll: ")+StudioLog.FilePath+"\r\n"
+                +"Project: https://github.com/gheitmann/MP1-Configuration-Studio";
             MessageBox.Show(form,text,"Über MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void TraverseHistory(int direction){int next=historyIndex+direction;while(next>=0&&next<history.Count){if(history[next].TreeView==tree){traversingHistory=true;try{if(Navigate(history[next]))historyIndex=next;}finally{traversingHistory=false;}UpdateHistoryButtons();return;}next+=direction;}}

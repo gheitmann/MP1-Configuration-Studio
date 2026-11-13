@@ -42,6 +42,7 @@ namespace MP1.ConfigurationStudio
         private IDisposable selectionFrame;
         private bool changingTheme;
         private bool restartClassic;
+        private bool dpiNoticeShown;
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
@@ -206,6 +207,15 @@ namespace MP1.ConfigurationStudio
             foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?theme.Colors.PrimaryText:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
             form.KeyPreview=true;
             form.KeyDown+=OnKeyDown;
+            form.DpiChanged+=delegate{
+                if(dpiNoticeShown)return;
+                dpiNoticeShown=true;
+                StudioLog.Warn("Display DPI changed; restart recommended");
+                MessageBox.Show(form,Localization.IsEnglish
+                        ?"Display scaling changed. Please restart Studio so the layout is recalculated."
+                        :"Die Bildschirmskalierung hat sich geändert. Bitte Studio neu starten, damit das Layout neu berechnet wird.",
+                    "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+            };
             }
         }
         private void CompleteSelectionFrame(object sender,EventArgs e)

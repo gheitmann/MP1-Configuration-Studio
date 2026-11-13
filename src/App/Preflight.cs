@@ -29,9 +29,13 @@ namespace MP1.ConfigurationStudio
 
                 StudioLog.Warn("MediaPortal or Configuration process is still running; asking the user.");
                 DialogResult answer = MessageBox.Show(
-                    "MediaPortal oder der originale Konfigurator läuft noch.\r\n\r\n"
-                    + "Bitte schließen Sie beide Anwendungen, bevor Sie die Konfiguration ändern, damit keine Dateien gleichzeitig geschrieben werden.\r\n\r\n"
-                    + "Trotzdem fortfahren?",
+                    Localization.IsEnglish
+                        ? "MediaPortal or the original configurator is still running.\r\n\r\n"
+                            + "Please close both applications before changing the configuration so that no files are written concurrently.\r\n\r\n"
+                            + "Continue anyway?"
+                        : "MediaPortal oder der originale Konfigurator läuft noch.\r\n\r\n"
+                            + "Bitte schließen Sie beide Anwendungen, bevor Sie die Konfiguration ändern, damit keine Dateien gleichzeitig geschrieben werden.\r\n\r\n"
+                            + "Trotzdem fortfahren?",
                     "MP1 Configuration Studio",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning,

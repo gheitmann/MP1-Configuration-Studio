@@ -20,7 +20,7 @@ namespace MP1.ConfigurationStudio
             get
             {
                 return Created.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
-                    + "  " + (FirstRun ? "First-Run" : "Manuell")
+                    + "  " + (FirstRun ? "First-Run" : (Localization.IsEnglish ? "Manual" : "Manuell"))
                     + "  " + (Size / 1024).ToString(CultureInfo.InvariantCulture) + " KB";
             }
         }

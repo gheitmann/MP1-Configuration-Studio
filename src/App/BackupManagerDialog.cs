@@ -18,7 +18,7 @@ namespace MP1.ConfigurationStudio
         public BackupManagerDialog(string backupRoot = null)
         {
             this.backupRoot = String.IsNullOrWhiteSpace(backupRoot) ? ConfigurationBackup.DefaultBackupDirectory : backupRoot;
-            Text = "Konfigurations-Backups";
+            Text = Localization.T("Konfigurations-Backups");
             FormBorderStyle = FormBorderStyle.Sizable;
             StartPosition = FormStartPosition.CenterParent;
             MinimizeBox = false;
@@ -35,7 +35,7 @@ namespace MP1.ConfigurationStudio
             var header = new Label
             {
                 Dock = DockStyle.Fill,
-                Text = "Sicherungen unter:\r\n" + this.backupRoot,
+                Text = Localization.T("Sicherungen unter:") + "\r\n" + this.backupRoot,
                 AutoEllipsis = true
             };
             layout.Controls.Add(header, 0, 0);
@@ -49,22 +49,22 @@ namespace MP1.ConfigurationStudio
 
             empty.Dock = DockStyle.Fill;
             empty.TextAlign = ContentAlignment.MiddleCenter;
-            empty.Text = "Keine Backups gefunden.";
+            empty.Text = Localization.T("Keine Backups gefunden.");
             empty.Visible = false;
             layout.Controls.Add(empty, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = "Schließen", Width = 95, Height = 28, DialogResult = DialogResult.Cancel };
+            var close = new Button { Text = Localization.T("Schließen"), Width = 95, Height = 28, DialogResult = DialogResult.Cancel };
             buttons.Controls.Add(close);
-            var folder = new Button { Text = "Ordner öffnen", Width = 115, Height = 28 };
+            var folder = new Button { Text = Localization.T("Ordner öffnen"), Width = 115, Height = 28 };
             folder.Click += delegate { OpenFolder(); };
             buttons.Controls.Add(folder);
-            delete.Text = "Löschen";
+            delete.Text = Localization.T("Löschen");
             delete.Width = 95;
             delete.Height = 28;
             delete.Click += delegate { DeleteSelected(); };
             buttons.Controls.Add(delete);
-            restore.Text = "Wiederherstellen";
+            restore.Text = Localization.T("Wiederherstellen");
             restore.Width = 125;
             restore.Height = 28;
             restore.Click += delegate { RestoreSelected(); };
@@ -116,9 +116,10 @@ namespace MP1.ConfigurationStudio
 
             DialogResult answer = MessageBox.Show(
                 this,
-                "Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\n"
-                + "Nicht gespeicherte Änderungen gehen verloren. Fortfahren?",
-                "Konfiguration wiederherstellen",
+                Localization.IsEnglish
+                    ? "The current MediaPortal.xml is backed up first. Studio then closes and the original interface starts with the restored configuration.\r\n\r\nUnsaved changes will be lost. Continue?"
+                    : "Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?",
+                Localization.T("Konfiguration wiederherstellen"),
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2);
@@ -140,7 +141,7 @@ namespace MP1.ConfigurationStudio
                 return;
             }
 
-            if (MessageBox.Show(this, "Backup wirklich löschen?\r\n\r\n" + info.Path, "Backup löschen",
+            if (MessageBox.Show(this, Localization.T("Backup wirklich löschen?\r\n\r\n") + info.Path, Localization.T("Backup löschen"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
             {
                 return;
@@ -154,7 +155,7 @@ namespace MP1.ConfigurationStudio
             catch (Exception ex)
             {
                 StudioLog.Error(ex, "Deleting backup failed");
-                MessageBox.Show(this, "Das Backup konnte nicht gelöscht werden.\r\n\r\n" + ex.Message, "Konfigurations-Backups",
+                MessageBox.Show(this, Localization.T("Das Backup konnte nicht gelöscht werden.\r\n\r\n") + ex.Message, Localization.T("Konfigurations-Backups"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }

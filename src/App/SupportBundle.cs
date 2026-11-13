@@ -61,6 +61,23 @@ namespace MP1.ConfigurationStudio
 
         private static string ReadmeText()
         {
+            if (Localization.IsEnglish)
+            {
+                return "MP1 Configuration Studio – support bundle\r\n"
+                    + "\r\n"
+                    + "Contents:\r\n"
+                    + "- version.txt: version, session, and build\r\n"
+                    + "- environment.txt: Windows, .NET, display, and MediaPortal environment\r\n"
+                    + "- compatibility.txt: section types and compatibility tiers\r\n"
+                    + "- sections.txt: loaded section types and titles\r\n"
+                    + "- appearance.xml: appearance preferences (theme, size, scale)\r\n"
+                    + "- logs/: Studio logs\r\n"
+                    + "\r\n"
+                    + "Not included: MediaPortal.xml, plugin configuration, setting values, credentials, or media paths.\r\n"
+                    + "Logs are redacted for token and password patterns before writing.\r\n"
+                    + "Share the bundle only for support purposes.\r\n";
+            }
+
             return "MP1 Configuration Studio – Support-Bundle\r\n"
                 + "\r\n"
                 + "Inhalt:\r\n"
