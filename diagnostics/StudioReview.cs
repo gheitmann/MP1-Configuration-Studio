@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -31,7 +32,7 @@ namespace MP1.ConfigurationStudio
             var document=new XmlDocument();var root=document.CreateElement("fullReview");document.AppendChild(root);
             root.SetAttribute("build",System.Diagnostics.FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion);root.SetAttribute("expectedPages",sections.Count.ToString());root.SetAttribute("nodes",nodes.Length.ToString());
             var timer=new Timer {Interval=120};
-            Action save=delegate{Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));document.Save(path);};
+            Action save=delegate{string full=Path.GetFullPath(path);Directory.CreateDirectory(Path.GetDirectoryName(full));string temporary=full+".tmp";document.Save(temporary);if(File.Exists(full))File.Replace(temporary,full,null);else File.Move(temporary,full);};
             timer.Tick+=delegate{
                 timer.Stop();
                 if(index==0)StudioLog.Info("Full review timer started");
@@ -68,6 +69,46 @@ namespace MP1.ConfigurationStudio
                         }
                         pageZoom.Apply(page,PageScale);theme.Set(originalDark);theme.Apply(page);pageZoom.EnsureContentFits(page);LayoutNativePage();
                         result.SetAttribute("themeAndScaleValuesPreserved",stable.ToString());
+                        int lowContrast=0;
+                        foreach(Control control in Descendants(page))
+                        {
+                            bool list=control is ListBox&&((ListBox)control).Items.Count>0;
+                            if(!control.Visible||control.IsDisposed||(!String.IsNullOrEmpty(control.Text)==false&&!list)||!IsAuditText(control)&&!list)continue;
+                            Color background=EffectiveBackground(control);
+                            double ratio=Theme.Contrast(control.ForeColor,background);
+                            double minimum=control.Enabled?((control.Font.Size>=14f||(control.Font.Bold&&control.Font.Size>=12f))?3.0:4.5):3.0;
+                            if(ratio>=minimum)continue;
+                            lowContrast++;
+                            var note=document.CreateElement("lowContrastControl");note.SetAttribute("control",control.Name);note.SetAttribute("type",control.GetType().Name);note.SetAttribute("text",list?"(list items)":(control.Text.Length>90?control.Text.Substring(0,90):control.Text));note.SetAttribute("fore",ColorTranslator.ToHtml(control.ForeColor));note.SetAttribute("back",ColorTranslator.ToHtml(background));note.SetAttribute("contrast",ratio.ToString("0.00",System.Globalization.CultureInfo.InvariantCulture));note.SetAttribute("font",control.Font.Name+" "+control.Font.SizeInPoints.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture));note.SetAttribute("disabled",(!control.Enabled).ToString());result.AppendChild(note);
+                        }
+                        result.SetAttribute("lowContrastControls",lowContrast.ToString());
+                        try
+                        {
+                            string shots=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)),"page-shots");
+                            Directory.CreateDirectory(shots);
+                            string file=Path.Combine(shots,page.GetType().Name+".png");
+                            using(var shot=new Bitmap(Math.Max(1,page.Width),Math.Max(1,page.Height)))
+                            {
+                                page.DrawToBitmap(shot,new Rectangle(0,0,shot.Width,shot.Height));
+                                shot.Save(file,ImageFormat.Png);
+                            }
+                            result.SetAttribute("screenshot",file);
+                        }
+                        catch(Exception ex){result.SetAttribute("screenshotError",ex.GetBaseException().Message);}
+                        var auditText=Descendants(page).Where(c=>c.Visible&&!c.IsDisposed&&!String.IsNullOrEmpty(c.Text)&&IsAuditText(c)&&!(c is TextBoxBase)).ToArray();
+                        int overlaps=0;
+                        for(int first=0;first<auditText.Length;first++)for(int second=first+1;second<auditText.Length;second++)
+                        {
+                            Control left=auditText[first],right=auditText[second];
+                            if(!Object.ReferenceEquals(left.Parent,right.Parent))continue;
+                            Rectangle intersection=Rectangle.Intersect(left.Bounds,right.Bounds);
+                            if(intersection.Width<=0||intersection.Height<=0)continue;
+                            long area=(long)intersection.Width*intersection.Height,smaller=Math.Min((long)left.Width*left.Height,(long)right.Width*right.Height);
+                            if(smaller<=0||area*5<smaller*2)continue;
+                            overlaps++;
+                            if(overlaps<=20){var note=document.CreateElement("overlapCandidate");note.SetAttribute("first",left.Name+" ("+left.GetType().Name+")");note.SetAttribute("second",right.Name+" ("+right.GetType().Name+")");note.SetAttribute("firstBounds",left.Bounds.ToString());note.SetAttribute("secondBounds",right.Bounds.ToString());result.AppendChild(note);}
+                        }
+                        result.SetAttribute("overlapCandidates",overlaps.ToString());
                         int tabPages=0;
                         foreach(var tabs in Descendants(page).OfType<TabControl>().ToArray())
                         {
@@ -79,6 +120,8 @@ namespace MP1.ConfigurationStudio
                         if(page.GetType().Name=="MovieViews"||page.GetType().Name=="MusicViews")result.SetAttribute("freshViewRows",Descendants(page).OfType<DataGridView>().Select(grid=>grid.DataSource as System.Data.DataTable).Where(table=>table!=null).Sum(table=>table.Rows.Count).ToString());
                         result.SetAttribute("lowContrastListCells",Descendants(page).OfType<ListView>().Where(list=>list.Enabled).SelectMany(list=>list.Items.Cast<ListViewItem>()).SelectMany(item=>item.SubItems.Cast<ListViewItem.ListViewSubItem>()).Count(cell=>Theme.Contrast(cell.ForeColor,cell.BackColor)<4.5).ToString());
                         result.SetAttribute("minimumFontPoints",Descendants(page).Where(c=>c.Visible&&!String.IsNullOrEmpty(c.Text)).Select(c=>c.Font.SizeInPoints).DefaultIfEmpty(0).Min().ToString(System.Globalization.CultureInfo.InvariantCulture));
+                        var grid=Descendants(page).OfType<DataGridView>().FirstOrDefault();
+                        if(grid!=null)result.SetAttribute("gridInfo",grid.GetType().FullName+" background="+ColorTranslator.ToHtml(grid.BackgroundColor)+" default="+ColorTranslator.ToHtml(grid.DefaultCellStyle.BackColor)+" rows="+grid.Rows.Count+" virtual="+grid.VirtualMode);
                         foreach(var method in page.GetType().GetMethods(BindingFlags.Public|BindingFlags.Instance).Where(m=>m.Name=="SaveSettings"||m.Name=="LoadSettings"))
                         {var api=document.CreateElement("nativeMethod");api.SetAttribute("signature",method.ToString());result.AppendChild(api);}
                         if(new[]{"General","GeneralStartupResume","GuiControls","GuiThumbs","GuiScreensaver","GuiFileMenu","GuiOSD","GuiSkipSteps"}.Contains(page.GetType().Name))ReviewRoundTrip(page,result,document,isolatedRoot);
@@ -125,6 +168,21 @@ namespace MP1.ConfigurationStudio
             {
                 field.Checked=original;save.Invoke(page,null);if(flush!=null)flush.Invoke(null,null);if(clear!=null)clear.Invoke(null,null);load.Invoke(page,null);test.SetAttribute("originalValueRestored",(field.Checked==original).ToString());
             }
+        }
+        private static bool IsAuditText(Control control)
+        {
+            return control is Label||control is CheckBox||control is RadioButton||control is Button||control is TextBoxBase||control is LinkLabel;
+        }
+        private static Color EffectiveBackground(Control control)
+        {
+            Control current=control;
+            while(current!=null)
+            {
+                Color color=current.BackColor;
+                if(color.A>0&&color!=Color.Transparent)return color;
+                current=current.Parent;
+            }
+            return Color.Black;
         }
     }
 }

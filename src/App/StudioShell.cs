@@ -439,9 +439,9 @@ namespace MP1.ConfigurationStudio
         }
         private void AddTab(TreeNode node,TreeNode selected)
         {
-            string caption=navigation.Label(node);var button=new StudioTabButton {Text=caption,Colors=()=>theme.Colors,Font=font,Width=Math.Min(Px(240),Math.Max(Px(72),TextRenderer.MeasureText(caption,font).Width+Px(34))),UseVisualStyleBackColor=false};
+            string caption=navigation.Label(node);var button=new StudioTabButton {Text=caption,Colors=()=>theme.Colors,Font=font,Width=Math.Min(Px(240),Math.Max(Px(68),TextRenderer.MeasureText(caption,font).Width+Px(28))),UseVisualStyleBackColor=false};
             button.Click+=delegate{Navigate(node);};
-            button.Tag=node;button.Height=Px(30);button.Margin=new Padding(0,0,Px(3),Px(9));button.AccessibleName="Bereich "+caption;tips.SetToolTip(button,node.FullPath);
+            button.Tag=node;button.Height=Px(28);button.Margin=new Padding(0,0,Px(3),Px(8));button.AccessibleName="Bereich "+caption;tips.SetToolTip(button,node.FullPath);
             tabs.Controls.Add(button);theme.Apply(button);SetTabColor(button);
         }
         private void SetTabColor(Button b)

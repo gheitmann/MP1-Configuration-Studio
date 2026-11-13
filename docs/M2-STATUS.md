@@ -2,8 +2,8 @@
 
 **Updated:** 2026-11-13
 **Branch:** `main`
-**Release:** [1.7.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.7.0) published unsigned with a documented waiver. See [FINAL-1.7.0-VERIFICATION.md](FINAL-1.7.0-VERIFICATION.md).
-**Last verification:** 207/207 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates.
+**Release:** [1.8.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.0) published unsigned with a documented waiver. See [FINAL-1.8.0-VERIFICATION.md](FINAL-1.8.0-VERIFICATION.md).
+**Last verification:** 207/207 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates; page audit with screenshots and low-contrast checks.
 
 ## Completed
 
@@ -21,7 +21,8 @@
 | Display changes | Done | Windows DPI event plus a two-second system-DPI check offer a restart after scaling changes |
 | Pre-save backup | Done | Timestamped backup before native OK/Apply; newest ten pre-save files retained; manual and first-run backups untouched |
 | High Contrast audit | Done | Selected/hover text, logo text, focus rectangle, search icon, and scroll thumbs use system colors |
-| Typography and icons | Done | Unified Segoe UI scale, Semibold headings, original MediaPortal icon, compact soft-chip tabs |
+| Typography and icons | Done | Unified Segoe UI scale, Semibold headings, original MediaPortal icon, compact folder tabs |
+| Native page audit | Done | 61 page screenshots, low-contrast and overlap audit, inner AutoScroll replaced by outer scrolling, wrapped labels reflow, dark DataGridView rows |
 | Search v2 | Done | Combo, list, and list-view options are searchable and selectable |
 | Release packaging | Done (waived) | 1.0.0 published with portable ZIP, Inno setup, matching SHA256 sidecars; unsigned and clean-VM checks waived |
 | Native verification | Done | 27/27 after classic, tier, backup, High Contrast, and lazy-preparation changes |
@@ -37,7 +38,7 @@
 
 1. OS DPI 150/200% and mixed-monitor fresh-session checks.
 2. Clean Windows 11 VM verification of the published artifact.
-3. Code signing for a future signed re-release (current 1.7.0 is unsigned by waiver).
+3. Code signing for a future signed re-release (current 1.8.0 is unsigned by waiver).
 4. NUnit migration for the fixture suite (deferred from M1-11).
 5. A dedicated visual High Contrast session at OS level.
 

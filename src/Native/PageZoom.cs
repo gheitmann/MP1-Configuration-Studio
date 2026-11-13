@@ -26,7 +26,7 @@ namespace MP1.ConfigurationStudio
         }
         private void CaptureControls(Control c)
         {
-            if(captured.Add(c)){Font original=c.Font;Font parentFont;if(c.Parent!=null&&originals.TryGetValue(c.Parent,out parentFont)&&!TypeDescriptor.GetProperties(c)["Font"].ShouldSerializeValue(c))original=parentFont;originals[c]=original;bounds[c]=c.Bounds;originalMinima[c]=c.MinimumSize;var container=c as ContainerControl;if(container!=null)container.AutoScaleMode=AutoScaleMode.None;var list=c as ListView;if(list!=null)foreach(ColumnHeader column in list.Columns)columns[column]=column.Width;}
+            if(captured.Add(c)){Font original=c.Font;Font parentFont;if(c.Parent!=null&&originals.TryGetValue(c.Parent,out parentFont)&&!TypeDescriptor.GetProperties(c)["Font"].ShouldSerializeValue(c))original=parentFont;originals[c]=original;bounds[c]=c.Bounds;originalMinima[c]=c.MinimumSize;var container=c as ContainerControl;if(container!=null)container.AutoScaleMode=AutoScaleMode.None;var scrollable=c as ScrollableControl;if(scrollable!=null&&!(c is TextBoxBase))scrollable.AutoScroll=false;var list=c as ListView;if(list!=null)foreach(ColumnHeader column in list.Columns)columns[column]=column.Width;}
             foreach(Control child in c.Controls)CaptureControls(child);
         }
         public void Apply(Control page,float factor)
@@ -45,19 +45,24 @@ namespace MP1.ConfigurationStudio
                 foreach(Control c in controls)
                 {
                     Size originalMinimum=originalMinima[c];c.MinimumSize=new Size((int)Math.Ceiling(originalMinimum.Width*factor),(int)Math.Ceiling(originalMinimum.Height*factor));
+                    var numeric=c as NumericUpDown;if(numeric!=null)numeric.AutoSize=false;
                     Rectangle originalBounds=bounds[c];c.Bounds=new Rectangle((int)Math.Round(originalBounds.X*factor),(int)Math.Round(originalBounds.Y*factor),(int)Math.Round(originalBounds.Width*factor),(int)Math.Round(originalBounds.Height*factor));
                     Font original=originals[c];string family=original.Name;if(family=="Microsoft Sans Serif"||family=="MS Sans Serif"||family=="Tahoma"||family=="Arial")family="Segoe UI";
-                    string key=family+"|"+original.SizeInPoints+"|"+original.Style+"|"+factor;Font font;
-                    if(!fonts.TryGetValue(key,out font)){font=new Font(family,original.SizeInPoints*factor,original.Style,GraphicsUnit.Point);fonts[key]=font;}c.Font=font;
+                    bool compactLabel=IsLabelLike(c)&&HasNumericSibling(c);
+                    float fontFactor=(IsLabelLike(c)&&!String.IsNullOrEmpty(c.Text)&&c.Text.Length>=80)||compactLabel?Math.Min(factor,1f):factor;
+                    string key=family+"|"+original.SizeInPoints+"|"+original.Style+"|"+fontFactor;Font font;
+                    if(!fonts.TryGetValue(key,out font)){font=new Font(family,original.SizeInPoints*fontFactor,original.Style,GraphicsUnit.Point);fonts[key]=font;}c.Font=font;
                     var combo=c as ComboBox;if(combo!=null&&combo.DrawMode==DrawMode.OwnerDrawFixed)combo.ItemHeight=font.Height+3;
                     var list=c as ListView;if(list!=null)foreach(ColumnHeader column in list.Columns){int width;if(!columns.TryGetValue(column,out width)){width=column.Width;columns[column]=width;}if(width>0)column.Width=(int)Math.Round(width*factor);}
                 }
+                AdjustWrappedLabels(page);
                 var minimum=minima[page];page.MinimumSize=new Size((int)Math.Ceiling(minimum.Width*factor),(int)Math.Ceiling(minimum.Height*factor));scales[page]=factor;
             }
             finally{foreach(Control c in controls){c.Anchor=anchors[c];c.Dock=docks[c];}foreach(Control c in controls.Reverse())c.ResumeLayout(true);foreach(var state in nativeStates)state.Dispose();}
         }
         public void EnsureContentFits(Control page)
         {
+            page.MinimumSize=new Size(Math.Max(page.MinimumSize.Width,page.Width),Math.Max(page.MinimumSize.Height,page.Height));
             var controls=All(page).Where(c=>c.Visible).ToArray();var anchors=controls.ToDictionary(c=>c,c=>c.Anchor);
             foreach(Control c in controls){c.SuspendLayout();c.Anchor=AnchorStyles.Top|AnchorStyles.Left;}
             try
@@ -84,7 +89,44 @@ namespace MP1.ConfigurationStudio
             }
             finally{foreach(Control c in controls)c.Anchor=anchors[c];foreach(Control c in controls.Reverse())c.ResumeLayout(true);}
         }
-        private IEnumerable<Control> All(Control c){yield return c;foreach(Control child in c.Controls)foreach(Control value in All(child))yield return value;}
+        private static void AdjustWrappedLabels(Control page)
+        {
+            foreach(Control label in All(page).Where(IsLabelLike).OrderBy(c=>c.Top).ToArray())
+            {
+                if(label.Dock!=DockStyle.None||label.Parent==null||label.Parent is FlowLayoutPanel||label.Parent is TableLayoutPanel||String.IsNullOrEmpty(label.Text))continue;
+                Size needed=TextRenderer.MeasureText(label.Text,label.Font,new Size(Math.Max(1,label.Width-4),Int32.MaxValue),TextFormatFlags.WordBreak);
+                bool autoSize=label is Label&&((Label)label).AutoSize;
+                if(!autoSize)
+                {
+                    int extra=needed.Height-label.Height;
+                    if(extra>2)label.Height+=extra;
+                }
+                int textBottom=label.Top+Math.Max(needed.Height,label.Height)+4;
+                int firstTop=Int32.MaxValue;
+                foreach(Control sibling in label.Parent.Controls)
+                    if(!Object.ReferenceEquals(sibling,label)&&!IsLabelLike(sibling)&&sibling.Top>label.Top+2&&sibling.Top<textBottom-2&&sibling.Left<label.Right&&sibling.Right>label.Left)
+                        firstTop=Math.Min(firstTop,sibling.Top);
+                if(firstTop!=Int32.MaxValue)
+                {
+                    int shift=Math.Max(0,textBottom-firstTop);
+                    foreach(Control sibling in label.Parent.Controls)
+                        if(!Object.ReferenceEquals(sibling,label)&&!IsLabelLike(sibling)&&sibling.Top>=firstTop-2)
+                            sibling.Top+=shift;
+                }
+            }
+        }
+        private static bool IsLabelLike(Control control)
+        {
+            return control is Label||control is LinkLabel||control.GetType().Name.IndexOf("Label",StringComparison.OrdinalIgnoreCase)>=0;
+        }
+        private static bool HasNumericSibling(Control control)
+        {
+            if(control.Parent==null)return false;
+            foreach(Control sibling in control.Parent.Controls)
+                if(sibling is NumericUpDown&&sibling.Left>=control.Left&&Math.Abs(sibling.Top-control.Top)<Math.Max(control.Height,sibling.Height))return true;
+            return false;
+        }
+        private static IEnumerable<Control> All(Control c){yield return c;foreach(Control child in c.Controls)foreach(Control value in All(child))yield return value;}
         public void Dispose(){foreach(Font font in fonts.Values)font.Dispose();fonts.Clear();}
     }
 }

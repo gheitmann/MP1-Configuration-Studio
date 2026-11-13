@@ -7,15 +7,15 @@
 | 1 | Quiet underline | No box around inactive tabs; active tab uses accent text and a 2 px underline. |
 | 2 | Plain text | Quietest option; active text is accent-colored, with no underline or fill. |
 | 3 | Segmented pill | Active tab is a filled accent pill; good for touch, visually stronger. |
-| 4 | Soft chips | Active chip uses the selection surface plus an accent dot; calm but clearly grouped. Implemented in 1.7. |
-| 5 | Folder tabs | Thin outlined tabs; closer to a classic settings dialog. |
+| 4 | Soft chips | Active chip uses the selection surface plus an accent dot; calm but clearly grouped. |
+| 5 | Folder tabs | Thin outlined tabs; closer to a classic settings dialog. Implemented in 1.8. |
 | 6 | Breadcrumb row | Tabs read as a path rather than buttons; very quiet, but less discoverable. |
 | 7 | Icon + label | Adds a small icon per tab; helps scanning, needs a consistent icon set. |
 | 8 | Uppercase bar | Compact uppercase labels; space-efficient but less friendly. |
 | 9 | Fine cards | Thin cards with an accent outline for the active tab; structured but slightly busier. |
 | 10 | Minimal with counts | Underline plus small counts; useful where sections contain many settings. |
 
-`shell-100-current.png` shows the current shell at 100% with the implemented variant 4. `welcome-100.png` shows the readable first-run dialog without a select-all highlight.
+`shell-100-current.png` shows the current shell at 100% with the implemented variant 5. `welcome-100.png` shows the readable first-run dialog without a select-all highlight. The implemented type scale is 10 pt shell body, 9 pt meta, 18 pt headings, and 9 pt native page body.
 
 ## Font comparison
 

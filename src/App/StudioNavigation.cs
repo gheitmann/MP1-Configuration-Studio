@@ -60,10 +60,10 @@ namespace MP1.ConfigurationStudio
             foreach(StudioAction button in rows.Controls.OfType<StudioAction>()){button.BackColor=colors().Panel;button.ForeColor=colors().Text;if(button.Tag is TreeNode)button.Selected=Object.ReferenceEquals(button.Tag,selected);button.Invalidate();}
             BackColor=rows.BackColor=colors().Panel;
         }
-        private void AddCaption(string text){rows.Controls.Add(new Label {Name="studioMuted",Text=text,Font=Font,Height=Font.Height+18,Padding=new Padding(14,10,0,0),ForeColor=colors().Muted,BackColor=colors().Panel,Margin=new Padding(0,8,0,4)});}
+        private void AddCaption(string text){rows.Controls.Add(new Label {Name="studioMuted",Text=text,Font=Font,Height=Font.Height+14,Padding=new Padding(14,8,0,0),ForeColor=colors().Muted,BackColor=colors().Panel,Margin=new Padding(0,6,0,3)});}
         private StudioAction AddButton(string text,string icon,Action action,bool sub)
         {
-            var button=new StudioAction {Text=text,IconName=icon,Colors=colors,Navigation=true,Secondary=sub,Font=Font,Height=Font.Height+(sub?17:23),Margin=new Padding(sub?27:0,2,0,2),Padding=Padding.Empty,BackColor=colors().Panel,AccessibleName=text};
+            var button=new StudioAction {Text=text,IconName=icon,Colors=colors,Navigation=true,Secondary=sub,Font=Font,Height=Font.Height+(sub?13:18),Margin=new Padding(sub?27:0,1,0,1),Padding=Padding.Empty,BackColor=colors().Panel,AccessibleName=text};
             button.Click+=delegate{action();};tips.SetToolTip(button,text);rows.Controls.Add(button);return button;
         }
         private void SizeRows(){foreach(Control c in rows.Controls)c.Width=Math.Max(60,rows.ClientSize.Width-8-c.Margin.Left-(rows.VerticalScroll.Visible?SystemInformation.VerticalScrollBarWidth:0));}

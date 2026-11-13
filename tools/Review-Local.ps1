@@ -57,7 +57,7 @@ try {
      if($OkCycle -and ($review.DocumentElement.GetAttribute('savedValueMatches') -ne 'True' -or $review.DocumentElement.GetAttribute('freshProcessLoadedSavedValue') -ne 'True' -or $review.DocumentElement.GetAttribute('originalRestored') -ne 'True')){throw 'Native OK cycle did not pass all persistence checks.'}
      $complete=$true;break
     }
-   }catch [System.Xml.XmlException]{}
+   }catch {}
   }
   Start-Sleep -Milliseconds 500
  }

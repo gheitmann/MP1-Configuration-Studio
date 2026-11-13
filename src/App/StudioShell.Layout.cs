@@ -29,7 +29,7 @@ namespace MP1.ConfigurationStudio
         private FlowLayoutPanel helpFlow;
         private StudioScrollHost helpScroll;
         private float UiScale {get{return appearance.TextScale/100f;}}
-        private float PageScale {get{int dpi=96;try{dpi=form.DeviceDpi;}catch(Exception){}return dpi>=120?1f:UiScale*Typography.Body/8.25f;}}
+        private float PageScale {get{int dpi=96;try{dpi=form.DeviceDpi;}catch(Exception){}return dpi>=120?1f:UiScale*Typography.NativeBody/8.25f;}}
         private int Px(float value){return (int)Math.Round(value*UiScale);}
         private Font MakeFont(float size,FontStyle style){var result=Typography.Create(size,style);shellFonts.Add(result);return result;}
         private Font MakeHeading(float size){var result=Typography.CreateHeading(size);shellFonts.Add(result);return result;}
@@ -75,11 +75,10 @@ namespace MP1.ConfigurationStudio
             results.DoubleClick+=delegate{OpenResult();};results.KeyDown+=delegate(object sender,KeyEventArgs e){if(e.KeyCode==Keys.Enter){e.SuppressKeyPress=true;OpenResult();}};
             search.TextChanged+=delegate{clearSearch.Visible=search.TextLength>0;searchPlaceholder.Visible=search.TextLength==0&&!search.Focused;UpdateSearch();};search.KeyDown+=delegate(object sender,KeyEventArgs e){if((e.KeyCode==Keys.Down||e.KeyCode==Keys.Enter)&&results.Visible&&results.Items.Count>0){results.SelectedIndex=0;results.Focus();if(e.KeyCode==Keys.Enter)OpenResult();e.SuppressKeyPress=true;}};
             center=new Panel {Dock=DockStyle.Fill,Name="studioContent",Margin=Padding.Empty,Padding=new Padding(Px(24),Px(21),Px(24),Px(14))};
-            var headings=new Panel {Dock=DockStyle.Top,Height=Px(99)};breadcrumb=new Label {AutoEllipsis=true,Dock=DockStyle.Top,Height=Px(23),Font=labelFont,Name="studioMuted"};
-            pageLead=new Label {Dock=DockStyle.Bottom,Height=Px(27),Font=labelFont,Name="studioPageLead",AutoEllipsis=true};
+            var headings=new Panel {Dock=DockStyle.Top,Height=Px(92)};breadcrumb=new Label {AutoEllipsis=true,Dock=DockStyle.Top,Height=Px(22),Font=labelFont,Name="studioMuted"};
+            pageLead=new Label {Dock=DockStyle.Bottom,Height=Px(24),Font=labelFont,Name="studioPageLead",AutoEllipsis=true};
             var titleRow=new Panel {Dock=DockStyle.Fill};pageIcon=new Panel {Dock=DockStyle.Left,Width=Px(42)};pageIcon.Paint+=delegate(object sender,PaintEventArgs e){if(tree.SelectedNode!=null)StudioIcons.Draw(e.Graphics,navigation.Icon(tree.SelectedNode),new Rectangle(0,Px(9),Px(29),Px(29)),theme.Colors.Accent);};title=new Label {Dock=DockStyle.Fill,Font=headingFont,AutoEllipsis=true,UseMnemonic=false,Name="studioPageTitle"};titleRow.Controls.Add(title);titleRow.Controls.Add(pageIcon);headings.Controls.Add(titleRow);headings.Controls.Add(pageLead);headings.Controls.Add(breadcrumb);
-            tabs=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=false,Height=Px(34),WrapContents=true,AutoScroll=false,AccessibleName=Localization.T("Unterbereiche"),Margin=Padding.Empty,TabIndex=8};
-            tabs.Paint+=delegate(object sender,PaintEventArgs e){using(var pen=new Pen(theme.Colors.Border))e.Graphics.DrawLine(pen,0,tabs.Height-1,tabs.Width,tabs.Height-1);};
+            tabs=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=false,Height=Px(32),WrapContents=true,AutoScroll=false,AccessibleName=Localization.T("Unterbereiche"),Margin=Padding.Empty,TabIndex=8};
             tabs.Layout+=delegate{if(tabs.Width<=0)return;int expected=tabs.GetPreferredSize(new Size(tabs.ClientSize.Width,0)).Height;if(expected>0&&tabs.Height!=expected)tabs.Height=expected;};
             holder.Padding=Padding.Empty;holder.Margin=Padding.Empty;holder.AutoScroll=true;contentScroll=new StudioScrollHost(holder,()=>holder.AutoScrollMinSize,()=>theme.Colors,true);center.Controls.Add(contentScroll);center.Controls.Add(tabs);center.Controls.Add(headings);
             context=new Panel {Dock=DockStyle.Fill,Margin=Padding.Empty,Padding=new Padding(Px(20),Px(22),Px(18),Px(12)),Name="studioContext",AccessibleName="Hilfe und Kontext"};

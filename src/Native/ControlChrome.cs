@@ -208,11 +208,13 @@ namespace MP1.ConfigurationStudio
             e.Graphics.Clear(BackColor);
             e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             bool highContrast=Palette.HighContrastActive;
-            if(Selected||hover)using(var shape=StudioIcons.Rounded(new Rectangle(0,2,Width-1,Height-6),6))using(var brush=new SolidBrush(Selected?p.Selection:p.Hover))e.Graphics.FillPath(brush,shape);
-            Color ink=Selected?(highContrast?SystemColors.HighlightText:p.Accent):(hover&&highContrast?SystemColors.HighlightText:p.Text);
-            int textLeft=Selected?18:0;
-            if(Selected)using(var brush=new SolidBrush(highContrast?SystemColors.HighlightText:p.Accent))e.Graphics.FillEllipse(brush,10,(Height-5)/2,5,5);
-            TextRenderer.DrawText(e.Graphics,Text,Font,new Rectangle(6+textLeft,0,Math.Max(0,Width-12-textLeft),Height),ink,TextFormatFlags.VerticalCenter|TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
+            using(var shape=StudioIcons.Rounded(new Rectangle(0,2,Width-1,Height-6),5))
+            {
+                using(var brush=new SolidBrush(Selected?p.Panel:(hover?p.Hover:BackColor)))e.Graphics.FillPath(brush,shape);
+                using(var pen=new Pen(Selected?p.Accent:p.Border))e.Graphics.DrawPath(pen,shape);
+            }
+            Color ink=Selected?(highContrast?SystemColors.WindowText:p.Text):(hover&&highContrast?SystemColors.HighlightText:p.Muted);
+            TextRenderer.DrawText(e.Graphics,Text,Font,new Rectangle(6,0,Math.Max(0,Width-12),Height),ink,TextFormatFlags.VerticalCenter|TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
             if(Focused)ControlPaint.DrawFocusRectangle(e.Graphics,Rectangle.Inflate(ClientRectangle,-4,-4),p.Accent,BackColor);
         }
     }

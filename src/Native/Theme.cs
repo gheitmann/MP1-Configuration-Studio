@@ -17,6 +17,7 @@ namespace MP1.ConfigurationStudio
         private readonly Dictionary<ListViewItem.ListViewSubItem, Color> originalListFore = new Dictionary<ListViewItem.ListViewSubItem, Color>();
         private readonly HashSet<GroupBox> flatGroups=new HashSet<GroupBox>();
         private readonly HashSet<ComboBox> drawnCombos=new HashSet<ComboBox>();
+        private readonly HashSet<DataGridView> formattedGrids=new HashSet<DataGridView>();
         private readonly Dictionary<Control,ControlChrome> chrome=new Dictionary<Control,ControlChrome>();
         private readonly Dictionary<ListView,ControlChrome> headers=new Dictionary<ListView,ControlChrome>();
         private readonly Dictionary<Control,IntPtr> themedHandles=new Dictionary<Control,IntPtr>();
@@ -91,7 +92,6 @@ namespace MP1.ConfigurationStudio
                 group.Paint+=delegate(object sender,PaintEventArgs e){
                     e.Graphics.Clear(group.BackColor);
                     if(!String.IsNullOrEmpty(group.Text))TextRenderer.DrawText(e.Graphics,group.Text,group.Font,new Rectangle(7,0,Math.Max(0,group.Width-14),group.Font.Height+4),group.Enabled?Colors.Text:Colors.Muted,TextFormatFlags.Top|TextFormatFlags.EndEllipsis);
-                    using(var pen=new Pen(Colors.Border))e.Graphics.DrawLine(pen,7,group.Height-1,Math.Max(7,group.Width-8),group.Height-1);
                 };
             }
             var textBox=c as TextBox;
@@ -145,10 +145,33 @@ namespace MP1.ConfigurationStudio
             {
                 grid.EnableHeadersVisualStyles = false; grid.BackgroundColor = p.Input; grid.GridColor = p.Border;
                 grid.BorderStyle=BorderStyle.None;grid.ColumnHeadersBorderStyle=DataGridViewHeaderBorderStyle.None;grid.RowHeadersBorderStyle=DataGridViewHeaderBorderStyle.None;grid.CellBorderStyle=DataGridViewCellBorderStyle.SingleHorizontal;
+                grid.BackgroundColor=p.Input;grid.GridColor=p.Border;grid.EnableHeadersVisualStyles=false;
                 grid.DefaultCellStyle.BackColor = p.Input; grid.DefaultCellStyle.ForeColor = p.Text;
                 grid.DefaultCellStyle.SelectionBackColor = p.Selection; grid.DefaultCellStyle.SelectionForeColor = p.Text;
+                grid.AlternatingRowsDefaultCellStyle.BackColor=p.Input;grid.AlternatingRowsDefaultCellStyle.ForeColor=p.Text;
+                grid.AlternatingRowsDefaultCellStyle.SelectionBackColor=p.Selection;grid.AlternatingRowsDefaultCellStyle.SelectionForeColor=p.Text;
+                grid.RowsDefaultCellStyle.BackColor=p.Input;grid.RowsDefaultCellStyle.ForeColor=p.Text;
+                grid.RowTemplate.DefaultCellStyle.BackColor=p.Input;grid.RowTemplate.DefaultCellStyle.ForeColor=p.Text;
                 grid.ColumnHeadersDefaultCellStyle.BackColor = p.Panel; grid.ColumnHeadersDefaultCellStyle.ForeColor = p.Text;
                 grid.RowHeadersDefaultCellStyle.BackColor = p.Panel; grid.RowHeadersDefaultCellStyle.ForeColor = p.Text;
+                if(formattedGrids.Add((DataGridView)c))
+                {
+                    var themed=(DataGridView)c;
+                    themed.RowsAdded+=delegate{ApplyGridColors(themed);};
+                    themed.DataBindingComplete+=delegate{ApplyGridColors(themed);};
+                    themed.CellFormatting+=delegate(object sender,DataGridViewCellFormattingEventArgs e){
+                        if(e.CellStyle==null)return;
+                        Color background=e.CellStyle.BackColor;
+                        if(background==Color.Empty||background.IsSystemColor||background.ToArgb()==Color.White.ToArgb())
+                        {
+                            e.CellStyle.BackColor=Colors.Input;
+                            Color foreground=e.CellStyle.ForeColor;
+                            if(foreground==Color.Empty||foreground.IsSystemColor||foreground.ToArgb()==Color.Black.ToArgb())e.CellStyle.ForeColor=Colors.Text;
+                        }
+                    };
+                }
+                foreach(DataGridViewColumn column in ((DataGridView)c).Columns){column.DefaultCellStyle.BackColor=p.Input;column.DefaultCellStyle.ForeColor=p.Text;}
+                foreach(DataGridViewRow row in ((DataGridView)c).Rows){row.DefaultCellStyle.BackColor=p.Input;row.DefaultCellStyle.ForeColor=p.Text;}
             }
             var tabs = c as TabControl;
             if (tabs != null && (drawnTabs.Contains(tabs) || tabs.DrawMode == TabDrawMode.Normal))
@@ -201,7 +224,7 @@ namespace MP1.ConfigurationStudio
             if (!c.IsHandleCreated || c.IsDisposed) return;
             IntPtr oldHandle;bool oldDark;
             bool changed=!themedHandles.TryGetValue(c,out oldHandle)||oldHandle!=c.Handle||!themedDark.TryGetValue(c,out oldDark)||oldDark!=Dark;
-            if (changed&&(c is TreeView || c is ListView || c is TextBoxBase || c is ListBox))
+            if (changed&&(c is TreeView || c is ListView || c is TextBoxBase || c is ListBox || c is DataGridView))
                 try { SetWindowTheme(c.Handle, Dark ? "DarkMode_Explorer" : "Explorer", null); } catch (DllNotFoundException) { }
             themedHandles[c]=c.Handle;themedDark[c]=Dark;
             if(c is TreeView)
@@ -250,6 +273,21 @@ namespace MP1.ConfigurationStudio
             TextFormatFlags flags=TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix|TextFormatFlags.SingleLine;
             if(column<list.Columns.Count){if(list.Columns[column].TextAlign==HorizontalAlignment.Right)flags|=TextFormatFlags.Right;else if(list.Columns[column].TextAlign==HorizontalAlignment.Center)flags|=TextFormatFlags.HorizontalCenter;}
             TextRenderer.DrawText(g,cell.Text,list.Font,text,selected||hover?p.Text:ReadableForeground(cell.ForeColor,p.Input,p.Text),flags);
+        }
+        private void ApplyGridColors(DataGridView grid)
+        {
+            if(grid==null||grid.IsDisposed)return;var p=Colors;
+            grid.BackgroundColor=p.Input;grid.GridColor=p.Border;
+            grid.DefaultCellStyle.BackColor=p.Input;grid.DefaultCellStyle.ForeColor=p.Text;
+            grid.DefaultCellStyle.SelectionBackColor=p.Selection;grid.DefaultCellStyle.SelectionForeColor=p.Text;
+            grid.AlternatingRowsDefaultCellStyle.BackColor=p.Input;grid.AlternatingRowsDefaultCellStyle.ForeColor=p.Text;
+            grid.AlternatingRowsDefaultCellStyle.SelectionBackColor=p.Selection;grid.AlternatingRowsDefaultCellStyle.SelectionForeColor=p.Text;
+            grid.RowsDefaultCellStyle.BackColor=p.Input;grid.RowsDefaultCellStyle.ForeColor=p.Text;
+            grid.RowTemplate.DefaultCellStyle.BackColor=p.Input;grid.RowTemplate.DefaultCellStyle.ForeColor=p.Text;
+            grid.ColumnHeadersDefaultCellStyle.BackColor=p.Panel;grid.ColumnHeadersDefaultCellStyle.ForeColor=p.Text;
+            grid.RowHeadersDefaultCellStyle.BackColor=p.Panel;grid.RowHeadersDefaultCellStyle.ForeColor=p.Text;
+            foreach(DataGridViewColumn column in grid.Columns){column.DefaultCellStyle.BackColor=p.Input;column.DefaultCellStyle.ForeColor=p.Text;}
+            foreach(DataGridViewRow row in grid.Rows){row.DefaultCellStyle.BackColor=p.Input;row.DefaultCellStyle.ForeColor=p.Text;}
         }
         private void ColorItems(ListView list)
         {
