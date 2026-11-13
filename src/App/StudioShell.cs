@@ -43,6 +43,7 @@ namespace MP1.ConfigurationStudio
         private bool changingTheme;
         private bool restartClassic;
         private bool restartStudio;
+        private bool restartNative;
         private bool dpiNoticeShown;
         private Timer dpiWatch;
         private DateTime lastPreSaveBackup;
@@ -170,6 +171,21 @@ namespace MP1.ConfigurationStudio
                 if(!form.IsDisposed)form.Close();
             });
         }
+        private void StartNativeStudioProcess()
+        {
+            try
+            {
+                string exe=Application.ExecutablePath;
+                string runtime=AppDomain.CurrentDomain.BaseDirectory;
+                Process.Start(new ProcessStartInfo(exe,"--native --runtime=\""+runtime+"\""){WorkingDirectory=Path.GetDirectoryName(exe),UseShellExecute=true});
+                StudioLog.Info("Native Studio interface started");
+            }
+            catch(Exception ex)
+            {
+                StudioLog.Error(ex,"Native Studio start failed");
+                MessageBox.Show(form,(Localization.IsEnglish?"The new interface could not be started.\r\n\r\n":"Die neue Oberfläche konnte nicht gestartet werden.\r\n\r\n")+ex.Message,"MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
+        }
         private void StartStudioProcess()
         {
             try
@@ -267,6 +283,7 @@ namespace MP1.ConfigurationStudio
                 appearance.Save();tips.Dispose();pageZoom.Dispose();if(dpiWatch!=null){dpiWatch.Stop();dpiWatch.Dispose();}foreach(Font owned in shellFonts)owned.Dispose();
                 if(restartClassic){restartClassic=false;Program.StartNative(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);}
                 else if(restartStudio){restartStudio=false;SingleInstance.Release();StartStudioProcess();}
+                else if(restartNative){restartNative=false;SingleInstance.Release();StartNativeStudioProcess();}
             };
             form.FormClosing+=delegate(object sender,FormClosingEventArgs e){
                 if(SaveRequested)return;

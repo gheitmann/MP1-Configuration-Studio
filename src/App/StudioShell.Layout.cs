@@ -170,6 +170,9 @@ namespace MP1.ConfigurationStudio
             var helpColumn=new ToolStripMenuItem(Localization.T(appearance.ContextVisible?"Hilfe ausblenden":"Hilfe einblenden"));
             helpColumn.Click+=delegate{SetContext(!appearance.ContextVisible,true);};
             menu.Items.Add(helpColumn);
+            var newInterface=new ToolStripMenuItem(Localization.T("Neue Oberfläche (Beta)"));
+            newInterface.Click+=delegate{restartNative=true;nativeCancel.PerformClick();if(!form.IsDisposed)form.Close();};
+            menu.Items.Add(newInterface);
             var nativeLook=new ToolStripMenuItem(Localization.T("Native Seiten im Original-Look")){Checked=appearance.NativeOriginal,CheckOnClick=true};
             nativeLook.Click+=delegate{appearance.NativeOriginal=nativeLook.Checked;appearance.Save();MessageBox.Show(form,Localization.IsEnglish?"Native page mode changed. Please restart Studio to apply it.":"Darstellung der nativen Seiten geändert. Bitte Studio neu starten.","MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);};
             menu.Items.Add(nativeLook);

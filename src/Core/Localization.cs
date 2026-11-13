@@ -114,6 +114,7 @@ namespace MP1.ConfigurationStudio
             {"Ungespeicherte Änderungen", "Unsaved changes"},
             {"Studio neu starten", "Restart Studio"},
             {"Native Seiten im Original-Look", "Native pages in original look"},
+            {"Neue Oberfläche (Beta)", "New interface (beta)"},
             {"Schließen", "Close"},
             {"Verstanden", "Understood"},
             {"Warnung", "Warning"}

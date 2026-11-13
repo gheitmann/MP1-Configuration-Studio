@@ -33,6 +33,7 @@ namespace MP1.ConfigurationStudio
             RunCompatibilityPolicyChecks(directory);
             RunSupportBundleChecks(directory);
             RunBackupChecks(directory);
+            RunNativeConfigChecks(directory);
             RunNativeContractChecks();
             RunAttachTransactionChecks(Path.Combine(directory,"attach-test.xml"));
             InitializeFixturePolicy(directory);
@@ -299,9 +300,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==9&&assemblyVersion.Build==0,"assembly version targets 1.9.0.0");
+            Check(assemblyVersion.Major==2&&assemblyVersion.Minor==0&&assemblyVersion.Build==0,"assembly version targets 2.0.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.9.0",StringComparison.Ordinal),"file version targets 1.9.0");
+            Check(fileVersion.StartsWith("2.0.0",StringComparison.Ordinal),"file version targets 2.0.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -404,7 +405,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.9.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.1"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -489,6 +490,30 @@ namespace MP1.ConfigurationStudio
             using(var manager=new BackupManagerDialog(manageRoot))
             {
                 Check(manager.Text=="Konfigurations-Backups","backup manager dialog constructs");
+            }
+        }
+        private static void RunNativeConfigChecks(string directory)
+        {
+            string path=Path.Combine(directory,"native-config.xml");
+            File.WriteAllText(path,"<?xml version=\"1.0\" encoding=\"utf-8\"?><profile><section name=\"general\"><entry name=\"loglevel\">2</entry><entry name=\"watchdogEnabled\">no</entry></section><section name=\"unknownSection\"><entry name=\"keepMe\">unchanged</entry></section></profile>");
+            var configuration=StudioConfiguration.Load(path);
+            Check(configuration.Get("general","loglevel","")=="2"&&configuration.Get("unknownSection","keepMe","")=="unchanged","native configuration reads existing entries and unknown sections");
+            configuration.Set("general","loglevel","3");
+            configuration.SetBool("general","watchdogEnabled",true);
+            string backup=configuration.Save(Path.Combine(directory,"native-save-backups"));
+            var reloaded=StudioConfiguration.Load(path);
+            Check(reloaded.Get("general","loglevel","")=="3"&&reloaded.GetBool("general","watchdogEnabled",false),"native configuration writes changed entries");
+            Check(reloaded.Get("unknownSection","keepMe","")=="unchanged","native configuration preserves unknown sections");
+            Check(!String.IsNullOrEmpty(backup)&&File.Exists(backup)&&backup.EndsWith(".zip",StringComparison.OrdinalIgnoreCase),"native configuration save creates a backup");
+            var fields=NativeSettingsSchema.Sections().SelectMany(section=>section.Groups).SelectMany(group=>group.Fields).ToArray();
+            Check(NativeSettingsSchema.Sections().Count>=6&&fields.Length>=50&&fields.All(field=>!String.IsNullOrEmpty(field.Section)&&!String.IsNullOrEmpty(field.Entry)),"native settings schema defines the first core pages");
+            string runtime=Path.Combine(directory,"native-runtime");
+            Directory.CreateDirectory(Path.Combine(runtime,"config"));
+            File.Copy(path,Path.Combine(runtime,"config","MediaPortal.xml"),true);
+            string nativePreferences=Path.Combine(directory,"native-preferences.xml");
+            using(var nativeForm=new NativeStudioForm(runtime,nativePreferences))
+            {
+                Check(nativeForm.Text.Contains("Neue Oberfläche")&&nativeForm.Controls.Count>0,"native Studio form constructs with the core sections");
             }
         }
         private static void CreateZip(string path,string entryName,string content)

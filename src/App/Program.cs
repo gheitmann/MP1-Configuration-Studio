@@ -14,9 +14,9 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("1.9.0")]
-[assembly: AssemblyVersion("1.9.0.0")]
-[assembly: AssemblyFileVersion("1.9.0.0")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.1")]
+[assembly: AssemblyVersion("2.0.0.0")]
+[assembly: AssemblyFileVersion("2.0.0.0")]
 
 namespace MP1.ConfigurationStudio
 {
@@ -37,10 +37,12 @@ namespace MP1.ConfigurationStudio
                 if (Array.IndexOf(args, "--design-preview") >= 0) return ShellTests.Preview();
 #endif
                 string preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null;
+                bool nativeUi = false;
                 var forwarded = new List<string>();
                 foreach (string arg in args)
                 {
-                    if (arg.StartsWith("--runtime=", StringComparison.OrdinalIgnoreCase)) runtime = arg.Substring(10).Trim('"');
+                    if (String.Equals(arg, "--native", StringComparison.OrdinalIgnoreCase)) nativeUi = true;
+                    else if (arg.StartsWith("--runtime=", StringComparison.OrdinalIgnoreCase)) runtime = arg.Substring(10).Trim('"');
                     else if (arg.StartsWith("--preferences=", StringComparison.OrdinalIgnoreCase)) preferences = arg.Substring(14).Trim('"');
                     else if (arg.StartsWith("--audit=", StringComparison.OrdinalIgnoreCase)) audit = arg.Substring(8).Trim('"');
                     else if (arg.StartsWith("--save-test=", StringComparison.OrdinalIgnoreCase)) saveCycle = arg.Substring(12).Trim('"');
@@ -57,6 +59,23 @@ namespace MP1.ConfigurationStudio
                     if (!Preflight.ConfirmMediaPortalClosed()) return 1;
                     StartNative(native, runtime);
                     return 0;
+                }
+                if(nativeUi)
+                {
+                    if(!SingleInstance.TryAcquire("MP1ConfigurationStudio-SingleInstance"))
+                    {
+                        MessageBox.Show(Localization.IsEnglish
+                                ?"MP1 Configuration Studio is already running in this session. Please close the existing window first."
+                                :"MP1 Configuration Studio läuft bereits in dieser Sitzung. Bitte zuerst das vorhandene Fenster schließen.",
+                            "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                        return 0;
+                    }
+                    try
+                    {
+                        using(var form=new NativeStudioForm(runtime,preferences))form.ShowDialog();
+                        return 0;
+                    }
+                    finally{SingleInstance.Release();}
                 }
                 if (version.FileMajorPart != 1 || version.FileMinorPart != 39)
                 {
