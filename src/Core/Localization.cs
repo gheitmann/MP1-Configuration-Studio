@@ -106,6 +106,8 @@ namespace MP1.ConfigurationStudio
             {"ZIP-Archiv (*.zip)|*.zip", "ZIP archive (*.zip)|*.zip"},
             {"Support-Bundle speichern", "Save support bundle"},
             {"Tastenkürzel", "Keyboard shortcuts"},
+            {"Ungespeicherte Änderungen", "Unsaved changes"},
+            {"Studio neu starten", "Restart Studio"},
             {"Schließen", "Close"},
             {"Verstanden", "Understood"},
             {"Warnung", "Warning"}

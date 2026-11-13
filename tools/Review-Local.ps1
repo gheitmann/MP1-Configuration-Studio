@@ -32,9 +32,11 @@ try {
  $nativeBefore=(Get-FileHash -LiteralPath $native).Hash
  $profileBefore=(Get-FileHash -LiteralPath $profile).Hash
  $started=Get-Date
+ $diagnostics=Join-Path $SourceDirectory 'StudioDiagnostics.exe'
+ $reviewExecutable=if(Test-Path -LiteralPath $diagnostics){$diagnostics}else{Join-Path $SourceDirectory 'MP1ConfigurationStudio.exe'}
  $reviewArgument=if($Core){'--verify="'}elseif($OkCycle){'--save-test="'}elseif($Persistence){'--persistence="'}else{'--review="'}
  $arguments=@(('--runtime="'+(Join-Path $TestRuntime 'base')+'"'),('--preferences="'+(Join-Path $TestRuntime 'review-appearance.xml')+'"'),($reviewArgument+$report+'"'))
- Start-Process -FilePath (Join-Path $SourceDirectory 'MP1ConfigurationStudio.exe') -ArgumentList $arguments -WindowStyle Hidden
+ Start-Process -FilePath $reviewExecutable -ArgumentList $arguments -WindowStyle Hidden
  $deadline=(Get-Date).AddMinutes(15)
  $complete=$false
  $restarted=$false
@@ -48,7 +50,7 @@ try {
     }
     if($OkCycle -and -not $restarted -and $review.DocumentElement.GetAttribute('stage') -eq 'saved'){
      foreach($process in @(Get-Process -Name 'MP1ConfigurationStudio','MP1ConfigurationStudio.x64','MP1ConfigurationStudio.x86' -ErrorAction SilentlyContinue | Where-Object {$_.Path -and (Split-Path $_.Path -Parent) -eq (Join-Path $TestRuntime 'base')})){if(-not $process.WaitForExit(15000)){throw 'First OK cycle process has not exited.'}}
-     Start-Process -FilePath (Join-Path $SourceDirectory 'MP1ConfigurationStudio.exe') -ArgumentList $arguments -WindowStyle Hidden
+     Start-Process -FilePath $reviewExecutable -ArgumentList $arguments -WindowStyle Hidden
      $restarted=$true
     }
     if($review.DocumentElement.GetAttribute('complete') -eq 'true'){

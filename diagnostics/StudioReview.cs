@@ -23,7 +23,9 @@ namespace MP1.ConfigurationStudio
                 string location=NativeContract.ConfigFolder(kind);
                 if(!Path.GetFullPath(location).StartsWith(isolatedRoot,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Non-isolated folder: "+kind);
             }
+            StudioLog.Info("Full review starting; nodes="+Flatten(tree.Nodes).Count());
             SetMode(true);
+            StudioLog.Info("Full review expert mode selected");
             form.Text="MP1 Configuration Studio · ISOLIERTE SEITENPRÜFUNG";
             var nodes=Flatten(tree.Nodes).ToArray();int index=0;int originalScale=appearance.TextScale;bool originalDark=appearance.Dark;
             var document=new XmlDocument();var root=document.CreateElement("fullReview");document.AppendChild(root);
@@ -32,6 +34,7 @@ namespace MP1.ConfigurationStudio
             Action save=delegate{Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));document.Save(path);};
             timer.Tick+=delegate{
                 timer.Stop();
+                if(index==0)StudioLog.Info("Full review timer started");
                 if(index>=nodes.Length){RunPluginDialogChecks(document,root,isolatedRoot);SetTextScale(originalScale);SetDark(originalDark);root.SetAttribute("complete","true");save();timer.Dispose();nativeCancel.PerformClick();return;}
                 TreeNode node=nodes[index++];Control page=NativeContract.NodeSection(node);var result=document.CreateElement("page");root.AppendChild(result);
                 result.SetAttribute("path",node.FullPath);result.SetAttribute("type",page==null?"":page.GetType().Name);

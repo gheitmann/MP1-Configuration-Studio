@@ -29,6 +29,7 @@ namespace MP1.ConfigurationStudio
             RunAppearanceSchemaChecks(directory);
             RunLoggingChecks(directory);
             RunVersionChecks();
+            RunCloseGuardChecks();
             RunCompatibilityPolicyChecks(directory);
             RunSupportBundleChecks(directory);
             RunBackupChecks(directory);
@@ -297,9 +298,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==3&&assemblyVersion.Build==0,"assembly version targets 1.3.0.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==4&&assemblyVersion.Build==0,"assembly version targets 1.4.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.3.0",StringComparison.Ordinal),"file version targets 1.3.0");
+            Check(fileVersion.StartsWith("1.4.0",StringComparison.Ordinal),"file version targets 1.4.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -335,6 +336,20 @@ namespace MP1.ConfigurationStudio
                 Check(nativePage.BackColor==Color.Magenta,"high contrast leaves native controls unthemed");
             }
             Palette.ForceHighContrast=false;
+        }
+        private static void RunCloseGuardChecks()
+        {
+            Check(!CloseGuard.ShouldPrompt(CloseReason.None,2,false,false),"programmatic close is not guarded");
+            Check(!CloseGuard.ShouldPrompt(CloseReason.UserClosing,0,false,false),"clean window close is not guarded");
+            Check(!CloseGuard.ShouldPrompt(CloseReason.UserClosing,2,true,false),"Studio restart skips the unsaved guard");
+            Check(!CloseGuard.ShouldPrompt(CloseReason.UserClosing,2,false,true),"automated test mode skips the unsaved guard");
+            Check(CloseGuard.ShouldPrompt(CloseReason.UserClosing,1,false,false),"window close with unsaved changes is guarded");
+            Check(CloseGuard.Prompt(1,false).Contains("Eine Änderung")&&CloseGuard.Prompt(2,true).Contains("2 unsaved changes"),"close prompt reflects the unsaved count and language");
+            Check(CloseGuard.RestartPrompt(0,true)=="Restart Studio now?"&&CloseGuard.RestartPrompt(2,false).Contains("2 ungespeicherte"),"restart prompt reflects the unsaved count");
+            Check(Localization.T("Studio neu starten")=="Studio neu starten","restart label falls back to German");
+            Localization.Set(UiLanguage.English);
+            Check(Localization.T("Studio neu starten")=="Restart Studio"&&Localization.T("Ungespeicherte Änderungen")=="Unsaved changes","restart and close labels are localized");
+            Localization.Set(UiLanguage.German);
         }
         private static void RunCompatibilityPolicyChecks(string directory)
         {
@@ -379,7 +394,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.3.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.4.0"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
             }
             StudioLog.Initialize(Path.Combine(directory,"logs-test"));

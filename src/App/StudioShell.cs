@@ -42,12 +42,14 @@ namespace MP1.ConfigurationStudio
         private IDisposable selectionFrame;
         private bool changingTheme;
         private bool restartClassic;
+        private bool restartStudio;
         private bool dpiNoticeShown;
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
         internal static Action<string> FaultHook {get;set;}
         internal static bool SuppressOnboarding {get;set;}
+        internal static bool SuppressCloseGuard {get;set;}
         public int OriginalSectionCount { get { return sections.Count; } }
         public int ChangedCount { get { return edits.Count; } }
         public bool ContextVisible { get { return appearance.ContextVisible; } }
@@ -124,6 +126,24 @@ namespace MP1.ConfigurationStudio
         {
             Action<string> hook=FaultHook;
             if(hook!=null)hook(stage);
+        }
+        private void StartStudioProcess()
+        {
+            try
+            {
+                string exe=Application.ExecutablePath;
+                string runtime=AppDomain.CurrentDomain.BaseDirectory;
+                Process.Start(new ProcessStartInfo(exe,"--runtime=\""+runtime+"\""){WorkingDirectory=Path.GetDirectoryName(exe),UseShellExecute=true});
+                StudioLog.Info("Studio restarted after display DPI change");
+            }
+            catch(Exception ex)
+            {
+                StudioLog.Error(ex,"Studio restart after DPI change failed");
+                MessageBox.Show(Localization.IsEnglish
+                        ?"Studio could not be restarted. Please start it manually.\r\n\r\n"+ex.Message
+                        :"Studio konnte nicht neu gestartet werden. Bitte manuell starten.\r\n\r\n"+ex.Message,
+                    "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
         }
         private void DisposeFailedAttach()
         {
@@ -202,6 +222,12 @@ namespace MP1.ConfigurationStudio
                 if(form.WindowState==FormWindowState.Normal){appearance.Width=form.Width;appearance.Height=form.Height;}
                 appearance.Save();tips.Dispose();pageZoom.Dispose();foreach(Font owned in shellFonts)owned.Dispose();
                 if(restartClassic){restartClassic=false;Program.StartNative(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);}
+                else if(restartStudio){restartStudio=false;SingleInstance.Release();StartStudioProcess();}
+            };
+            form.FormClosing+=delegate(object sender,FormClosingEventArgs e){
+                if(!CloseGuard.ShouldPrompt(e.CloseReason,edits.Count,restartClassic||restartStudio,SuppressCloseGuard))return;
+                if(MessageBox.Show(form,CloseGuard.Prompt(edits.Count,Localization.IsEnglish),Localization.T("Ungespeicherte Änderungen"),
+                    MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)e.Cancel=true;
             };
             holder.SizeChanged+=delegate{LayoutNativePage();};
             foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?theme.Colors.PrimaryText:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
@@ -210,11 +236,20 @@ namespace MP1.ConfigurationStudio
             form.DpiChanged+=delegate{
                 if(dpiNoticeShown)return;
                 dpiNoticeShown=true;
-                StudioLog.Warn("Display DPI changed; restart recommended");
-                MessageBox.Show(form,Localization.IsEnglish
-                        ?"Display scaling changed. Please restart Studio so the layout is recalculated."
-                        :"Die Bildschirmskalierung hat sich geändert. Bitte Studio neu starten, damit das Layout neu berechnet wird.",
-                    "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
+                StudioLog.Warn("Display DPI changed; offering restart");
+                DialogResult answer=MessageBox.Show(form,Localization.IsEnglish
+                        ?"Display scaling changed. Restart Studio now so the layout is recalculated?\r\n\r\nUnsaved changes will be lost."
+                        :"Die Bildschirmskalierung hat sich geändert. Studio jetzt neu starten, damit das Layout neu berechnet wird?\r\n\r\nNicht gespeicherte Änderungen gehen verloren.",
+                    "MP1 Configuration Studio",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button1);
+                if(answer==DialogResult.Yes)
+                {
+                    form.BeginInvoke((Action)delegate{
+                        if(form.IsDisposed||form.Disposing)return;
+                        restartStudio=true;StudioLog.Info("Studio restart requested after display DPI change");
+                        nativeCancel.PerformClick();
+                        if(!form.IsDisposed)form.Close();
+                    });
+                }
             };
             }
         }

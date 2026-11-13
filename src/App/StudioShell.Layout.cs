@@ -154,6 +154,9 @@ namespace MP1.ConfigurationStudio
             keyboard.Click+=delegate{OpenKeyboardHelp();};
             menu.Items.Add(keyboard);
             menu.Items.Add(new ToolStripSeparator());
+            var restart=new ToolStripMenuItem(Localization.T("Studio neu starten"));
+            restart.Click+=delegate{RestartStudio();};
+            menu.Items.Add(restart);
             var classic=new ToolStripMenuItem(Localization.T("Klassische Oberfläche starten"));
             classic.Click+=delegate{StartClassic();};
             menu.Items.Add(classic);
@@ -256,6 +259,15 @@ namespace MP1.ConfigurationStudio
                 StudioLog.Error(ex,"Configuration restore failed");
                 MessageBox.Show(form,Localization.T("Die Konfiguration konnte nicht wiederhergestellt werden.\r\n\r\n")+ex.Message+"\r\n\r\n"+Localization.T("Protokoll: ")+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
+        }
+        private void RestartStudio()
+        {
+            if(MessageBox.Show(form,CloseGuard.RestartPrompt(edits.Count,Localization.IsEnglish),Localization.T("Studio neu starten"),
+                MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+            restartStudio=true;
+            StudioLog.Info("Studio restart requested");
+            nativeCancel.PerformClick();
+            if(!form.IsDisposed)form.Close();
         }
         private void StartClassic()
         {

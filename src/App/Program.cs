@@ -14,9 +14,9 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("1.3.0")]
-[assembly: AssemblyVersion("1.3.0.0")]
-[assembly: AssemblyFileVersion("1.3.0.0")]
+[assembly: AssemblyInformationalVersion("1.4.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.4.0.0")]
 
 namespace MP1.ConfigurationStudio
 {
@@ -271,10 +271,15 @@ namespace MP1.ConfigurationStudio
                             return;
                         }
                         StudioShell.SuppressOnboarding = !String.IsNullOrEmpty(audit) || !String.IsNullOrEmpty(verify) || !String.IsNullOrEmpty(review) || !String.IsNullOrEmpty(persistence) || !String.IsNullOrEmpty(saveCycle);
+                        StudioShell.SuppressCloseGuard = StudioShell.SuppressOnboarding;
                         shell = StudioShell.Attach(form, preferences);
                         StudioLog.Info("Studio shell attached");
+                        bool readyStarted=false;
                         Action ready=delegate{
+                            if(readyStarted)return;
+                            readyStarted=true;
 #if DIAGNOSTICS
+                            StudioLog.Info("Diagnostics ready: audit="+(!String.IsNullOrEmpty(audit))+", verify="+(!String.IsNullOrEmpty(verify))+", review="+(!String.IsNullOrEmpty(review))+", persistence="+(!String.IsNullOrEmpty(persistence))+", saveCycle="+(!String.IsNullOrEmpty(saveCycle)));
                             if (!String.IsNullOrEmpty(audit)) shell.StartAudit(audit);
                             if (!String.IsNullOrEmpty(verify)) shell.StartNativeChecks(verify);
                             else if (!String.IsNullOrEmpty(review)) shell.StartFullReview(review);
