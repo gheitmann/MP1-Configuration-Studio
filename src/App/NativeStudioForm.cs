@@ -237,6 +237,32 @@ namespace MP1.ConfigurationStudio
 
         private void AddField(NativeField field)
         {
+            if (field.Kind == NativeFieldKind.DynamicBools)
+            {
+                int count = 0;
+                foreach (var entry in configuration.Entries(field.Section).ToArray())
+                {
+                    if (String.IsNullOrEmpty(entry.Key)) continue;
+                    string key = entry.Key;
+                    var check = new CheckBox { Text = key, Checked = configuration.GetBool(field.Section, key, false), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                    check.CheckedChanged += delegate { configuration.SetBool(field.Section, key, check.Checked); MarkDirty(); };
+                    table.Controls.Add(check, 0, table.RowCount);
+                    table.SetColumnSpan(check, 2);
+                    table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    table.RowCount++;
+                    count++;
+                }
+                if (count == 0)
+                {
+                    var empty = new Label { Text = Localization.IsEnglish ? "No entries found in the configuration." : "Keine Einträge in der Konfiguration gefunden.", Font = small, ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(2), 0, Px(10)) };
+                    table.Controls.Add(empty, 0, table.RowCount);
+                    table.SetColumnSpan(empty, 2);
+                    table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    table.RowCount++;
+                }
+                AddHelp(field);
+                return;
+            }
             if (field.Kind == NativeFieldKind.Shares)
             {
                 var editor = new NativeShareEditor(configuration, field.Section, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(6)) };
