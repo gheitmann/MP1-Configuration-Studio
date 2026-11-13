@@ -130,6 +130,7 @@ namespace MP1.ConfigurationStudio
             if (checkbox != null) checkbox.UseVisualStyleBackColor = false;
             var radio = c as RadioButton;
             if (radio != null) radio.UseVisualStyleBackColor = false;
+            if(c.GetType().Name.IndexOf("Label",StringComparison.OrdinalIgnoreCase)>=0&&!(c is TextBoxBase)){c.Enabled=true;c.ForeColor=p.Text;}
             var link = c as LinkLabel;
             if (link != null) { link.LinkColor = p.Accent; link.ActiveLinkColor = p.Accent; link.VisitedLinkColor = p.Accent; }
             var tree = c as TreeView;

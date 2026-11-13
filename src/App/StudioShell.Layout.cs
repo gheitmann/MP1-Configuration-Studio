@@ -11,6 +11,7 @@ namespace MP1.ConfigurationStudio
     public sealed partial class StudioShell
     {
         private StudioNavigation navigation;
+        private ContextMenuStrip toolsMenu;
         private ComboBox sizeChoice,modeChoice;
         private StudioAction backButton,forwardButton;
         private Panel pageIcon;
@@ -78,7 +79,7 @@ namespace MP1.ConfigurationStudio
             var headings=new Panel {Dock=DockStyle.Top,Height=Px(92)};breadcrumb=new Label {AutoEllipsis=true,Dock=DockStyle.Top,Height=Px(22),Font=labelFont,Name="studioMuted"};
             pageLead=new Label {Dock=DockStyle.Bottom,Height=Px(24),Font=labelFont,Name="studioPageLead",AutoEllipsis=true};
             var titleRow=new Panel {Dock=DockStyle.Fill};pageIcon=new Panel {Dock=DockStyle.Left,Width=Px(42)};pageIcon.Paint+=delegate(object sender,PaintEventArgs e){if(tree.SelectedNode!=null)StudioIcons.Draw(e.Graphics,navigation.Icon(tree.SelectedNode),new Rectangle(0,Px(9),Px(29),Px(29)),theme.Colors.Accent);};title=new Label {Dock=DockStyle.Fill,Font=headingFont,AutoEllipsis=true,UseMnemonic=false,Name="studioPageTitle"};titleRow.Controls.Add(title);titleRow.Controls.Add(pageIcon);headings.Controls.Add(titleRow);headings.Controls.Add(pageLead);headings.Controls.Add(breadcrumb);
-            tabs=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=false,Height=Px(32),WrapContents=true,AutoScroll=false,AccessibleName=Localization.T("Unterbereiche"),Margin=Padding.Empty,TabIndex=8};
+            tabs=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=false,Height=Px(40),WrapContents=true,AutoScroll=false,AccessibleName=Localization.T("Unterbereiche"),Margin=Padding.Empty,TabIndex=8};
             tabs.Layout+=delegate{if(tabs.Width<=0)return;int expected=tabs.GetPreferredSize(new Size(tabs.ClientSize.Width,0)).Height;if(expected>0&&tabs.Height!=expected)tabs.Height=expected;};
             holder.Padding=Padding.Empty;holder.Margin=Padding.Empty;holder.AutoScroll=true;contentScroll=new StudioScrollHost(holder,()=>holder.AutoScrollMinSize,()=>theme.Colors,true);center.Controls.Add(contentScroll);center.Controls.Add(tabs);center.Controls.Add(headings);
             context=new Panel {Dock=DockStyle.Fill,Margin=Padding.Empty,Padding=new Padding(Px(20),Px(22),Px(18),Px(12)),Name="studioContext",AccessibleName="Hilfe und Kontext"};
@@ -143,7 +144,8 @@ namespace MP1.ConfigurationStudio
         private void InvokeNativeTool(string name){var item=NativeItems(nativeTools.Items).FirstOrDefault(i=>i.Name.IndexOf(name=="logs"?"logs":"configToolStrip",StringComparison.OrdinalIgnoreCase)>=0);if(item!=null)ClickNative(item);else status.Text=Localization.T("Dieser Ordnerzugriff wird von der Installation nicht angeboten.");}
         private void ShowNativeTools(Control anchor)
         {
-            var menu=new ContextMenuStrip {Font=font};
+            if(toolsMenu!=null){try{toolsMenu.Dispose();}catch{}}
+            var menu=new ContextMenuStrip {Font=font};toolsMenu=menu;
             Action<ToolStripItemCollection,ToolStripItemCollection> copy=null;copy=delegate(ToolStripItemCollection source,ToolStripItemCollection target){foreach(ToolStripItem original in source){if(original is ToolStripSeparator){target.Add(new ToolStripSeparator());continue;}var proxy=new ToolStripMenuItem(original.Text){Enabled=original.Enabled};var checkedButton=original as ToolStripButton;if(checkedButton!=null)proxy.Checked=checkedButton.Checked;ToolStripItem action=original;target.Add(proxy);var dropdown=original as ToolStripDropDownItem;if(dropdown!=null&&dropdown.DropDownItems.Count>0)copy(dropdown.DropDownItems,proxy.DropDownItems);else proxy.Click+=delegate{ClickNative(action);};}};
             copy(nativeTools.Items,menu.Items);
             menu.Items.Add(new ToolStripSeparator());
@@ -165,6 +167,9 @@ namespace MP1.ConfigurationStudio
             var keyboard=new ToolStripMenuItem(Localization.T("Tastenkürzel…"));
             keyboard.Click+=delegate{OpenKeyboardHelp();};
             menu.Items.Add(keyboard);
+            var helpColumn=new ToolStripMenuItem(Localization.T(appearance.ContextVisible?"Hilfe ausblenden":"Hilfe einblenden"));
+            helpColumn.Click+=delegate{SetContext(!appearance.ContextVisible,true);};
+            menu.Items.Add(helpColumn);
             menu.Items.Add(new ToolStripSeparator());
             var restart=new ToolStripMenuItem(Localization.T("Studio neu starten"));
             restart.Click+=delegate{RestartStudio();};
@@ -185,7 +190,7 @@ namespace MP1.ConfigurationStudio
             var about=new ToolStripMenuItem(Localization.T("Über MP1 Configuration Studio"));
             about.Click+=delegate{ShowAbout();};
             menu.Items.Add(about);
-            theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
+            theme.Apply(menu);menu.Show(anchor,new Point(0,anchor.Height));
         }
         private string MediaPortalConfigPath()
         {

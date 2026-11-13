@@ -2,7 +2,7 @@
 
 **Updated:** 2026-11-13
 **Branch:** `main`
-**Release:** [1.8.2](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.2) published unsigned with a documented waiver. See [FINAL-1.8.2-VERIFICATION.md](FINAL-1.8.2-VERIFICATION.md).
+**Release:** [1.8.3](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.3) published unsigned with a documented waiver. See [FINAL-1.8.3-VERIFICATION.md](FINAL-1.8.3-VERIFICATION.md).
 **Last verification:** 207/207 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates; page audit with screenshots and low-contrast checks.
 
 ## Completed
@@ -38,7 +38,7 @@
 
 1. OS DPI 150/200% and mixed-monitor fresh-session checks.
 2. Clean Windows 11 VM verification of the published artifact.
-3. Code signing for a future signed re-release (current 1.8.2 is unsigned by waiver).
+3. Code signing for a future signed re-release (current 1.8.3 is unsigned by waiver).
 4. NUnit migration for the fixture suite (deferred from M1-11).
 5. A dedicated visual High Contrast session at OS level.
 

@@ -208,12 +208,12 @@ namespace MP1.ConfigurationStudio
             e.Graphics.Clear(BackColor);
             e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             bool highContrast=Palette.HighContrastActive;
-            using(var shape=StudioIcons.Rounded(new Rectangle(0,2,Width-1,Height-6),5))
+            using(var shape=StudioIcons.Rounded(new Rectangle(0,2,Width-1,Height-6),4))
             {
                 using(var brush=new SolidBrush(Selected?p.Panel:(hover?p.Hover:BackColor)))e.Graphics.FillPath(brush,shape);
                 using(var pen=new Pen(Selected?p.Accent:p.Border))e.Graphics.DrawPath(pen,shape);
             }
-            Color ink=Selected?(highContrast?SystemColors.WindowText:p.Text):(hover&&highContrast?SystemColors.HighlightText:p.Muted);
+            Color ink=Selected?(highContrast?SystemColors.WindowText:p.Accent):(hover&&highContrast?SystemColors.HighlightText:p.Text);
             TextRenderer.DrawText(e.Graphics,Text,Font,new Rectangle(6,0,Math.Max(0,Width-12),Height),ink,TextFormatFlags.VerticalCenter|TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
             if(Focused&&!Selected)ControlPaint.DrawFocusRectangle(e.Graphics,Rectangle.Inflate(ClientRectangle,-4,-4),p.Accent,BackColor);
         }

@@ -12,7 +12,7 @@ namespace MP1.ConfigurationStudio
         public const int CurrentSchema = 2;
 
         public bool Dark = true;
-        public bool ContextVisible = true;
+        public bool ContextVisible = false;
         public bool OnboardingSeen = false;
         public bool PreSaveBackup = true;
         public string Language = "de";
@@ -40,7 +40,7 @@ namespace MP1.ConfigurationStudio
         private void Reset()
         {
             Dark = true;
-            ContextVisible = true;
+            ContextVisible = false;
             OnboardingSeen = false;
             PreSaveBackup = true;
             Language = Localization.DefaultCode;
@@ -73,7 +73,7 @@ namespace MP1.ConfigurationStudio
                 SchemaVersion = Int32.TryParse(root.GetAttribute("schema"), out schema) && schema > 0 ? schema : 1;
                 ThemeMode = root.GetAttribute("theme") == "Hell" ? "Hell" : "Dunkel";
                 Dark = ThemeMode == "Dunkel";
-                ContextVisible = root.GetAttribute("context") != "false";
+                ContextVisible = root.GetAttribute("context") == "true";
                 OnboardingSeen = root.GetAttribute("onboarding") == "true";
                 PreSaveBackup = root.GetAttribute("preSaveBackup") != "false";
                 string language = root.GetAttribute("language");

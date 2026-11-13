@@ -2,7 +2,7 @@
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
-> **Current release:** [1.8.2](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.2) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
+> **Current release:** [1.8.3](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.3) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -25,15 +25,15 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 - Approvers: [@gheitmann](https://github.com/gheitmann)
 - Privacy policy: [PRIVACY.md](PRIVACY.md)
 
-The published 1.8.2 build predates the SignPath application and is unsigned. The SignPath application will be submitted after the planned repository move toward the official MediaPortal organization, so that the project is bound to its final URL. A signed 1.8.x re-release will then use the prepared workflow. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
+The published 1.8.3 build predates the SignPath application and is unsigned. The SignPath application will be submitted after the planned repository move toward the official MediaPortal organization, so that the project is bound to its final URL. A signed 1.8.x re-release will then use the prepared workflow. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
 
 ## Install and run
 
-1.8.2 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.
+1.8.3 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.
 
 1. Back up the MediaPortal configuration.
 2. Close MediaPortal and the original configurator.
-3. Download `MP1-Configuration-Studio-1.8.2-Setup.exe` or the portable ZIP from [Releases](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.2). Verify the SHA256 sidecar.
+3. Download `MP1-Configuration-Studio-1.8.3-Setup.exe` or the portable ZIP from [Releases](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.8.3). Verify the SHA256 sidecar.
 4. Run the setup (administrator approval is required) or extract the portable ZIP completely.
 5. Start `MP1ConfigurationStudio.exe`.
 
@@ -62,7 +62,7 @@ The setup and ZIP are unsigned. Windows SmartScreen or antivirus software may wa
 
 ## Validation and limits
 
-1.8.2 validation: 207/207 fixture checks on x64, 27/27 native smoke checks on isolated MediaPortal 1.39 x64, and a full 175% review of 61/61 pages with 0 value failures and 0 overflow candidates. The page audit also captures screenshots, low-contrast controls, and overlap candidates for all 61 pages. Attach time is about 340 ms. See [final verification](docs/FINAL-1.8.2-VERIFICATION.md) and [release notes](docs/RELEASE-1.8.2.md) for scope and known limitations. The build is unsigned.
+1.8.3 validation: 207/207 fixture checks on x64, 27/27 native smoke checks on isolated MediaPortal 1.39 x64, and a full 175% review of 61/61 pages with 0 value failures and 0 overflow candidates. The page audit also captures screenshots, low-contrast controls, and overlap candidates for all 61 pages. Attach time is about 340 ms. See [final verification](docs/FINAL-1.8.3-VERIFICATION.md) and [release notes](docs/RELEASE-1.8.3.md) for scope and known limitations. The build is unsigned.
 
 ## Build
 
@@ -77,7 +77,7 @@ The build targets .NET Framework 4.8 through the `Microsoft.NETFramework.Referen
 Create a portable release ZIP:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Package-Studio.ps1 -Version 1.8.2
+powershell -ExecutionPolicy Bypass -File .\tools\Package-Studio.ps1 -Version 1.8.3
 ```
 
 The tag release workflow builds the setup executable with Inno Setup, writes SHA256 sidecars, and publishes a draft GitHub release. Final releases require the signing secrets `SIGNING_PFX_BASE64` and `SIGNING_PFX_PASSWORD`.
