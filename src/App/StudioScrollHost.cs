@@ -53,7 +53,7 @@ namespace MP1.ConfigurationStudio
             int pos=Maximum<=0?0:(int)((long)Math.Max(0,Math.Min(Value,Maximum))*(length-size)/Maximum);
             return Vertical?new Rectangle(3,pos,5,size):new Rectangle(pos,3,size,5);
         }
-        protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(BackColor);if(Maximum<=0)return;using(var shape=StudioIcons.Rounded(Thumb(),3))using(var brush=new SolidBrush(Color.FromArgb(drag>=0?230:125,Colors().Muted)))e.Graphics.FillPath(brush,shape);}
+        protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(BackColor);if(Maximum<=0)return;Color ink=Palette.HighContrastActive?SystemColors.WindowText:Color.FromArgb(drag>=0?230:125,Colors().Muted);using(var shape=StudioIcons.Rounded(Thumb(),3))using(var brush=new SolidBrush(ink))e.Graphics.FillPath(brush,shape);}
         protected override void OnMouseDown(MouseEventArgs e){base.OnMouseDown(e);Rectangle thumb=Thumb();int point=Vertical?e.Y:e.X;drag=thumb.Contains(e.Location)?point-(Vertical?thumb.Top:thumb.Left):(Vertical?thumb.Height:thumb.Width)/2;Capture=true;MoveThumb(point);}
         protected override void OnMouseMove(MouseEventArgs e){base.OnMouseMove(e);if(drag>=0)MoveThumb(Vertical?e.Y:e.X);}
         protected override void OnMouseUp(MouseEventArgs e){base.OnMouseUp(e);drag=-1;Capture=false;Invalidate();}

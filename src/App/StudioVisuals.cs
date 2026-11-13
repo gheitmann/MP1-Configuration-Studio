@@ -40,25 +40,36 @@ namespace MP1.ConfigurationStudio
         public Func<Palette> Colors;public string IconName;public bool Selected;public bool Navigation;public bool Secondary;
         private bool hover;
         public StudioAction(){FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;SetStyle(ControlStyles.OptimizedDoubleBuffer|ControlStyles.AllPaintingInWmPaint|ControlStyles.ResizeRedraw,true);Cursor=Cursors.Hand;}
+        internal static Color Ink(Palette p,bool enabled,bool hovered,bool selected,bool secondary)
+        {
+            if(!enabled)return p.Muted;
+            if(selected)return Palette.HighContrastActive?SystemColors.HighlightText:p.SelectionText;
+            if(hovered)return Palette.HighContrastActive?SystemColors.HighlightText:p.Text;
+            return secondary?p.Muted:p.Text;
+        }
         protected override void OnMouseEnter(EventArgs e){hover=true;Invalidate();base.OnMouseEnter(e);}
         protected override void OnMouseLeave(EventArgs e){hover=false;Invalidate();base.OnMouseLeave(e);}
         protected override void OnPaint(PaintEventArgs e)
         {
             var p=Colors==null?Palette.For(true):Colors();e.Graphics.Clear(BackColor);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;
-            if(Selected||hover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(hover?p.Hover:p.Selection))e.Graphics.FillPath(b,shape);}
+            if(Selected||hover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(Selected?p.Selection:p.Hover))e.Graphics.FillPath(b,shape);}
             if(Selected&&Navigation)using(var b=new SolidBrush(p.Accent))e.Graphics.FillRectangle(b,0,7,3,Height-14);
-            Color ink=!Enabled?p.Muted:hover?p.Text:Selected?p.SelectionText:Secondary?p.Muted:p.Text;
+            Color ink=Ink(p,Enabled,hover,Selected,Secondary);
             int iconSize=Math.Min(23,Font.Height+2),left=Navigation?15:10;
             if(!String.IsNullOrEmpty(IconName)){StudioIcons.Draw(e.Graphics,IconName,new Rectangle(left,(Height-iconSize)/2,iconSize,iconSize),ink);left+=iconSize+12;}
             var flags=TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix;
             if(!Navigation&&String.IsNullOrEmpty(IconName))flags|=TextFormatFlags.HorizontalCenter;
             TextRenderer.DrawText(e.Graphics,Text,Font,new Rectangle(left,0,Math.Max(0,Width-left-12),Height),ink,flags);
-            if(Focused)using(var pen=new Pen(p.Accent))e.Graphics.DrawLine(pen,12,Height-3,Width-12,Height-3);
+            if(Focused)
+            {
+                if(Palette.HighContrastActive)ControlPaint.DrawFocusRectangle(e.Graphics,Rectangle.Inflate(ClientRectangle,-3,-3),p.Text,BackColor);
+                else using(var pen=new Pen(p.Accent))e.Graphics.DrawLine(pen,12,Height-3,Width-12,Height-3);
+            }
         }
     }
     internal sealed class StudioLogo : Control
     {
         public Func<Palette> Colors;
-        protected override void OnPaint(PaintEventArgs e){var p=Colors();e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),8))using(var b=new SolidBrush(p.Primary))e.Graphics.FillPath(b,shape);TextRenderer.DrawText(e.Graphics,"MP",Font,ClientRectangle,Color.White,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
+        protected override void OnPaint(PaintEventArgs e){var p=Colors();e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),8))using(var b=new SolidBrush(p.Primary))e.Graphics.FillPath(b,shape);if(Palette.HighContrastActive)using(var pen=new Pen(SystemColors.WindowFrame))e.Graphics.DrawRectangle(pen,0,0,Width-1,Height-1);TextRenderer.DrawText(e.Graphics,"MP",Font,ClientRectangle,p.PrimaryText,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
     }
 }

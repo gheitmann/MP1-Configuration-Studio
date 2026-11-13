@@ -129,6 +129,9 @@ namespace MP1.ConfigurationStudio
             {
                 builder.AppendLine("DPI: unavailable");
             }
+            builder.AppendLine("System DPI: " + DisplayScale.SystemDpi().ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("High contrast: " + (SystemInformation.HighContrast ? "active" : "inactive"));
+            builder.AppendLine("Screens: " + Screen.AllScreens.Length.ToString(CultureInfo.InvariantCulture));
 
             string native = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration.exe");
             if (File.Exists(native))

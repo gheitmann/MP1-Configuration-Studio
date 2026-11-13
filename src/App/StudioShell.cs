@@ -44,6 +44,7 @@ namespace MP1.ConfigurationStudio
         private bool restartClassic;
         private bool restartStudio;
         private bool dpiNoticeShown;
+        private Timer dpiWatch;
         private bool initializing;
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
@@ -127,6 +128,23 @@ namespace MP1.ConfigurationStudio
             Action<string> hook=FaultHook;
             if(hook!=null)hook(stage);
         }
+        private void OfferDpiRestart(string reason)
+        {
+            if(dpiNoticeShown)return;
+            dpiNoticeShown=true;
+            StudioLog.Warn(reason+"; offering restart");
+            DialogResult answer=MessageBox.Show(form,Localization.IsEnglish
+                    ?"Display scaling changed. Restart Studio now so the layout is recalculated?\r\n\r\nUnsaved changes will be lost."
+                    :"Die Bildschirmskalierung hat sich geändert. Studio jetzt neu starten, damit das Layout neu berechnet wird?\r\n\r\nNicht gespeicherte Änderungen gehen verloren.",
+                "MP1 Configuration Studio",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button1);
+            if(answer!=DialogResult.Yes)return;
+            form.BeginInvoke((Action)delegate{
+                if(form.IsDisposed||form.Disposing)return;
+                restartStudio=true;StudioLog.Info("Studio restart requested after display DPI change");
+                nativeCancel.PerformClick();
+                if(!form.IsDisposed)form.Close();
+            });
+        }
         private void StartStudioProcess()
         {
             try
@@ -149,6 +167,7 @@ namespace MP1.ConfigurationStudio
         {
             try{tips.Dispose();}catch{}
             try{pageZoom.Dispose();}catch{}
+            try{if(dpiWatch!=null){dpiWatch.Stop();dpiWatch.Dispose();}}catch{}
             foreach(Font owned in shellFonts){try{owned.Dispose();}catch{}}
         }
         private StudioShell(Form f,TreeView originalTree,Panel originalHolder,Button ok,Button cancel,Button apply,ToolStrip tools,Control donateLink,string preferencePath,List<Control> originalSections)
@@ -220,7 +239,7 @@ namespace MP1.ConfigurationStudio
             form.FormClosed+=delegate{
                 Application.Idle-=CompleteSelectionFrame;CompleteSelectionFrame(null,EventArgs.Empty);
                 if(form.WindowState==FormWindowState.Normal){appearance.Width=form.Width;appearance.Height=form.Height;}
-                appearance.Save();tips.Dispose();pageZoom.Dispose();foreach(Font owned in shellFonts)owned.Dispose();
+                appearance.Save();tips.Dispose();pageZoom.Dispose();if(dpiWatch!=null){dpiWatch.Stop();dpiWatch.Dispose();}foreach(Font owned in shellFonts)owned.Dispose();
                 if(restartClassic){restartClassic=false;Program.StartNative(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Configuration.exe"),AppDomain.CurrentDomain.BaseDirectory);}
                 else if(restartStudio){restartStudio=false;SingleInstance.Release();StartStudioProcess();}
             };
@@ -233,24 +252,15 @@ namespace MP1.ConfigurationStudio
             foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?theme.Colors.PrimaryText:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
             form.KeyPreview=true;
             form.KeyDown+=OnKeyDown;
-            form.DpiChanged+=delegate{
-                if(dpiNoticeShown)return;
-                dpiNoticeShown=true;
-                StudioLog.Warn("Display DPI changed; offering restart");
-                DialogResult answer=MessageBox.Show(form,Localization.IsEnglish
-                        ?"Display scaling changed. Restart Studio now so the layout is recalculated?\r\n\r\nUnsaved changes will be lost."
-                        :"Die Bildschirmskalierung hat sich geändert. Studio jetzt neu starten, damit das Layout neu berechnet wird?\r\n\r\nNicht gespeicherte Änderungen gehen verloren.",
-                    "MP1 Configuration Studio",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button1);
-                if(answer==DialogResult.Yes)
-                {
-                    form.BeginInvoke((Action)delegate{
-                        if(form.IsDisposed||form.Disposing)return;
-                        restartStudio=true;StudioLog.Info("Studio restart requested after display DPI change");
-                        nativeCancel.PerformClick();
-                        if(!form.IsDisposed)form.Close();
-                    });
-                }
+            form.DpiChanged+=delegate{OfferDpiRestart("Display DPI changed");};
+            int systemDpi=DisplayScale.SystemDpi();
+            dpiWatch=new Timer {Interval=2000};
+            dpiWatch.Tick+=delegate{
+                int current=DisplayScale.SystemDpi();
+                if(DisplayScale.ShouldOffer(systemDpi,current,dpiNoticeShown))OfferDpiRestart("System DPI changed");
+                systemDpi=current;
             };
+            dpiWatch.Start();
             }
         }
         private void CompleteSelectionFrame(object sender,EventArgs e)

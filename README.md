@@ -2,7 +2,7 @@
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
-> **Current release:** [1.4.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.4.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
+> **Current release:** [1.5.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.5.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -24,15 +24,15 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 - Approvers: [@gheitmann](https://github.com/gheitmann)
 - Privacy policy: [PRIVACY.md](PRIVACY.md)
 
-The published 1.4.0 build predates the SignPath application and is unsigned. The SignPath application will be submitted after the planned repository move toward the official MediaPortal organization, so that the project is bound to its final URL. A signed 1.4.x re-release will then use the prepared workflow. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
+The published 1.5.0 build predates the SignPath application and is unsigned. The SignPath application will be submitted after the planned repository move toward the official MediaPortal organization, so that the project is bound to its final URL. A signed 1.5.x re-release will then use the prepared workflow. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
 
 ## Install and run
 
-1.4.0 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.
+1.5.0 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.
 
 1. Back up the MediaPortal configuration.
 2. Close MediaPortal and the original configurator.
-3. Download `MP1-Configuration-Studio-1.4.0-Setup.exe` or the portable ZIP from [Releases](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.4.0). Verify the SHA256 sidecar.
+3. Download `MP1-Configuration-Studio-1.5.0-Setup.exe` or the portable ZIP from [Releases](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.5.0). Verify the SHA256 sidecar.
 4. Run the setup (administrator approval is required) or extract the portable ZIP completely.
 5. Start `MP1ConfigurationStudio.exe`.
 
@@ -44,7 +44,8 @@ The setup and ZIP are unsigned. Windows SmartScreen or antivirus software may wa
 
 - The tools menu can create a backup of `MediaPortal.xml` and restore it later. A first-run backup is created automatically.
 - Closing the Studio window with unsaved changes asks for confirmation before discarding them.
-- Tools → Restart Studio relaunches Studio. A reported display DPI change also offers an automatic restart so the layout is recalculated.
+- Tools → Restart Studio relaunches Studio. A reported display DPI change also offers an automatic restart so the layout is recalculated; Studio checks the system DPI periodically in case Windows does not raise the form event.
+- High Contrast mode uses system colors throughout the custom shell, including hover/selection text, focus, the logo, and scroll thumbs. Support bundles record the system DPI, High Contrast state, and screen count.
 - `MP1ConfigurationStudio.exe --classic` or the tools menu starts the original configurator without the Studio shell.
 - Restoring a backup closes Studio, keeps a safety copy of the current file, and restarts the original configurator.
 
@@ -58,7 +59,7 @@ The setup and ZIP are unsigned. Windows SmartScreen or antivirus software may wa
 
 ## Validation and limits
 
-1.4.0 validation: 197/197 fixture checks on x64, 27/27 native smoke checks on isolated MediaPortal 1.39 x64, and a full 175% review of 61/61 pages with 0 value failures and 0 overflow candidates. Attach time is about 340 ms. See [final verification](docs/FINAL-1.4.0-VERIFICATION.md) and [release notes](docs/RELEASE-1.4.0.md) for scope and known limitations. The build is unsigned.
+1.5.0 validation: 203/203 fixture checks on x64, 27/27 native smoke checks on isolated MediaPortal 1.39 x64, and a full 175% review of 61/61 pages with 0 value failures and 0 overflow candidates. Attach time is about 340 ms. See [final verification](docs/FINAL-1.5.0-VERIFICATION.md) and [release notes](docs/RELEASE-1.5.0.md) for scope and known limitations. The build is unsigned.
 
 ## Build
 
@@ -73,7 +74,7 @@ The build targets .NET Framework 4.8 through the `Microsoft.NETFramework.Referen
 Create a portable release ZIP:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Package-Studio.ps1 -Version 1.4.0
+powershell -ExecutionPolicy Bypass -File .\tools\Package-Studio.ps1 -Version 1.5.0
 ```
 
 The tag release workflow builds the setup executable with Inno Setup, writes SHA256 sidecars, and publishes a draft GitHub release. Final releases require the signing secrets `SIGNING_PFX_BASE64` and `SIGNING_PFX_PASSWORD`.
