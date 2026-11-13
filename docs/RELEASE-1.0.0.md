@@ -2,6 +2,15 @@
 
 **Status:** 1.0.0 release for MediaPortal 1.39 x64. This build is **unsigned**: no code-signing certificate is configured. Windows SmartScreen may warn; verify the published SHA256 before running.
 
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation. The SignPath application is prepared but not yet approved; this 1.0.0 build predates it.
+
+- Committers and reviewers: [@gheitmann](https://github.com/gheitmann)
+- Approvers: [@gheitmann](https://github.com/gheitmann)
+- Privacy policy: [PRIVACY.md](https://github.com/gheitmann/MP1-Configuration-Studio/blob/main/PRIVACY.md)
+- SignPath setup: [docs/SIGNPATH.md](https://github.com/gheitmann/MP1-Configuration-Studio/blob/main/docs/SIGNPATH.md)
+
 ## What it is
 
 A modern, readable shell around the original MediaPortal 1.39 configurator. The native pages, controls, values, and save handlers remain in use.

@@ -16,6 +16,16 @@ Studio adds grouped navigation with icons, search, navigation history, light/dar
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+- Committers and reviewers: [@gheitmann](https://github.com/gheitmann)
+- Approvers: [@gheitmann](https://github.com/gheitmann)
+- Privacy policy: [PRIVACY.md](PRIVACY.md)
+
+The published 1.0.0 build predates the SignPath application and is unsigned. A signed 1.0.x re-release will use the prepared SignPath workflow once the foundation approves the project. See [docs/SIGNPATH.md](docs/SIGNPATH.md).
+
 ## Install and run
 
 1.0.0 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.

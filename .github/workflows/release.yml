@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   release:
@@ -53,13 +54,66 @@ jobs:
         run: |
           $version = '${{ steps.version.outputs.value }}'
           $allowUnsigned = '${{ inputs.unsigned_waiver }}' -eq 'true' -or '${{ vars.ALLOW_UNSIGNED_FINAL }}' -eq 'true'
+          $hasSignPath = '${{ vars.SIGNPATH_ORGANIZATION_ID }}' -ne ''
           if ($env:SIGNING_PFX_BASE64) {
             .\tools\Sign-Studio.ps1 -Target 'dist\MP1ConfigurationStudio.exe' -RequireSignature
+          } elseif ($hasSignPath) {
+            Write-Output 'Application signing delegated to SignPath.'
           } elseif ($version -notmatch '-' -and -not $allowUnsigned) {
-            throw 'Final releases require SIGNING_PFX_BASE64 and SIGNING_PFX_PASSWORD, or the documented ALLOW_UNSIGNED_FINAL waiver.'
+            throw 'Final releases require a signing certificate, SignPath configuration, or the documented ALLOW_UNSIGNED_FINAL waiver.'
           } else {
             Write-Warning 'UNSIGNED RELEASE: no signing certificate configured. The release notes disclose this.'
           }
+
+      - name: Stage unsigned application for SignPath
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path 'signpath\app' | Out-Null
+          Copy-Item 'dist\MP1ConfigurationStudio.exe' 'signpath\app\MP1ConfigurationStudio.exe' -Force
+          Compress-Archive -Path 'signpath\app\MP1ConfigurationStudio.exe' -DestinationPath 'signpath\app.zip' -Force
+
+      - name: Upload unsigned application
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        id: upload-app
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app
+          path: signpath\app.zip
+
+      - name: Sign application via SignPath
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        id: sign-app
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_APP_CONFIG_SLUG }}
+          github-artifact-id: ${{ steps.upload-app.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-app
+
+      - name: Use signed application
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: powershell
+        run: |
+          $candidates = @('signed-app\MP1ConfigurationStudio.exe', 'signed-app\app\MP1ConfigurationStudio.exe', 'signed-app\app.zip')
+          $found = $null
+          foreach ($candidate in $candidates) {
+            if (Test-Path -LiteralPath $candidate) { $found = $candidate; break }
+          }
+          if (-not $found) { throw 'Signed application not found in the SignPath output.' }
+          if ($found -like '*.zip') {
+            Expand-Archive -LiteralPath $found -DestinationPath 'signed-app\extracted' -Force
+            $exe = Get-ChildItem 'signed-app\extracted' -Recurse -Filter 'MP1ConfigurationStudio.exe' | Select-Object -First 1
+            if (-not $exe) { throw 'Signed application executable not found in the SignPath ZIP.' }
+            $found = $exe.FullName
+          }
+          Copy-Item -LiteralPath $found -Destination 'dist\MP1ConfigurationStudio.exe' -Force
+          $signature = Get-AuthenticodeSignature -LiteralPath 'dist\MP1ConfigurationStudio.exe'
+          if ($signature.Status -ne 'Valid') { throw "SignPath application signature is not valid: $($signature.Status)" }
 
       - name: Package portable ZIP
         shell: powershell
@@ -85,7 +139,58 @@ jobs:
           $setup = "dist\package\MP1-Configuration-Studio-${{ steps.version.outputs.value }}-Setup.exe"
           if ($env:SIGNING_PFX_BASE64) {
             .\tools\Sign-Studio.ps1 -Target $setup -RequireSignature
+          } else {
+            Write-Output 'Skipping PFX setup signing.'
           }
+
+      - name: Stage unsigned setup for SignPath
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: powershell
+        run: |
+          $setup = Get-ChildItem 'dist\package' -Filter '*Setup.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'Setup executable not found.' }
+          New-Item -ItemType Directory -Force -Path 'signpath\setup' | Out-Null
+          Copy-Item -LiteralPath $setup.FullName -Destination (Join-Path 'signpath\setup' $setup.Name) -Force
+          Compress-Archive -Path (Join-Path 'signpath\setup' $setup.Name) -DestinationPath 'signpath\setup.zip' -Force
+
+      - name: Upload unsigned setup
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        id: upload-setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-setup
+          path: signpath\setup.zip
+
+      - name: Sign setup via SignPath
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        id: sign-setup
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_SETUP_CONFIG_SLUG }}
+          github-artifact-id: ${{ steps.upload-setup.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-setup
+
+      - name: Use signed setup
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: powershell
+        run: |
+          $signed = Get-ChildItem 'signed-setup' -Recurse -Filter '*Setup.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $signed) {
+            $archive = Get-ChildItem 'signed-setup' -Recurse -Filter '*.zip' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($archive) {
+              Expand-Archive -LiteralPath $archive.FullName -DestinationPath 'signed-setup\extracted' -Force
+              $signed = Get-ChildItem 'signed-setup\extracted' -Recurse -Filter '*Setup.exe' | Select-Object -First 1
+            }
+          }
+          if (-not $signed) { throw 'Signed setup executable not found in the SignPath output.' }
+          Copy-Item -LiteralPath $signed.FullName -Destination (Join-Path 'dist\package' $signed.Name) -Force
+          $signature = Get-AuthenticodeSignature -LiteralPath (Join-Path 'dist\package' $signed.Name)
+          if ($signature.Status -ne 'Valid') { throw "SignPath setup signature is not valid: $($signature.Status)" }
 
       - name: Write checksums
         shell: powershell
