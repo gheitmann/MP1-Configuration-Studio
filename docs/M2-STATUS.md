@@ -2,8 +2,8 @@
 
 **Updated:** 2026-11-13
 **Branch:** `main`
-**Release:** [1.5.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.5.0) published unsigned with a documented waiver. See [FINAL-1.5.0-VERIFICATION.md](FINAL-1.5.0-VERIFICATION.md).
-**Last verification:** 203/203 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates.
+**Release:** [1.6.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.6.0) published unsigned with a documented waiver. See [FINAL-1.6.0-VERIFICATION.md](FINAL-1.6.0-VERIFICATION.md).
+**Last verification:** 205/205 fixture checks on x64; native smoke 27/27 on isolated MediaPortal 1.39 x64; full 175% review 61/61 with 0 overflow candidates.
 
 ## Completed
 
@@ -19,6 +19,7 @@
 | 175% scaling | Done | Full review: 61/61 pages, 0 value failures, 0 overflow candidates, 5 plugin dialogs |
 | Attach performance | Done | Lazy page preparation reduced attach from 2.7-3.2 s to about 340 ms, below the 2.0 s budget |
 | Display changes | Done | Windows DPI event plus a two-second system-DPI check offer a restart after scaling changes |
+| Pre-save backup | Done | Timestamped backup before native OK/Apply; newest ten pre-save files retained; manual and first-run backups untouched |
 | High Contrast audit | Done | Selected/hover text, logo text, focus rectangle, search icon, and scroll thumbs use system colors |
 | Search v2 | Done | Combo, list, and list-view options are searchable and selectable |
 | Release packaging | Done (waived) | 1.0.0 published with portable ZIP, Inno setup, matching SHA256 sidecars; unsigned and clean-VM checks waived |
@@ -35,7 +36,7 @@
 
 1. OS DPI 150/200% and mixed-monitor fresh-session checks.
 2. Clean Windows 11 VM verification of the published artifact.
-3. Code signing for a future signed re-release (current 1.5.0 is unsigned by waiver).
+3. Code signing for a future signed re-release (current 1.6.0 is unsigned by waiver).
 4. NUnit migration for the fixture suite (deferred from M1-11).
 5. A dedicated visual High Contrast session at OS level.
 
