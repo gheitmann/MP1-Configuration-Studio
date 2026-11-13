@@ -405,7 +405,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.3"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.4"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -516,6 +516,14 @@ namespace MP1.ConfigurationStudio
             using(var nativeForm=new NativeStudioForm(runtime,nativePreferences))
             {
                 Check(nativeForm.Text.Contains("Neue Oberfläche")&&nativeForm.Controls.Count>0,"native Studio form constructs with the core sections");
+                var showSection=typeof(NativeStudioForm).GetMethod("ShowSection",BindingFlags.Instance|BindingFlags.NonPublic);
+                int builtSections=0;
+                foreach(var section in NativeSettingsSchema.Sections())
+                {
+                    showSection.Invoke(nativeForm,new object[]{section,null});
+                    builtSections++;
+                }
+                Check(builtSections==NativeSettingsSchema.Sections().Count&&builtSections>=14,"native Studio form builds every schema section");
             }
         }
         private static void CreateZip(string path,string entryName,string content)

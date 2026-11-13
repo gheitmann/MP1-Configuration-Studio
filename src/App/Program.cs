@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.3")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.4")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
