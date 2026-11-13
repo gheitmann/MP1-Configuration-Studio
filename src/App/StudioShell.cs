@@ -46,6 +46,7 @@ namespace MP1.ConfigurationStudio
         private Font font,headingFont,labelFont,treeRootFont;
         private string fieldHelp = "";
         internal static Action<string> FaultHook {get;set;}
+        internal static bool SuppressOnboarding {get;set;}
         public int OriginalSectionCount { get { return sections.Count; } }
         public int ChangedCount { get { return edits.Count; } }
         public bool ContextVisible { get { return appearance.ContextVisible; } }
@@ -102,6 +103,7 @@ namespace MP1.ConfigurationStudio
         }
         internal static StudioShell AttachFixture(Form form, TreeView tree, Panel holder, Button ok, Button cancel, ToolStrip tools,string preferences,List<Control> sections)
         {
+            SuppressOnboarding=true;
             var snapshot=new NativeUiSnapshot(form,sections);
             StudioShell shell=null;
             try
@@ -180,6 +182,16 @@ namespace MP1.ConfigurationStudio
                 if(!initializing)return;
                 foreach(Control input in baselines.Keys.ToArray())if(!input.IsDisposed)baselines[input]=Value(input);
                 edits.Clear();userTouched.Clear();initializing=false;UpdateStatus();
+                if(!appearance.OnboardingSeen&&!SuppressOnboarding)
+                {
+                    appearance.OnboardingSeen=true;
+                    appearance.Save();
+                    using(var dialog=new FirstRunDialog())
+                    {
+                        theme.Apply(dialog);
+                        dialog.ShowDialog(form);
+                    }
+                }
             };
             nativeTools.ItemClicked+=delegate { if(form.IsHandleCreated)form.BeginInvoke((Action)delegate{RefreshPage();UpdateSearch();}); };
             holder.ControlAdded+=delegate(object sender,ControlEventArgs e){Control added=e.Control;Watch(added);SectionPolicy addedPolicy=CompatibilityPolicy.Resolve(added.GetType().FullName);if(!String.Equals(addedPolicy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(added);else theme.Skip(added);LayoutNativePage();};
@@ -231,7 +243,7 @@ namespace MP1.ConfigurationStudio
             else if(e.Control&&(e.KeyCode==Keys.Add||e.KeyCode==Keys.Oemplus)){StepTextScale(1);e.SuppressKeyPress=true;}
             else if(e.Control&&(e.KeyCode==Keys.Subtract||e.KeyCode==Keys.OemMinus)){StepTextScale(-1);e.SuppressKeyPress=true;}
             else if(e.KeyCode==Keys.Escape&&(search.Focused||results.Focused)&&search.TextLength>0){search.Clear();search.Focus();e.SuppressKeyPress=true;}
-            else if(e.KeyCode==Keys.F1){OpenHelp();e.SuppressKeyPress=true;}
+            else if(e.KeyCode==Keys.F1){if(e.Shift)OpenKeyboardHelp();else OpenHelp();e.SuppressKeyPress=true;}
         }
         public void ToggleContext(){SetContext(!appearance.ContextVisible,true);}
         private void SetContext(bool visible,bool save)
@@ -275,7 +287,7 @@ namespace MP1.ConfigurationStudio
                 if(themeChoice!=null){bool highContrast=SystemInformation.HighContrast;themeChoice.Enabled=!highContrast;themeChoice.AccessibleName=highContrast?"Hoher Kontrast aktiv":"Hell oder Dunkel";}
                 center.BackColor=p.Background;holder.BackColor=p.Background;tree.BackColor=p.Panel;tabs.BackColor=p.Background;
                 foreach(Control c in Descendants(form))if(c.Name=="studioMuted")c.ForeColor=p.Muted;
-                title.ForeColor=p.Text;breadcrumb.ForeColor=p.Muted;hint.ForeColor=p.Muted;helpText.ForeColor=p.Muted;changeText.ForeColor=p.Muted;status.ForeColor=p.Muted;
+                title.ForeColor=p.Text;breadcrumb.ForeColor=p.Muted;pageLead.ForeColor=p.Muted;hint.ForeColor=p.Muted;helpText.ForeColor=p.Muted;changeText.ForeColor=p.Muted;status.ForeColor=p.Muted;
                 foreach(Control b in tabs.Controls)SetTabColor(b as Button);
                 navigation.Sync(tree.SelectedNode,false);
                 searchBar.BackColor=search.BackColor=searchPlaceholder.BackColor=p.Input;searchPlaceholder.ForeColor=p.Muted;
@@ -330,7 +342,7 @@ namespace MP1.ConfigurationStudio
             PreparePage(selectedSection);
             CorrectStoredSettingDisplay(NativeContract.NodeSection(node));
             navigation.Sync(node,false);RecordHistory(node);
-            breadcrumb.Text="Konfiguration  /  "+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node);pageIcon.Invalidate();
+            breadcrumb.Text="Konfiguration  /  "+navigation.Group(node);title.Text=navigation.Label(node);pageLead.Text=Lead(node)+"  ·  "+TierLabel(selectedPolicy);pageIcon.Invalidate();
             TreeNode group=node.Parent??node;
             TreeNode[] requestedTabs=(new[]{group}).Concat(group.Nodes.Cast<TreeNode>()).ToArray();
             if(!requestedTabs.SequenceEqual(displayedTabs))
@@ -383,6 +395,13 @@ namespace MP1.ConfigurationStudio
             if(tree.SelectedNode!=node)return false;
             return true;
         }
+        private static string TierLabel(SectionPolicy policy)
+        {
+            if(policy==null)return "Tier B";
+            if(policy.Tier==CompatibilityTier.A)return "Tier A · voll unterstützt";
+            if(policy.Tier==CompatibilityTier.C)return "Tier C · nicht unterstützt";
+            return "Tier B · nativer Look";
+        }
         private static string SectionHelp(TreeNode node)
         {
             string root=node.FullPath.ToLowerInvariant();
@@ -399,6 +418,14 @@ namespace MP1.ConfigurationStudio
         {
             var help=nativeTools.Items.Find("helpToolStripSplitButton",true).FirstOrDefault();
             if(help!=null)ClickNative(help);
+        }
+        private void OpenKeyboardHelp()
+        {
+            using(var dialog=new KeyboardHelpDialog())
+            {
+                theme.Apply(dialog);
+                dialog.ShowDialog(form);
+            }
         }
         private static IEnumerable<TreeNode> Flatten(TreeNodeCollection nodes)
         {

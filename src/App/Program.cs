@@ -14,9 +14,9 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("1.0.1")]
-[assembly: AssemblyVersion("1.0.1.0")]
-[assembly: AssemblyFileVersion("1.0.1.0")]
+[assembly: AssemblyInformationalVersion("1.1.0")]
+[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
 
 namespace MP1.ConfigurationStudio
 {
@@ -264,6 +264,7 @@ namespace MP1.ConfigurationStudio
                                 "Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
                             return;
                         }
+                        StudioShell.SuppressOnboarding = !String.IsNullOrEmpty(audit) || !String.IsNullOrEmpty(verify) || !String.IsNullOrEmpty(review) || !String.IsNullOrEmpty(persistence) || !String.IsNullOrEmpty(saveCycle);
                         shell = StudioShell.Attach(form, preferences);
                         StudioLog.Info("Studio shell attached");
                         Action ready=delegate{

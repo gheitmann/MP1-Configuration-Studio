@@ -13,6 +13,7 @@ namespace MP1.ConfigurationStudio
 
         public bool Dark = true;
         public bool ContextVisible = true;
+        public bool OnboardingSeen = false;
         public string ThemeMode = "Dunkel";
         public int Width = 1360;
         public int Height = 900;
@@ -38,6 +39,7 @@ namespace MP1.ConfigurationStudio
         {
             Dark = true;
             ContextVisible = true;
+            OnboardingSeen = false;
             ThemeMode = "Dunkel";
             Width = 1360;
             Height = 900;
@@ -68,6 +70,7 @@ namespace MP1.ConfigurationStudio
                 ThemeMode = root.GetAttribute("theme") == "Hell" ? "Hell" : "Dunkel";
                 Dark = ThemeMode == "Dunkel";
                 ContextVisible = root.GetAttribute("context") != "false";
+                OnboardingSeen = root.GetAttribute("onboarding") == "true";
 
                 int value;
                 if (Int32.TryParse(root.GetAttribute("textScale"), out value))
@@ -112,6 +115,7 @@ namespace MP1.ConfigurationStudio
                     writer.WriteAttributeString("schema", CurrentSchema.ToString(CultureInfo.InvariantCulture));
                     writer.WriteAttributeString("theme", Dark ? "Dunkel" : "Hell");
                     writer.WriteAttributeString("context", ContextVisible ? "true" : "false");
+                    writer.WriteAttributeString("onboarding", OnboardingSeen ? "true" : "false");
                     writer.WriteAttributeString("width", Width.ToString(CultureInfo.InvariantCulture));
                     writer.WriteAttributeString("height", Height.ToString(CultureInfo.InvariantCulture));
                     writer.WriteAttributeString("textScale", TextScale.ToString(CultureInfo.InvariantCulture));
