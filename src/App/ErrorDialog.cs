@@ -16,46 +16,52 @@ namespace MP1.ConfigurationStudio
             this.nativePath = nativePath;
             this.runtime = runtime;
 
+            Icon = StudioIcon.Value;
+            Font = Typography.Create(Typography.DialogBody, FontStyle.Regular);
             Text = "MP1 Configuration Studio";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(680, 380);
-            MinimumSize = new Size(520, 260);
+            ClientSize = new Size(720, 420);
+            MinimumSize = new Size(560, 300);
 
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(14) };
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(16) };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
 
             var details = new TextBox
             {
                 Dock = DockStyle.Fill,
                 Multiline = true,
                 ReadOnly = true,
+                TabStop = false,
                 ScrollBars = ScrollBars.Both,
                 WordWrap = true,
+                Font = Typography.Create(Typography.DialogBody, FontStyle.Regular),
                 Text = (message ?? String.Empty) + "\r\n\r\n" + Localization.T("Protokoll: ") + StudioLog.FilePath
             };
+            details.SelectionStart = 0;
+            details.SelectionLength = 0;
             layout.Controls.Add(details, 0, 0);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = Localization.T("Schließen"), Width = 95, Height = 28, DialogResult = DialogResult.Cancel };
+            var close = new Button { Text = Localization.T("Schließen"), Width = 105, Height = 32, DialogResult = DialogResult.Cancel, Tag = "studio-primary" };
             buttons.Controls.Add(close);
 
-            var log = new Button { Text = Localization.T("Protokoll öffnen"), Width = 125, Height = 28 };
+            var log = new Button { Text = Localization.T("Protokoll öffnen"), Width = 135, Height = 32 };
             log.Click += delegate { OpenLog(); };
             buttons.Controls.Add(log);
 
-            var bundle = new Button { Text = Localization.T("Support-Bundle…"), Width = 130, Height = 28 };
+            var bundle = new Button { Text = Localization.T("Support-Bundle…"), Width = 140, Height = 32 };
             bundle.Click += delegate { CreateSupportBundle(); };
             buttons.Controls.Add(bundle);
 
             if (!String.IsNullOrEmpty(nativePath) && File.Exists(nativePath))
             {
-                var classic = new Button { Text = Localization.T("Klassisch starten"), Width = 130, Height = 28 };
+                var classic = new Button { Text = Localization.T("Klassisch starten"), Width = 140, Height = 32 };
                 classic.Click += delegate
                 {
                     Program.StartNative(nativePath, runtime);
@@ -69,6 +75,7 @@ namespace MP1.ConfigurationStudio
             Controls.Add(layout);
             AcceptButton = close;
             CancelButton = close;
+            Shown += delegate { details.Select(0, 0); close.Focus(); };
         }
 
         public static void Show(IWin32Window owner, string message, string nativePath, string runtime)

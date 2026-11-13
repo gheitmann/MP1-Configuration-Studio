@@ -188,7 +188,7 @@ namespace MP1.ConfigurationStudio
         }
         private StudioShell(Form f,TreeView originalTree,Panel originalHolder,Button ok,Button cancel,Button apply,ToolStrip tools,Control donateLink,string preferencePath,List<Control> originalSections)
         {
-            form=f;tree=originalTree;holder=originalHolder;nativeOk=ok;nativeCancel=cancel;nativeApply=apply;nativeTools=tools;donate=donateLink;sections=originalSections;
+            form=f;form.Icon=StudioIcon.Value;tree=originalTree;holder=originalHolder;nativeOk=ok;nativeCancel=cancel;nativeApply=apply;nativeTools=tools;donate=donateLink;sections=originalSections;
             PreparedBeforeFirstDisplay=!FrameRendering.IsVisible(form);
             initializing=PreparedBeforeFirstDisplay;
             bool newAppearance=!File.Exists(preferencePath);
@@ -265,7 +265,7 @@ namespace MP1.ConfigurationStudio
                     MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)e.Cancel=true;
             };
             holder.SizeChanged+=delegate{LayoutNativePage();};
-            foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);if(primary)using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6))using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?theme.Colors.PrimaryText:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
+            foreach(Button button in new[]{nativeOk,nativeCancel})button.Paint+=delegate(object sender,PaintEventArgs e){var b=(Button)sender;bool primary=Object.ReferenceEquals(b,nativeOk);e.Graphics.Clear(theme.Colors.Panel);using(var path=StudioIcons.Rounded(new RectangleF(0,0,b.Width-1,b.Height-1),6)){if(primary)using(var brush=new SolidBrush(theme.Colors.Primary))e.Graphics.FillPath(brush,path);else using(var pen=new Pen(theme.Colors.Border))e.Graphics.DrawPath(pen,path);}TextRenderer.DrawText(e.Graphics,b.Text,b.Font,b.ClientRectangle,primary?theme.Colors.PrimaryText:theme.Colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.HidePrefix);};
             form.KeyPreview=true;
             form.KeyDown+=OnKeyDown;
             form.DpiChanged+=delegate{OfferDpiRestart("Display DPI changed");};
@@ -439,9 +439,9 @@ namespace MP1.ConfigurationStudio
         }
         private void AddTab(TreeNode node,TreeNode selected)
         {
-            string caption=navigation.Label(node);var button=new StudioTabButton {Text=caption,Colors=()=>theme.Colors,Font=font,Width=Math.Min(Px(240),Math.Max(Px(80),TextRenderer.MeasureText(caption,font).Width+Px(30))),UseVisualStyleBackColor=false};
+            string caption=navigation.Label(node);var button=new StudioTabButton {Text=caption,Colors=()=>theme.Colors,Font=font,Width=Math.Min(Px(240),Math.Max(Px(72),TextRenderer.MeasureText(caption,font).Width+Px(34))),UseVisualStyleBackColor=false};
             button.Click+=delegate{Navigate(node);};
-            button.Tag=node;button.Height=Px(40);button.Margin=new Padding(0,0,Px(8),Px(9));button.AccessibleName="Bereich "+caption;tips.SetToolTip(button,node.FullPath);
+            button.Tag=node;button.Height=Px(30);button.Margin=new Padding(0,0,Px(3),Px(9));button.AccessibleName="Bereich "+caption;tips.SetToolTip(button,node.FullPath);
             tabs.Controls.Add(button);theme.Apply(button);SetTabColor(button);
         }
         private void SetTabColor(Button b)

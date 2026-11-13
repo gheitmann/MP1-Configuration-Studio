@@ -5,6 +5,22 @@ using System.Windows.Forms;
 
 namespace MP1.ConfigurationStudio
 {
+    internal static class StudioIcon
+    {
+        private static Icon cached;
+        public static Icon Value
+        {
+            get
+            {
+                if(cached==null)
+                {
+                    try{cached=Icon.ExtractAssociatedIcon(Application.ExecutablePath);}
+                    catch(Exception){}
+                }
+                return cached;
+            }
+        }
+    }
     internal static class StudioIcons
     {
         internal static GraphicsPath Rounded(RectangleF r,float radius)

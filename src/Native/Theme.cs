@@ -121,10 +121,10 @@ namespace MP1.ConfigurationStudio
             if (button != null)
             {
                 button.UseVisualStyleBackColor = false; button.FlatStyle = FlatStyle.Flat;
-                button.FlatAppearance.BorderSize=0;
+                button.FlatAppearance.BorderSize = Convert.ToString(button.Tag) == "studio-primary" ? 0 : 1;
                 button.FlatAppearance.BorderColor = p.Border; button.FlatAppearance.MouseOverBackColor = p.Hover;
                 button.FlatAppearance.MouseDownBackColor = p.Selection;
-                if (Convert.ToString(button.Tag) == "studio-primary") { button.BackColor = p.Primary; button.ForeColor = Color.White; }
+                if (Convert.ToString(button.Tag) == "studio-primary") { button.BackColor = p.Primary; button.ForeColor = p.PrimaryText; }
             }
             var checkbox = c as CheckBox;
             if (checkbox != null) checkbox.UseVisualStyleBackColor = false;

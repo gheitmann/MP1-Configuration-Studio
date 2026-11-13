@@ -9,6 +9,7 @@
     <RootNamespace>MP1.ConfigurationStudio</RootNamespace>
     <StartupObject>MP1.ConfigurationStudio.Program</StartupObject>
     <ApplicationManifest>..\app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\assets\MediaPortal.ico</ApplicationIcon>
     <AppConfig>..\app.config</AppConfig>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DefineConstants>$(DefineConstants);DIAGNOSTICS</DefineConstants>

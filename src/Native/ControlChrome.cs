@@ -199,7 +199,7 @@ namespace MP1.ConfigurationStudio
         public Func<Palette> Colors;
         public bool Selected;
         private bool hover;
-        public StudioTabButton(){SetStyle(ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);FlatStyle=FlatStyle.Flat;}
+        public StudioTabButton(){SetStyle(ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);FlatStyle=FlatStyle.Flat;Cursor=Cursors.Hand;}
         protected override void OnMouseEnter(EventArgs e){base.OnMouseEnter(e);hover=true;Invalidate();}
         protected override void OnMouseLeave(EventArgs e){base.OnMouseLeave(e);hover=false;Invalidate();}
         protected override void OnPaint(PaintEventArgs e)
@@ -207,11 +207,12 @@ namespace MP1.ConfigurationStudio
             Palette p=Colors==null?Palette.For(true):Colors();
             e.Graphics.Clear(BackColor);
             e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using(var shape=StudioIcons.Rounded(new Rectangle(0,1,Width-1,Height-3),7))
-            using(var brush=new SolidBrush(hover?p.Hover:Selected?p.Selection:p.Panel))e.Graphics.FillPath(brush,shape);
-            using(var textFont=new Font(Font,FontStyle.Regular))
-                TextRenderer.DrawText(e.Graphics,Text,textFont,Rectangle.Inflate(ClientRectangle,-8,0),Selected&&!hover?p.Accent:p.Text,TextFormatFlags.VerticalCenter|TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
-            if(Selected)using(var pen=new Pen(p.Accent,3))e.Graphics.DrawLine(pen,12,Height-3,Width-12,Height-3);
+            bool highContrast=Palette.HighContrastActive;
+            if(Selected||hover)using(var shape=StudioIcons.Rounded(new Rectangle(0,2,Width-1,Height-6),6))using(var brush=new SolidBrush(Selected?p.Selection:p.Hover))e.Graphics.FillPath(brush,shape);
+            Color ink=Selected?(highContrast?SystemColors.HighlightText:p.Accent):(hover&&highContrast?SystemColors.HighlightText:p.Text);
+            int textLeft=Selected?18:0;
+            if(Selected)using(var brush=new SolidBrush(highContrast?SystemColors.HighlightText:p.Accent))e.Graphics.FillEllipse(brush,10,(Height-5)/2,5,5);
+            TextRenderer.DrawText(e.Graphics,Text,Font,new Rectangle(6+textLeft,0,Math.Max(0,Width-12-textLeft),Height),ink,TextFormatFlags.VerticalCenter|TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
             if(Focused)ControlPaint.DrawFocusRectangle(e.Graphics,Rectangle.Inflate(ClientRectangle,-4,-4),p.Accent,BackColor);
         }
     }

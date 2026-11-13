@@ -28,8 +28,10 @@ OutputBaseFilename=MP1-Configuration-Studio-{#AppVersion}-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile={#ProjectRoot}\assets\MediaPortal.ico
 Uninstallable=yes
 UninstallDisplayName={#AppName}
+UninstallDisplayIcon={app}\{#AppExe}
 LicenseFile={#ProjectRoot}\LICENSE
 
 [Files]
@@ -39,7 +41,7 @@ Source: "{#ProjectRoot}\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\SECURITY.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\SUPPORT.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#ProjectRoot}\docs\RELEASE-1.0.0.md"; DestDir: "{app}"; DestName: "RELEASE-NOTES.md"; Flags: ignoreversion
+Source: "{#ProjectRoot}\docs\RELEASE-{#AppVersion}.md"; DestDir: "{app}"; DestName: "RELEASE-NOTES.md"; Flags: ignoreversion
 Source: "{#ProjectRoot}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]

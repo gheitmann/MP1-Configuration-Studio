@@ -299,9 +299,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==6&&assemblyVersion.Build==0,"assembly version targets 1.6.0.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==7&&assemblyVersion.Build==0,"assembly version targets 1.7.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.6.0",StringComparison.Ordinal),"file version targets 1.6.0");
+            Check(fileVersion.StartsWith("1.7.0",StringComparison.Ordinal),"file version targets 1.7.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -313,8 +313,12 @@ namespace MP1.ConfigurationStudio
             }
             using(var firstRun=new FirstRunDialog())
             {
-                Check(firstRun.Text.Contains("Willkommen"),"first-run dialog can be constructed");
+                var welcomeText=All(firstRun).OfType<TextBox>().First();
+                Check(firstRun.Text.Contains("Willkommen")&&firstRun.Font.SizeInPoints>=10f&&welcomeText.Font.SizeInPoints>=10f&&welcomeText.SelectionLength==0,"first-run dialog uses readable type without a select-all highlight");
             }
+            Check(Typography.Body>=10.5f&&Typography.Small>=9.5f,"type scale keeps small text readable at 100%");
+            using(var heading=Typography.CreateHeading(20f))
+                Check(heading.Name.IndexOf("Semibold",StringComparison.OrdinalIgnoreCase)>=0||heading.Bold,"headings use a semibold weight");
             using(var keyboardHelp=new KeyboardHelpDialog())
             {
                 Check(keyboardHelp.Text=="Tastenkürzel","keyboard help dialog can be constructed");
@@ -400,7 +404,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.6.0"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.7.0"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }

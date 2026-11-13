@@ -20,13 +20,15 @@ namespace MP1.ConfigurationStudio
         public BackupManagerDialog(string backupRoot = null)
         {
             this.backupRoot = String.IsNullOrWhiteSpace(backupRoot) ? ConfigurationBackup.DefaultBackupDirectory : backupRoot;
+            Icon = StudioIcon.Value;
+            Font = Typography.Create(Typography.DialogBody, FontStyle.Regular);
             Text = Localization.T("Konfigurations-Backups");
             FormBorderStyle = FormBorderStyle.Sizable;
             StartPosition = FormStartPosition.CenterParent;
             MinimizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(620, 380);
-            MinimumSize = new Size(480, 280);
+            ClientSize = new Size(680, 420);
+            MinimumSize = new Size(540, 320);
 
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(12) };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -52,22 +54,23 @@ namespace MP1.ConfigurationStudio
             layout.Controls.Add(empty, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = Localization.T("Schließen"), Width = 95, Height = 28, DialogResult = DialogResult.Cancel };
+            var close = new Button { Text = Localization.T("Schließen"), Width = 105, Height = 32, DialogResult = DialogResult.Cancel };
             buttons.Controls.Add(close);
-            var folder = new Button { Text = Localization.T("Ordner öffnen"), Width = 115, Height = 28 };
+            var folder = new Button { Text = Localization.T("Ordner öffnen"), Width = 125, Height = 32 };
             folder.Click += delegate { OpenFolder(); };
             buttons.Controls.Add(folder);
             delete.Text = Localization.T("Löschen");
-            delete.Width = 95;
-            delete.Height = 28;
+            delete.Width = 105;
+            delete.Height = 32;
             delete.Click += delegate { DeleteSelected(); };
             buttons.Controls.Add(delete);
             restore.Text = Localization.T("Wiederherstellen");
-            restore.Width = 125;
-            restore.Height = 28;
+            restore.Width = 135;
+            restore.Height = 32;
+            restore.Tag = "studio-primary";
             restore.Click += delegate { RestoreSelected(); };
             buttons.Controls.Add(restore);
-            var prune = new Button { Text = Localization.T("Aufräumen"), Width = 100, Height = 28 };
+            var prune = new Button { Text = Localization.T("Aufräumen"), Width = 110, Height = 32 };
             prune.Click += delegate { PruneBackups(); };
             buttons.Controls.Add(prune);
             layout.Controls.Add(buttons, 0, 2);

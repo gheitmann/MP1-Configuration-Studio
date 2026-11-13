@@ -75,6 +75,7 @@ namespace MP1.ConfigurationStudio
                         }
                         result.SetAttribute("detailTabsActivated",tabPages.ToString());
                         result.SetAttribute("controls",Descendants(page).Count().ToString());
+                        result.SetAttribute("fontFamilies",String.Join(", ",Descendants(page).Select(c=>c.Font.Name).Distinct().OrderBy(name=>name)));
                         if(page.GetType().Name=="MovieViews"||page.GetType().Name=="MusicViews")result.SetAttribute("freshViewRows",Descendants(page).OfType<DataGridView>().Select(grid=>grid.DataSource as System.Data.DataTable).Where(table=>table!=null).Sum(table=>table.Rows.Count).ToString());
                         result.SetAttribute("lowContrastListCells",Descendants(page).OfType<ListView>().Where(list=>list.Enabled).SelectMany(list=>list.Items.Cast<ListViewItem>()).SelectMany(item=>item.SubItems.Cast<ListViewItem.ListViewSubItem>()).Count(cell=>Theme.Contrast(cell.ForeColor,cell.BackColor)<4.5).ToString());
                         result.SetAttribute("minimumFontPoints",Descendants(page).Where(c=>c.Visible&&!String.IsNullOrEmpty(c.Text)).Select(c=>c.Font.SizeInPoints).DefaultIfEmpty(0).Min().ToString(System.Globalization.CultureInfo.InvariantCulture));
