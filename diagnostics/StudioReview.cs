@@ -112,10 +112,11 @@ namespace MP1.ConfigurationStudio
                         int tabPages=0;
                         foreach(var tabs in Descendants(page).OfType<TabControl>().ToArray())
                         {
-                            int selected=tabs.SelectedIndex;foreach(TabPage tab in tabs.TabPages){tabs.SelectedTab=tab;tab.PerformLayout();tabPages++;}if(selected>=0&&selected<tabs.TabCount)tabs.SelectedIndex=selected;
+                            int selected=tabs.SelectedIndex;int tabIndex=0;foreach(TabPage tab in tabs.TabPages){tabs.SelectedTab=tab;tab.PerformLayout();page.PerformLayout();tabPages++;try{string shots=Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)),"page-shots");Directory.CreateDirectory(shots);using(var shot=new Bitmap(Math.Max(1,page.Width),Math.Max(1,page.Height))){page.DrawToBitmap(shot,new Rectangle(0,0,shot.Width,shot.Height));shot.Save(Path.Combine(shots,page.GetType().Name+"-tab"+tabIndex+".png"),ImageFormat.Png);}tabIndex++;}catch{}}if(selected>=0&&selected<tabs.TabCount)tabs.SelectedIndex=selected;
                         }
                         result.SetAttribute("detailTabsActivated",tabPages.ToString());
                         result.SetAttribute("controls",Descendants(page).Count().ToString());
+                        result.SetAttribute("layoutPanels",Descendants(page).Count(c=>c is TableLayoutPanel||c is FlowLayoutPanel).ToString());
                         result.SetAttribute("fontFamilies",String.Join(", ",Descendants(page).Select(c=>c.Font.Name).Distinct().OrderBy(name=>name)));
                         if(page.GetType().Name=="MovieViews"||page.GetType().Name=="MusicViews")result.SetAttribute("freshViewRows",Descendants(page).OfType<DataGridView>().Select(grid=>grid.DataSource as System.Data.DataTable).Where(table=>table!=null).Sum(table=>table.Rows.Count).ToString());
                         result.SetAttribute("lowContrastListCells",Descendants(page).OfType<ListView>().Where(list=>list.Enabled).SelectMany(list=>list.Items.Cast<ListViewItem>()).SelectMany(item=>item.SubItems.Cast<ListViewItem.ListViewSubItem>()).Count(cell=>Theme.Contrast(cell.ForeColor,cell.BackColor)<4.5).ToString());

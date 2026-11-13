@@ -6,7 +6,7 @@
   <section type="MediaPortal.Configuration.Sections.GeneralVolume" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.GeneralKeyboardControl" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.Keys" tier="A" zoom="true" theme="full" search="true" />
-  <section type="MediaPortal.Configuration.Sections.GeneralDynamicRefreshRate" tier="A" zoom="true" theme="full" search="true" />
+  <section type="MediaPortal.Configuration.Sections.GeneralDynamicRefreshRate" tier="A" zoom="false" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.GeneralStartupResume" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.Gui" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.GuiLanguage" tier="A" zoom="true" theme="full" search="true" />
@@ -28,7 +28,7 @@
   <section type="MediaPortal.Configuration.Sections.BDZoom" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.BDPostProcessing" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.BDPlayer" tier="A" zoom="true" theme="full" search="true" />
-  <section type="MediaPortal.Configuration.Sections.DVD" tier="A" zoom="true" theme="full" search="true" />
+  <section type="MediaPortal.Configuration.Sections.DVD" tier="A" zoom="false" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.DVDPlayer" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.DVDZoom" tier="A" zoom="true" theme="full" search="true" />
   <section type="MediaPortal.Configuration.Sections.DVDPostProcessing" tier="A" zoom="true" theme="full" search="true" />

@@ -115,6 +115,10 @@ namespace MP1.ConfigurationStudio
                 }
             }
         }
+        internal static bool UsesManagedLayout(Control page)
+        {
+            return page!=null&&(page is TableLayoutPanel||page is FlowLayoutPanel||All(page).Any(c=>c is TableLayoutPanel||c is FlowLayoutPanel));
+        }
         private static bool IsLabelLike(Control control)
         {
             return control is Label||control is LinkLabel||control.GetType().Name.IndexOf("Label",StringComparison.OrdinalIgnoreCase)>=0;

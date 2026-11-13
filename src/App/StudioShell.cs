@@ -297,7 +297,7 @@ namespace MP1.ConfigurationStudio
             }
             Watch(section);
             if(themed)theme.Prepare(section);
-            if(policy.Zoom){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
+            if(policy.Zoom&&!PageZoom.UsesManagedLayout(section)){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
             preparedPages.Add(section);
             StudioLog.Info("Prepared page "+section.GetType().FullName+" tier="+policy.Tier+" ("+preparedPages.Count+"/"+sections.Count+")");
         }
@@ -432,7 +432,7 @@ namespace MP1.ConfigurationStudio
             else foreach(Button button in tabs.Controls.OfType<Button>())SetTabColor(button);
             helpTitle.Text=navigation.Label(node);fieldHelp="";helpText.Text=SectionHelp(node);
             foreach(Control c in holder.Controls){Watch(c);}
-            if(holder.Controls.Count>0&&CompatibilityPolicy.Resolve(holder.Controls[0].GetType().FullName).Zoom)pageZoom.EnsureContentFits(holder.Controls[0]);
+            if(holder.Controls.Count>0&&CompatibilityPolicy.Resolve(holder.Controls[0].GetType().FullName).Zoom&&!PageZoom.UsesManagedLayout(holder.Controls[0]))pageZoom.EnsureContentFits(holder.Controls[0]);
             LayoutNativePage();
             UpdateStatus();
             if(stopwatch.ElapsedMilliseconds>300)StudioLog.Warn("Page switch exceeded 300 ms: "+node.Text+" ("+stopwatch.ElapsedMilliseconds+" ms)");
@@ -624,7 +624,7 @@ namespace MP1.ConfigurationStudio
             {
                 string value=Value(c);if(value!=null)baselines[c]=value;
                 c.Enter+=delegate{ShowFieldHelp(c);};
-                var nativeTabs=c as TabControl;if(nativeTabs!=null)nativeTabs.SelectedIndexChanged+=delegate{if(!building&&!settingSize&&holder.Controls.Count>0){pageZoom.EnsureContentFits(holder.Controls[0]);LayoutNativePage();}};
+                var nativeTabs=c as TabControl;if(nativeTabs!=null)nativeTabs.SelectedIndexChanged+=delegate{if(!building&&!settingSize&&holder.Controls.Count>0){if(!PageZoom.UsesManagedLayout(holder.Controls[0]))pageZoom.EnsureContentFits(holder.Controls[0]);LayoutNativePage();}};
                 EventHandler changed=delegate{OnValueChanged(c);};
                 if(c is CheckedListBox)((CheckedListBox)c).ItemCheck+=delegate{if(building||switching)return;if(c.IsHandleCreated)c.BeginInvoke((Action)delegate{OnValueChanged(c);});};
                 else if(c is CheckBox)((CheckBox)c).CheckStateChanged+=changed;
