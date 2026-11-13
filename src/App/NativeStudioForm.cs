@@ -92,7 +92,7 @@ namespace MP1.ConfigurationStudio
                 item.Tag = section;
                 navigation.Controls.Add(item);
             }
-            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic interface / plugins" : "Klassische Oberfläche / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
+            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
             classic.Click += delegate { StartClassic(); };
             navigation.Controls.Add(classic);
             bodyPanel.Controls.Add(scroll);

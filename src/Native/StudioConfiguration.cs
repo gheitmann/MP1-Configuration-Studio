@@ -48,7 +48,9 @@ namespace MP1.ConfigurationStudio
             foreach (string candidate in new[]
             {
                 System.IO.Path.Combine(runtime, "config", "MediaPortal.xml"),
-                System.IO.Path.Combine(runtime, "MediaPortal.xml")
+                System.IO.Path.Combine(runtime, "MediaPortal.xml"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Team MediaPortal", "MediaPortal", "MediaPortal.xml"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Team MediaPortal", "MediaPortal", "MediaPortal.xml")
             })
             {
                 if (File.Exists(candidate)) return System.IO.Path.GetFullPath(candidate);
