@@ -52,36 +52,36 @@ namespace MP1.ConfigurationStudio
             toolbar=new Panel {Dock=DockStyle.Fill,Margin=Padding.Empty};root.Controls.Add(toolbar,0,1);
             backButton=new StudioAction {Name="studioHistoryBack",Text="",IconName="back",Colors=()=>theme.Colors,Size=new Size(Px(35),Px(35)),Location=new Point(Px(13),Px(8)),AccessibleName="Zurück",Enabled=false};backButton.Click+=delegate{TraverseHistory(-1);};
             forwardButton=new StudioAction {Name="studioHistoryForward",Text="",IconName="forward",Colors=()=>theme.Colors,Size=backButton.Size,Location=new Point(Px(48),Px(8)),AccessibleName="Vorwärts",Enabled=false};forwardButton.Click+=delegate{TraverseHistory(1);};toolbar.Controls.Add(backButton);toolbar.Controls.Add(forwardButton);backButton.TabIndex=0;forwardButton.TabIndex=1;
-            tips.SetToolTip(backButton,"Zurück · Alt+Links");tips.SetToolTip(forwardButton,"Vorwärts · Alt+Rechts");
+            tips.SetToolTip(backButton,Localization.T("Zurück · Alt+Links"));tips.SetToolTip(forwardButton,Localization.T("Vorwärts · Alt+Rechts"));
             options=new FlowLayoutPanel {Dock=DockStyle.None,Width=Px(550),WrapContents=false,Padding=new Padding(0,Px(8),Px(12),0),Margin=Padding.Empty};toolbar.Controls.Add(options);
-            modeChoice=Choice("studioMode","Standard- oder Expertenansicht",100,new object[]{"Standard","Experte"});modeChoice.SelectedIndex=IsExpert()?1:0;modeChoice.SelectedIndexChanged+=delegate{SetMode(modeChoice.SelectedIndex==1);};
-            sizeChoice=Choice("studioTextSize","Schrift und Oberfläche vergrößern",110,new object[]{"Größe 100%","Größe 115%","Größe 125%","Größe 150%","Größe 175%"});sizeChoice.SelectedIndex=Array.IndexOf(new[]{100,115,125,150,175},appearance.TextScale);if(sizeChoice.SelectedIndex<0)sizeChoice.SelectedIndex=2;sizeChoice.SelectedIndexChanged+=delegate{if(!settingSize&&sizeChoice.SelectedIndex>=0)SetTextScale(new[]{100,115,125,150,175}[sizeChoice.SelectedIndex]);};
-            themeChoice=Choice("studioTheme","Hell oder Dunkel",85,new object[]{"Dunkel","Hell"});themeChoice.SelectedIndex=appearance.Dark?0:1;themeChoice.SelectedIndexChanged+=delegate{SetDark(themeChoice.SelectedIndex==0);};
-            contextButton=ActionButton("",ToggleContext,Px(43));contextButton.Name="studioContextToggle";contextButton.AccessibleName="Hilfe ein- oder ausblenden";((StudioAction)contextButton).IconName="help";tips.SetToolTip(contextButton,"Rechte Hilfespalte ein- oder ausblenden");
-            var more=(StudioAction)ActionButton("Werkzeuge",delegate{},Px(140));more.IconName="settings";more.Click+=delegate{ShowNativeTools(more);};
+            modeChoice=Choice("studioMode",Localization.T("Standard- oder Expertenansicht"),100,new object[]{Localization.T("Standard"),Localization.T("Experte")});modeChoice.SelectedIndex=IsExpert()?1:0;modeChoice.SelectedIndexChanged+=delegate{SetMode(modeChoice.SelectedIndex==1);};
+            sizeChoice=Choice("studioTextSize",Localization.T("Schrift und Oberfläche vergrößern"),110,new object[]{Localization.T("Größe 100%"),Localization.T("Größe 115%"),Localization.T("Größe 125%"),Localization.T("Größe 150%"),Localization.T("Größe 175%")});sizeChoice.SelectedIndex=Array.IndexOf(new[]{100,115,125,150,175},appearance.TextScale);if(sizeChoice.SelectedIndex<0)sizeChoice.SelectedIndex=2;sizeChoice.SelectedIndexChanged+=delegate{if(!settingSize&&sizeChoice.SelectedIndex>=0)SetTextScale(new[]{100,115,125,150,175}[sizeChoice.SelectedIndex]);};
+            themeChoice=Choice("studioTheme",Localization.T("Hell oder Dunkel"),85,new object[]{Localization.T("Dunkel"),Localization.T("Hell")});themeChoice.SelectedIndex=appearance.Dark?0:1;themeChoice.SelectedIndexChanged+=delegate{SetDark(themeChoice.SelectedIndex==0);};
+            contextButton=ActionButton("",ToggleContext,Px(43));contextButton.Name="studioContextToggle";contextButton.AccessibleName=Localization.T("Hilfe ein- oder ausblenden");((StudioAction)contextButton).IconName="help";tips.SetToolTip(contextButton,Localization.T("Rechte Hilfespalte ein- oder ausblenden"));
+            var more=(StudioAction)ActionButton(Localization.T("Werkzeuge"),delegate{},Px(140));more.IconName="settings";more.Click+=delegate{ShowNativeTools(more);};
             options.Controls.Add(modeChoice);options.Controls.Add(sizeChoice);options.Controls.Add(themeChoice);options.Controls.Add(contextButton);options.Controls.Add(more);modeChoice.TabIndex=3;sizeChoice.TabIndex=4;themeChoice.TabIndex=5;contextButton.TabIndex=6;more.TabIndex=7;
             searchBar=new Panel {Name="studioSearchBar",Height=Px(36),Padding=new Padding(Px(34),Px(7),Px(7),Px(5))};
-            search=new TextBox {Dock=DockStyle.Fill,BorderStyle=BorderStyle.None,AutoSize=false,Font=font,Name="studioSearch",AccessibleName="Einstellung oder Bereich suchen",TabIndex=2};
+            search=new TextBox {Dock=DockStyle.Fill,BorderStyle=BorderStyle.None,AutoSize=false,Font=font,Name="studioSearch",AccessibleName=Localization.T("Einstellung oder Bereich suchen"),TabIndex=2};
             search.HandleCreated+=delegate{SendCue(search.Handle,0x1501,IntPtr.Zero,"");};
-            clearSearch=ActionButton("×",delegate{search.Clear();search.Focus();},Px(25));clearSearch.Dock=DockStyle.Right;clearSearch.Visible=false;clearSearch.AccessibleName="Suche zurücksetzen";searchBar.Controls.Add(search);searchBar.Controls.Add(clearSearch);
-            searchPlaceholder=new Label {Text="Einstellungen suchen …  Strg+F",Font=font,UseMnemonic=false,AutoEllipsis=true,TextAlign=ContentAlignment.MiddleLeft,Name="studioSearchPlaceholder"};searchBar.Controls.Add(searchPlaceholder);searchPlaceholder.BringToFront();searchPlaceholder.Click+=delegate{search.Focus();};searchBar.Layout+=delegate{searchPlaceholder.Bounds=search.Bounds;};search.Enter+=delegate{searchPlaceholder.Visible=false;};search.Leave+=delegate{searchPlaceholder.Visible=search.TextLength==0;};
+            clearSearch=ActionButton("×",delegate{search.Clear();search.Focus();},Px(25));clearSearch.Dock=DockStyle.Right;clearSearch.Visible=false;clearSearch.AccessibleName=Localization.T("Suche zurücksetzen");searchBar.Controls.Add(search);searchBar.Controls.Add(clearSearch);
+            searchPlaceholder=new Label {Text=Localization.T("Einstellungen suchen …  Strg+F"),Font=font,UseMnemonic=false,AutoEllipsis=true,TextAlign=ContentAlignment.MiddleLeft,Name="studioSearchPlaceholder"};searchBar.Controls.Add(searchPlaceholder);searchPlaceholder.BringToFront();searchPlaceholder.Click+=delegate{search.Focus();};searchBar.Layout+=delegate{searchPlaceholder.Bounds=search.Bounds;};search.Enter+=delegate{searchPlaceholder.Visible=false;};search.Leave+=delegate{searchPlaceholder.Visible=search.TextLength==0;};
             searchBar.Paint+=delegate(object sender,PaintEventArgs e){e.Graphics.Clear(theme.Colors.Input);using(var path=StudioIcons.Rounded(new RectangleF(0,0,searchBar.Width-1,searchBar.Height-1),5))using(var pen=new Pen(theme.Colors.Border))e.Graphics.DrawPath(pen,path);StudioIcons.Draw(e.Graphics,"search",new Rectangle(Px(10),Px(10),Px(16),Px(16)),theme.Colors.Muted);};
             toolbar.Controls.Add(searchBar);toolbar.Resize+=delegate{LayoutToolbar();};
             toolbar.Paint+=delegate(object sender,PaintEventArgs e){using(var pen=new Pen(theme.Colors.Border))e.Graphics.DrawLine(pen,0,toolbar.Height-1,toolbar.Width,toolbar.Height-1);};
             body=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=3,RowCount=1,Margin=Padding.Empty};body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,Px(250)));body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,Px(225)));body.RowStyles.Add(new RowStyle(SizeType.Percent,100));root.Controls.Add(body,0,2);
             sidebar=new Panel {Dock=DockStyle.Fill,Padding=new Padding(Px(10),Px(10),Px(6),Px(10)),Margin=Padding.Empty};navigation=new StudioNavigation(tree,NativeContract.NodeSection,Navigate,()=>theme.Colors,InvokeNativeTool){Font=font};sidebar.Controls.Add(navigation);navigation.TabIndex=0;
-            results=new ListBox {Dock=DockStyle.Fill,Visible=false,IntegralHeight=false,BorderStyle=BorderStyle.None,Font=font,Name="studioSearchResults",DisplayMember="Label",AccessibleName="Suchergebnisse"};sidebar.Controls.Add(results);results.TabIndex=1;
+            results=new ListBox {Dock=DockStyle.Fill,Visible=false,IntegralHeight=false,BorderStyle=BorderStyle.None,Font=font,Name="studioSearchResults",DisplayMember="Label",AccessibleName=Localization.T("Suchergebnisse")};sidebar.Controls.Add(results);results.TabIndex=1;
             results.DoubleClick+=delegate{OpenResult();};results.KeyDown+=delegate(object sender,KeyEventArgs e){if(e.KeyCode==Keys.Enter){e.SuppressKeyPress=true;OpenResult();}};
             search.TextChanged+=delegate{clearSearch.Visible=search.TextLength>0;searchPlaceholder.Visible=search.TextLength==0&&!search.Focused;UpdateSearch();};search.KeyDown+=delegate(object sender,KeyEventArgs e){if((e.KeyCode==Keys.Down||e.KeyCode==Keys.Enter)&&results.Visible&&results.Items.Count>0){results.SelectedIndex=0;results.Focus();if(e.KeyCode==Keys.Enter)OpenResult();e.SuppressKeyPress=true;}};
             center=new Panel {Dock=DockStyle.Fill,Name="studioContent",Margin=Padding.Empty,Padding=new Padding(Px(24),Px(21),Px(24),Px(14))};
             var headings=new Panel {Dock=DockStyle.Top,Height=Px(99)};breadcrumb=new Label {AutoEllipsis=true,Dock=DockStyle.Top,Height=Px(23),Font=labelFont,Name="studioMuted"};
             pageLead=new Label {Dock=DockStyle.Bottom,Height=Px(27),Font=labelFont,Name="studioPageLead",AutoEllipsis=true};
             var titleRow=new Panel {Dock=DockStyle.Fill};pageIcon=new Panel {Dock=DockStyle.Left,Width=Px(42)};pageIcon.Paint+=delegate(object sender,PaintEventArgs e){if(tree.SelectedNode!=null)StudioIcons.Draw(e.Graphics,navigation.Icon(tree.SelectedNode),new Rectangle(0,Px(9),Px(29),Px(29)),theme.Colors.Accent);};title=new Label {Dock=DockStyle.Fill,Font=headingFont,AutoEllipsis=true,UseMnemonic=false,Name="studioPageTitle"};titleRow.Controls.Add(title);titleRow.Controls.Add(pageIcon);headings.Controls.Add(titleRow);headings.Controls.Add(pageLead);headings.Controls.Add(breadcrumb);
-            tabs=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink,WrapContents=true,AutoScroll=false,AccessibleName="Unterbereiche",Margin=Padding.Empty,TabIndex=8};
+            tabs=new FlowLayoutPanel {Dock=DockStyle.Top,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink,WrapContents=true,AutoScroll=false,AccessibleName=Localization.T("Unterbereiche"),Margin=Padding.Empty,TabIndex=8};
             holder.Padding=Padding.Empty;holder.Margin=Padding.Empty;holder.AutoScroll=true;contentScroll=new StudioScrollHost(holder,()=>holder.AutoScrollMinSize,()=>theme.Colors,true);center.Controls.Add(contentScroll);center.Controls.Add(tabs);center.Controls.Add(headings);
             context=new Panel {Dock=DockStyle.Fill,Margin=Padding.Empty,Padding=new Padding(Px(20),Px(22),Px(18),Px(12)),Name="studioContext",AccessibleName="Hilfe und Kontext"};
-            contextCaption=new Label {Text="HILFE & KONTEXT",Dock=DockStyle.Top,Height=Px(31),Font=labelFont,UseMnemonic=false,Name="studioMuted"};helpTitle=new Label {Dock=DockStyle.Top,Height=Px(46),Font=MakeFont(11*UiScale,FontStyle.Bold),UseMnemonic=false,AutoEllipsis=true};helpText=new Label {Dock=DockStyle.Top,Height=Px(147),Font=font};
-            var help=ActionButton("Online-Hilfe öffnen",OpenHelp,Px(180));help.Dock=DockStyle.Top;var changesHeading=new Label {Text="ÄNDERUNGEN",Dock=DockStyle.Top,Height=Px(44),Padding=new Padding(0,Px(16),0,0),Font=labelFont,Name="studioMuted"};changeText=new Label {Dock=DockStyle.Fill,Font=font,AutoEllipsis=true};hint=new Label {Text="OK speichert mit der originalen MediaPortal-Prüfung. Abbrechen verwirft die Einstellungen.",Dock=DockStyle.Bottom,Height=Px(97),Font=labelFont,Name="studioMuted"};
+            contextCaption=new Label {Text=Localization.T("HILFE & KONTEXT"),Dock=DockStyle.Top,Height=Px(31),Font=labelFont,UseMnemonic=false,Name="studioMuted"};helpTitle=new Label {Dock=DockStyle.Top,Height=Px(46),Font=MakeFont(11*UiScale,FontStyle.Bold),UseMnemonic=false,AutoEllipsis=true};helpText=new Label {Dock=DockStyle.Top,Height=Px(147),Font=font};
+            var help=ActionButton(Localization.T("Online-Hilfe öffnen"),OpenHelp,Px(180));help.Dock=DockStyle.Top;var changesHeading=new Label {Text=Localization.T("ÄNDERUNGEN"),Dock=DockStyle.Top,Height=Px(44),Padding=new Padding(0,Px(16),0,0),Font=labelFont,Name="studioMuted"};changeText=new Label {Dock=DockStyle.Fill,Font=font,AutoEllipsis=true};hint=new Label {Text=Localization.T("OK speichert mit der originalen MediaPortal-Prüfung. Abbrechen verwirft die Einstellungen."),Dock=DockStyle.Bottom,Height=Px(97),Font=labelFont,Name="studioMuted"};
             context.Controls.Add(changeText);context.Controls.Add(hint);context.Controls.Add(changesHeading);context.Controls.Add(help);context.Controls.Add(helpText);context.Controls.Add(helpTitle);context.Controls.Add(contextCaption);body.Controls.Add(sidebar,0,0);body.Controls.Add(center,1,0);body.Controls.Add(context,2,0);
             helpFlow=new FlowLayoutPanel {FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=true,Padding=new Padding(0,0,0,SystemInformation.HorizontalScrollBarHeight)};
             foreach(Control item in new Control[]{contextCaption,helpTitle,helpText,help,changesHeading,changeText,hint})
@@ -91,8 +91,8 @@ namespace MP1.ConfigurationStudio
             }
             helpScroll=new StudioScrollHost(helpFlow,()=>new Size(0,Math.Max(0,helpFlow.GetPreferredSize(new Size(Math.Max(1,helpFlow.ClientSize.Width-10),0)).Height-SystemInformation.HorizontalScrollBarHeight)),()=>theme.Colors,false);context.Controls.Add(helpScroll);helpFlow.SizeChanged+=delegate{LayoutHelp();};
             footer=new Panel {Dock=DockStyle.Fill,Padding=new Padding(Px(23),Px(11),Px(18),Px(10)),Margin=Padding.Empty};var actions=new FlowLayoutPanel {Dock=DockStyle.Right,FlowDirection=FlowDirection.RightToLeft,WrapContents=false,Width=Px(290)};
-            nativeOk.Parent=actions;nativeOk.Text="&OK – Speichern";nativeOk.Size=new Size(Px(151),Px(36));nativeOk.Font=font;nativeOk.Margin=new Padding(Px(10),0,0,0);nativeOk.Tag="studio-primary";nativeOk.TabIndex=0;
-            nativeCancel.Parent=actions;nativeCancel.Text="&Abbrechen";nativeCancel.Size=new Size(Px(115),Px(36));nativeCancel.Font=font;nativeCancel.Margin=new Padding(Px(8),0,0,0);nativeCancel.TabIndex=1;
+            nativeOk.Parent=actions;nativeOk.Text=Localization.T("&OK – Speichern");nativeOk.Size=new Size(Px(151),Px(36));nativeOk.Font=font;nativeOk.Margin=new Padding(Px(10),0,0,0);nativeOk.Tag="studio-primary";nativeOk.TabIndex=0;
+            nativeCancel.Parent=actions;nativeCancel.Text=Localization.T("&Abbrechen");nativeCancel.Size=new Size(Px(115),Px(36));nativeCancel.Font=font;nativeCancel.Margin=new Padding(Px(8),0,0,0);nativeCancel.TabIndex=1;
             if(nativeApply!=null){nativeApply.Parent=actions;if(nativeApply.Visible){nativeApply.Size=new Size(Px(110),Px(36));actions.Width+=Px(120);}}
             InjectFault("build-reparented");
             status=new Label {Dock=DockStyle.Fill,AutoEllipsis=true,TextAlign=ContentAlignment.MiddleLeft,Font=labelFont,Name="studioStatus",AccessibleName="Änderungsstatus"};footer.Controls.Add(status);footer.Controls.Add(actions);root.Controls.Add(footer,0,3);
@@ -131,36 +131,43 @@ namespace MP1.ConfigurationStudio
         private bool IsExpert(){var button=ExpertButton();return button!=null&&button.Checked;}
         private static void ClickNative(ToolStripItem item){var split=item as ToolStripSplitButton;if(split!=null)split.PerformButtonClick();else item.PerformClick();}
         private void SetMode(bool expert){var button=ExpertButton();if(button==null||button.Checked==expert)return;Control current=tree.SelectedNode==null?null:NativeContract.NodeSection(tree.SelectedNode);ClickNative(button);history.Clear();historyIndex=-1;var node=Flatten(tree.Nodes).FirstOrDefault(n=>Object.ReferenceEquals(NativeContract.NodeSection(n),current))??Flatten(tree.Nodes).FirstOrDefault();if(node!=null){Navigate(node);RecordHistory(node);}UpdateSearch();}
-        private void InvokeNativeTool(string name){var item=NativeItems(nativeTools.Items).FirstOrDefault(i=>i.Name.IndexOf(name=="logs"?"logs":"configToolStrip",StringComparison.OrdinalIgnoreCase)>=0);if(item!=null)ClickNative(item);else status.Text="Dieser Ordnerzugriff wird von der Installation nicht angeboten.";}
+        private void InvokeNativeTool(string name){var item=NativeItems(nativeTools.Items).FirstOrDefault(i=>i.Name.IndexOf(name=="logs"?"logs":"configToolStrip",StringComparison.OrdinalIgnoreCase)>=0);if(item!=null)ClickNative(item);else status.Text=Localization.T("Dieser Ordnerzugriff wird von der Installation nicht angeboten.");}
         private void ShowNativeTools(Control anchor)
         {
             var menu=new ContextMenuStrip {Font=font};
             Action<ToolStripItemCollection,ToolStripItemCollection> copy=null;copy=delegate(ToolStripItemCollection source,ToolStripItemCollection target){foreach(ToolStripItem original in source){if(original is ToolStripSeparator){target.Add(new ToolStripSeparator());continue;}var proxy=new ToolStripMenuItem(original.Text){Enabled=original.Enabled};var checkedButton=original as ToolStripButton;if(checkedButton!=null)proxy.Checked=checkedButton.Checked;ToolStripItem action=original;target.Add(proxy);var dropdown=original as ToolStripDropDownItem;if(dropdown!=null&&dropdown.DropDownItems.Count>0)copy(dropdown.DropDownItems,proxy.DropDownItems);else proxy.Click+=delegate{ClickNative(action);};}};
             copy(nativeTools.Items,menu.Items);
             menu.Items.Add(new ToolStripSeparator());
-            var backup=new ToolStripMenuItem("Konfiguration sichern…");
+            var backup=new ToolStripMenuItem(Localization.T("Konfiguration sichern…"));
             backup.Click+=delegate{BackupConfiguration();};
             menu.Items.Add(backup);
-            var restore=new ToolStripMenuItem("Konfiguration wiederherstellen…");
+            var restore=new ToolStripMenuItem(Localization.T("Konfiguration wiederherstellen…"));
             restore.Click+=delegate{RestoreConfiguration();};
             menu.Items.Add(restore);
-            var manageBackups=new ToolStripMenuItem("Backups verwalten…");
+            var manageBackups=new ToolStripMenuItem(Localization.T("Backups verwalten…"));
             manageBackups.Click+=delegate{ManageBackups();};
             menu.Items.Add(manageBackups);
-            var nativeSize=new ToolStripMenuItem("Seite in Originalgröße");
+            var nativeSize=new ToolStripMenuItem(Localization.T("Seite in Originalgröße"));
             nativeSize.Click+=delegate{UseNativePageSize();};
             menu.Items.Add(nativeSize);
-            var keyboard=new ToolStripMenuItem("Tastenkürzel…");
+            var keyboard=new ToolStripMenuItem(Localization.T("Tastenkürzel…"));
             keyboard.Click+=delegate{OpenKeyboardHelp();};
             menu.Items.Add(keyboard);
             menu.Items.Add(new ToolStripSeparator());
-            var classic=new ToolStripMenuItem("Klassische Oberfläche starten");
+            var classic=new ToolStripMenuItem(Localization.T("Klassische Oberfläche starten"));
             classic.Click+=delegate{StartClassic();};
             menu.Items.Add(classic);
-            var support=new ToolStripMenuItem("Support-Bundle erzeugen…");
+            var support=new ToolStripMenuItem(Localization.T("Support-Bundle erzeugen…"));
             support.Click+=delegate{CreateSupportBundle();};
             menu.Items.Add(support);
-            var about=new ToolStripMenuItem("Über MP1 Configuration Studio");
+            var language=new ToolStripMenuItem(Localization.IsEnglish?"Language":"Sprache");
+            var german=new ToolStripMenuItem(Localization.IsEnglish?"German":"Deutsch"){Checked=appearance.Language=="de"};
+            german.Click+=delegate{SetLanguage("de");};
+            var english=new ToolStripMenuItem("English"){Checked=appearance.Language=="en"};
+            english.Click+=delegate{SetLanguage("en");};
+            language.DropDownItems.Add(german);language.DropDownItems.Add(english);
+            menu.Items.Add(language);
+            var about=new ToolStripMenuItem(Localization.T("Über MP1 Configuration Studio"));
             about.Click+=delegate{ShowAbout();};
             menu.Items.Add(about);
             theme.Apply(menu);menu.Closed+=delegate{menu.Dispose();};menu.Show(anchor,new Point(0,anchor.Height));
@@ -194,6 +201,15 @@ namespace MP1.ConfigurationStudio
                 StudioLog.Error(ex,"Configuration backup failed");
                 MessageBox.Show(form,"Die Konfiguration konnte nicht gesichert werden.\r\n\r\n"+ex.Message+"\r\n\r\nProtokoll: "+StudioLog.FilePath,"Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
+        }
+        private void SetLanguage(string code)
+        {
+            if(appearance.Language==code)return;
+            appearance.Language=code;
+            appearance.Save();
+            MessageBox.Show(form,
+                code=="en"?"Language changed. Please restart Studio to apply it.":"Sprache geändert. Bitte Studio neu starten.",
+                "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void ManageBackups()
         {
@@ -296,6 +312,18 @@ namespace MP1.ConfigurationStudio
                 int selected=Array.IndexOf(new[]{100,115,125,150,175},percent);if(selected>=0)sizeChoice.SelectedIndex=selected;appearance.Save();RefreshPage();form.PerformLayout();LayoutToolbar();LayoutHelp();
             }}finally{settingSize=false;}
         }
-        private string Lead(TreeNode node){switch(navigation.Group(node)){case "Allgemein":return "Start, Verhalten und Grundeinstellungen deines Media Centers.";case "Oberfläche":return "Skin, Sprache und Darstellung von MediaPortal.";case "Wiedergabe":return "Player, Ton und Bild – mit den originalen MediaPortal-Einstellungen.";case "Medienordner":return "Quellen und Bibliotheken für Videos, Musik und Bilder.";case "Bedienung":return "Tastatur, Fernbedienung und Eingabegeräte einrichten.";case "Plugins":return "Erweiterungen aktivieren und ihre Konfiguration öffnen.";default:return "Informationen, Kompatibilität und Diagnose.";}}
+        private string Lead(TreeNode node)
+        {
+            switch(navigation.Icon(node))
+            {
+                case "settings":return Localization.IsEnglish?"Startup, behavior, and basic settings for your media center.":"Start, Verhalten und Grundeinstellungen deines Media Centers.";
+                case "surface":return Localization.IsEnglish?"Skin, language, and presentation of MediaPortal.":"Skin, Sprache und Darstellung von MediaPortal.";
+                case "play":return Localization.IsEnglish?"Player, audio, and video with the original MediaPortal settings.":"Player, Ton und Bild – mit den originalen MediaPortal-Einstellungen.";
+                case "folder":return Localization.IsEnglish?"Sources and libraries for videos, music, and pictures.":"Quellen und Bibliotheken für Videos, Musik und Bilder.";
+                case "keyboard":return Localization.IsEnglish?"Set up keyboard, remote, and input devices.":"Tastatur, Fernbedienung und Eingabegeräte einrichten.";
+                case "plugin":return Localization.IsEnglish?"Enable extensions and open their configuration.":"Erweiterungen aktivieren und ihre Konfiguration öffnen.";
+                default:return Localization.IsEnglish?"Information, compatibility, and diagnostics.":"Informationen, Kompatibilität und Diagnose.";
+            }
+        }
     }
 }
