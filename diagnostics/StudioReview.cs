@@ -32,7 +32,7 @@ namespace MP1.ConfigurationStudio
             var document=new XmlDocument();var root=document.CreateElement("fullReview");document.AppendChild(root);
             root.SetAttribute("build",System.Diagnostics.FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion);root.SetAttribute("expectedPages",sections.Count.ToString());root.SetAttribute("nodes",nodes.Length.ToString());
             var timer=new Timer {Interval=120};
-            Action save=delegate{string full=Path.GetFullPath(path);Directory.CreateDirectory(Path.GetDirectoryName(full));string temporary=full+".tmp";document.Save(temporary);if(File.Exists(full))File.Replace(temporary,full,null);else File.Move(temporary,full);};
+            Action save=delegate{try{string full=Path.GetFullPath(path);Directory.CreateDirectory(Path.GetDirectoryName(full));document.Save(full);}catch(IOException){try{System.Threading.Thread.Sleep(80);document.Save(Path.GetFullPath(path));}catch(IOException){}}};
             timer.Tick+=delegate{
                 timer.Stop();
                 if(index==0)StudioLog.Info("Full review timer started");

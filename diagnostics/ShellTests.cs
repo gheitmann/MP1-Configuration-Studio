@@ -299,9 +299,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==8&&assemblyVersion.Build==1,"assembly version targets 1.8.1.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==8&&assemblyVersion.Build==2,"assembly version targets 1.8.2.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.8.1",StringComparison.Ordinal),"file version targets 1.8.1");
+            Check(fileVersion.StartsWith("1.8.2",StringComparison.Ordinal),"file version targets 1.8.2");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -404,7 +404,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.8.1"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.8.2"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }

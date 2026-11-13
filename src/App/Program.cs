@@ -14,9 +14,9 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("1.8.1")]
-[assembly: AssemblyVersion("1.8.1.0")]
-[assembly: AssemblyFileVersion("1.8.1.0")]
+[assembly: AssemblyInformationalVersion("1.8.2")]
+[assembly: AssemblyVersion("1.8.2.0")]
+[assembly: AssemblyFileVersion("1.8.2.0")]
 
 namespace MP1.ConfigurationStudio
 {

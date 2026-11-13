@@ -215,7 +215,7 @@ namespace MP1.ConfigurationStudio
             }
             Color ink=Selected?(highContrast?SystemColors.WindowText:p.Text):(hover&&highContrast?SystemColors.HighlightText:p.Muted);
             TextRenderer.DrawText(e.Graphics,Text,Font,new Rectangle(6,0,Math.Max(0,Width-12),Height),ink,TextFormatFlags.VerticalCenter|TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
-            if(Focused)ControlPaint.DrawFocusRectangle(e.Graphics,Rectangle.Inflate(ClientRectangle,-4,-4),p.Accent,BackColor);
+            if(Focused&&!Selected)ControlPaint.DrawFocusRectangle(e.Graphics,Rectangle.Inflate(ClientRectangle,-4,-4),p.Accent,BackColor);
         }
     }
 }

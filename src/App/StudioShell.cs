@@ -298,6 +298,7 @@ namespace MP1.ConfigurationStudio
             Watch(section);
             if(themed)theme.Prepare(section);
             if(policy.Zoom&&!PageZoom.UsesManagedLayout(section)){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
+            else{section.Font=form.Font;section.PerformLayout();if(!PageZoom.UsesManagedLayout(section))pageZoom.EnsureContentFits(section);}
             preparedPages.Add(section);
             StudioLog.Info("Prepared page "+section.GetType().FullName+" tier="+policy.Tier+" ("+preparedPages.Count+"/"+sections.Count+")");
         }
