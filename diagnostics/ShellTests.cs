@@ -405,7 +405,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.2"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.3"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -507,6 +507,8 @@ namespace MP1.ConfigurationStudio
             Check(!String.IsNullOrEmpty(backup)&&File.Exists(backup)&&backup.EndsWith(".zip",StringComparison.OrdinalIgnoreCase),"native configuration save creates a backup");
             var fields=NativeSettingsSchema.Sections().SelectMany(section=>section.Groups).SelectMany(group=>group.Fields).ToArray();
             Check(NativeSettingsSchema.Sections().Count>=6&&fields.Length>=50&&fields.All(field=>!String.IsNullOrEmpty(field.Section)&&!String.IsNullOrEmpty(field.Entry)),"native settings schema defines the first core pages");
+            Check(NativeShareEditor.IsShareKey("sharename3")&&NativeShareEditor.IsShareKey("sharepath0")&&NativeShareEditor.IsShareKey("sharescan12")&&NativeShareEditor.IsShareKey("pincode1")&&NativeShareEditor.IsShareKey("hostdetectmethod0"),"native share editor recognises all media folder entries");
+            Check(!NativeShareEditor.IsShareKey("sharename")&&!NativeShareEditor.IsShareKey("volume0")&&!NativeShareEditor.IsShareKey("sharepathabc"),"native share editor leaves unrelated entries untouched");
             string runtime=Path.Combine(directory,"native-runtime");
             Directory.CreateDirectory(Path.Combine(runtime,"config"));
             File.Copy(path,Path.Combine(runtime,"config","MediaPortal.xml"),true);

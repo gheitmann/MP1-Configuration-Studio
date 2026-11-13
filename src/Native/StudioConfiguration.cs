@@ -116,6 +116,22 @@ namespace MP1.ConfigurationStudio
             changed = true;
         }
 
+        public System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> Entries(string section)
+        {
+            XmlNode sectionNode = FindSection(section);
+            if (sectionNode == null) yield break;
+            foreach (XmlNode node in sectionNode.ChildNodes)
+                if (node.Name == "entry") yield return new System.Collections.Generic.KeyValuePair<string, string>(Attribute(node, "name"), node.InnerText);
+        }
+
+        public void Remove(string section, string entry)
+        {
+            XmlNode node = FindEntry(section, entry);
+            if (node == null) return;
+            node.ParentNode.RemoveChild(node);
+            changed = true;
+        }
+
         public void SetBool(string section, string entry, bool value)
         {
             Set(section, entry, value ? "yes" : "no");

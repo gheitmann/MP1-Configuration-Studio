@@ -8,7 +8,8 @@ namespace MP1.ConfigurationStudio
         Text,
         Integer,
         Combo,
-        Info
+        Info,
+        Shares
     }
 
     internal sealed class NativeOption
@@ -201,7 +202,7 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("movies", "AddOpticalDiskDrives", "Optische Laufwerke einbinden", "Include optical drives", NativeFieldKind.Bool))
                         .Add(new NativeField("movies", "SwitchRemovableDrives", "Wechseldatenträger einbinden", "Include removable drives", NativeFieldKind.Bool))
                         .Add(new NativeField("movies", "extensions", "Video-Endungen", "Video extensions", NativeFieldKind.Text, "Kommagetrennte Liste der Videoformate.", "Comma-separated video extensions."))
-                        .Add(new NativeField("movies", "sharepath0", "Videoordner (klassisch bearbeiten)", "Video folders (edit in classic)", NativeFieldKind.Info, "Die Liste der Videoordner bleibt vorerst der klassischen Oberfläche vorbehalten.", "The video folder list remains on the classic interface for now."))),
+                        .Add(new NativeField("movies", "sharepath0", "Videoordner (klassisch bearbeiten)", "Video folders (edit in classic)", NativeFieldKind.Info, "Videoordner werden auf der Seite Medienordner verwaltet.", "Video folders are managed on the Media folders page."))),
                 new NativeSection("music", "Musik", "Music", "Audiowiedergabe, Playlists und Musikordner.", "Audio playback, playlists, and music folders.", "play")
                     .Group(new NativeGroup("Wiedergabe", "Playback")
                         .Add(new NativeField("audioplayer", "crossfade", "Crossfade", "Crossfade", NativeFieldKind.Integer, "Überblendzeit in Millisekunden.", "Crossfade time in milliseconds.").Range(0, 20000, "ms"))
@@ -215,7 +216,88 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("music", "AddOpticalDiskDrives", "Optische Laufwerke einbinden", "Include optical drives", NativeFieldKind.Bool))
                         .Add(new NativeField("music", "SwitchRemovableDrives", "Wechseldatenträger einbinden", "Include removable drives", NativeFieldKind.Bool))
                         .Add(new NativeField("music", "extensions", "Audio-Endungen", "Audio extensions", NativeFieldKind.Text, "Kommagetrennte Liste der Audioformate.", "Comma-separated audio extensions."))
-                        .Add(new NativeField("music", "sharepath0", "Musikordner (klassisch bearbeiten)", "Music folders (edit in classic)", NativeFieldKind.Info, "Die Liste der Musikordner bleibt vorerst der klassischen Oberfläche vorbehalten.", "The music folder list remains on the classic interface for now.")))
+                        .Add(new NativeField("music", "sharepath0", "Musikordner (klassisch bearbeiten)", "Music folders (edit in classic)", NativeFieldKind.Info, "Musikordner werden auf der Seite Medienordner verwaltet.", "Music folders are managed on the Media folders page."))),
+                new NativeSection("folders", "Medienordner", "Media folders", "Video-, Musik- und Bilderordner verwalten.", "Manage video, music, and picture folders.", "folder")
+                    .Group(new NativeGroup("Videoordner", "Video folders")
+                        .Add(new NativeField("movies", "sharename", "Videoordner", "Video folders", NativeFieldKind.Shares, "Lokale oder Netzwerkordner für Videos. Scannen aktualisiert die Datenbank.", "Local or network folders for videos. Scan updates the database.")))
+                    .Group(new NativeGroup("Musikordner", "Music folders")
+                        .Add(new NativeField("music", "sharename", "Musikordner", "Music folders", NativeFieldKind.Shares, "Lokale oder Netzwerkordner für Musik. Scannen aktualisiert die Datenbank.", "Local or network folders for music. Scan updates the database.")))
+                    .Group(new NativeGroup("Bilderordner", "Picture folders")
+                        .Add(new NativeField("pictures", "sharename", "Bilderordner", "Picture folders", NativeFieldKind.Shares, "Lokale oder Netzwerkordner für Bilder.", "Local or network folders for pictures."))),
+                new NativeSection("tv", "TV", "TV", "TV-Server, Aufnahmen und Live-TV-Verhalten.", "TV server, recordings, and live TV behavior.", "play")
+                    .Group(new NativeGroup("TV-Server", "TV server")
+                        .Add(new NativeField("tvservice", "hostname", "Server-Hostname", "Server hostname", NativeFieldKind.Text))
+                        .Add(new NativeField("tvservice", "isWakeOnLanEnabled", "Wake-on-LAN", "Wake on LAN", NativeFieldKind.Bool))
+                        .Add(new NativeField("tvservice", "WOLTimeOut", "WOL-Timeout", "WOL timeout", NativeFieldKind.Integer).Range(0, 120, "s"))
+                        .Add(new NativeField("tvservice", "recordingpath", "Aufnahmeordner", "Recording folder", NativeFieldKind.Text, "Leer lassen für den MediaPortal-Standard.", "Leave empty for the MediaPortal default."))
+                        .Add(new NativeField("tvservice", "timeshiftingpath", "Timeshift-Ordner", "Timeshift folder", NativeFieldKind.Text))
+                        .Add(new NativeField("tvservice", "preferac3", "AC3 bevorzugen", "Prefer AC3", NativeFieldKind.Bool))
+                        .Add(new NativeField("tvservice", "preferAudioTypeOverLang", "Audiospur vor Sprache", "Prefer audio type over language", NativeFieldKind.Bool)))
+                    .Group(new NativeGroup("Live-TV", "Live TV")
+                        .Add(new NativeField("mytv", "autoturnontv", "TV automatisch starten", "Auto-start TV", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "autofullscreen", "Automatisch Vollbild", "Auto fullscreen", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "showchannelnumber", "Kanalnummer anzeigen", "Show channel number", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "channelnumbermaxlength", "Maximale Kanalnummernlänge", "Maximum channel number length", NativeFieldKind.Integer).Range(1, 6))
+                        .Add(new NativeField("mytv", "hideAllChannelsGroup", "Gruppe „Alle Kanäle“ ausblenden", "Hide all-channels group", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "showChannelStateIcons", "Kanalstatus-Symbole", "Channel state icons", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "continuousScrollGuide", "Endlos-Scroll im Guide", "Continuous guide scroll", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "enableRecNotifier", "Aufnahme-Hinweis", "Recording notifier", NativeFieldKind.Bool))
+                        .Add(new NativeField("mytv", "notifyTVBefore", "Hinweis vor Aufnahme", "Notify before recording", NativeFieldKind.Integer).Range(0, 3600, "s"))
+                        .Add(new NativeField("mytv", "confirmTimeshiftStop", "Timeshift-Stopp bestätigen", "Confirm timeshift stop", NativeFieldKind.Bool))),
+                new NativeSection("radio", "Radio", "Radio", "Radio-Sender, Gruppen und Verhalten.", "Radio channels, groups, and behavior.", "play")
+                    .Group(new NativeGroup("Radio", "Radio")
+                        .Add(new NativeField("myradio", "hideAllChannelsGroup", "Gruppe „Alle Kanäle“ ausblenden", "Hide all-channels group", NativeFieldKind.Bool))
+                        .Add(new NativeField("myradio", "rememberlastgroup", "Letzte Gruppe merken", "Remember last group", NativeFieldKind.Bool))
+                        .Add(new NativeField("myradio", "autoturnonradio", "Radio automatisch starten", "Auto-start radio", NativeFieldKind.Bool))
+                        .Add(new NativeField("myradio", "byindex", "Nach Index sortieren", "Sort by index", NativeFieldKind.Bool))
+                        .Add(new NativeField("myradio", "showchannelnumber", "Kanalnummer anzeigen", "Show channel number", NativeFieldKind.Bool))
+                        .Add(new NativeField("myradio", "channelnumbermaxlength", "Maximale Kanalnummernlänge", "Maximum channel number length", NativeFieldKind.Integer).Range(1, 6))
+                        .Add(new NativeField("myradio", "layout", "Ansicht", "Layout", NativeFieldKind.Integer).Range(0, 10))
+                        .Add(new NativeField("myradio", "sort", "Sortierung", "Sort order", NativeFieldKind.Text))),
+                new NativeSection("codecs", "Codecs", "Codecs", "Decoder und Renderer für Video, TV und Audio.", "Decoders and renderers for video, TV, and audio.", "settings")
+                    .Group(new NativeGroup("Video", "Video")
+                        .Add(new NativeField("movieplayer", "autodecodersettings", "Automatische Decoder-Einstellungen", "Automatic decoder settings", NativeFieldKind.Bool))
+                        .Add(new NativeField("movieplayer", "forcesourcesplitter", "Source-Splitter erzwingen", "Force source splitter", NativeFieldKind.Bool))
+                        .Add(new NativeField("movieplayer", "usemoviecodects", "Movie-Codecs verwenden", "Use movie codecs", NativeFieldKind.Bool))
+                        .Add(new NativeField("movieplayer", "mpeg2videocodec", "MPEG-2 Video", "MPEG-2 video", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "h264videocodec", "H.264 Video", "H.264 video", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "hevcvideocodec", "HEVC Video", "HEVC video", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "vc1videocodec", "VC-1 Video", "VC-1 video", NativeFieldKind.Text)))
+                    .Group(new NativeGroup("Audio", "Audio")
+                        .Add(new NativeField("movieplayer", "mpeg2audiocodec", "MPEG-2 Audio", "MPEG-2 audio", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "aacaudiocodec", "AAC Audio", "AAC audio", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "audiorenderer", "Audio-Renderer", "Audio renderer", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "splitterfilter", "Splitter", "Splitter", NativeFieldKind.Text))
+                        .Add(new NativeField("movieplayer", "splitterfilefilter", "Datei-Splitter", "File splitter", NativeFieldKind.Text)))
+                    .Group(new NativeGroup("TV", "TV")
+                        .Add(new NativeField("mytv", "videocodec", "TV Video", "TV video", NativeFieldKind.Text))
+                        .Add(new NativeField("mytv", "h264videocodec", "TV H.264", "TV H.264", NativeFieldKind.Text))
+                        .Add(new NativeField("mytv", "hevcvideocodec", "TV HEVC", "TV HEVC", NativeFieldKind.Text))
+                        .Add(new NativeField("mytv", "audiocodec", "TV Audio", "TV audio", NativeFieldKind.Text))
+                        .Add(new NativeField("mytv", "audiorenderer", "TV Audio-Renderer", "TV audio renderer", NativeFieldKind.Text))),
+                new NativeSection("discs", "BD / DVD", "BD / DVD", "Blu-ray- und DVD-Wiedergabe.", "Blu-ray and DVD playback.", "play")
+                    .Group(new NativeGroup("Blu-ray", "Blu-ray")
+                        .Add(new NativeField("bdplayer", "useInternalBDPlayer", "Internen BD-Player verwenden", "Use internal BD player", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "useforbluray", "Externen Player für Blu-rays", "External player for Blu-rays", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "path", "Player-Pfad", "Player path", NativeFieldKind.Text))
+                        .Add(new NativeField("bdplayer", "arguments", "Player-Parameter", "Player arguments", NativeFieldKind.Text))
+                        .Add(new NativeField("bdplayer", "audiolanguage", "Audiosprache", "Audio language", NativeFieldKind.Text))
+                        .Add(new NativeField("bdplayer", "subtitlelanguage", "Untertitelsprache", "Subtitle language", NativeFieldKind.Text))
+                        .Add(new NativeField("bdplayer", "subtitlesenabled", "Untertitel aktiviert", "Subtitles enabled", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "regioncode", "Regionscode", "Region code", NativeFieldKind.Text)))
+                    .Group(new NativeGroup("DVD", "DVD")
+                        .Add(new NativeField("dvdplayer", "internal", "Internen DVD-Player verwenden", "Use internal DVD player", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "usefordvd", "Externen Player für DVDs", "External player for DVDs", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "path", "Player-Pfad", "Player path", NativeFieldKind.Text))
+                        .Add(new NativeField("dvdplayer", "arguments", "Player-Parameter", "Player arguments", NativeFieldKind.Text))
+                        .Add(new NativeField("dvdplayer", "audiolanguage", "Audiosprache", "Audio language", NativeFieldKind.Text))
+                        .Add(new NativeField("dvdplayer", "subtitlelanguage", "Untertitelsprache", "Subtitle language", NativeFieldKind.Text))
+                        .Add(new NativeField("dvdplayer", "showsubtitles", "Untertitel anzeigen", "Show subtitles", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "showclosedcaptions", "Closed Captions anzeigen", "Show closed captions", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "pixelratiocorrection", "Pixel-Ratio-Korrektur", "Pixel ratio correction", NativeFieldKind.Bool))),
+                new NativeSection("plugins", "Plugins", "Plugins", "Plugin-Konfiguration öffnet weiterhin die Originalfenster.", "Plugin configuration still opens the original windows.", "plugin")
+                    .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
+                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Plugins verwalten ihre eigenen Fenster und Einstellungen. Nutze Klassisch / Plugins, um die originale Plugin-Konfiguration zu oeffnen.", "Plugins manage their own windows and settings. Use Classic / plugins to open the original plugin configuration.")))
             };
         }
     }
