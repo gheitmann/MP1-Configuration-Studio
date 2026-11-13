@@ -170,6 +170,9 @@ namespace MP1.ConfigurationStudio
             var helpColumn=new ToolStripMenuItem(Localization.T(appearance.ContextVisible?"Hilfe ausblenden":"Hilfe einblenden"));
             helpColumn.Click+=delegate{SetContext(!appearance.ContextVisible,true);};
             menu.Items.Add(helpColumn);
+            var nativeLook=new ToolStripMenuItem(Localization.T("Native Seiten im Original-Look")){Checked=appearance.NativeOriginal,CheckOnClick=true};
+            nativeLook.Click+=delegate{appearance.NativeOriginal=nativeLook.Checked;appearance.Save();MessageBox.Show(form,Localization.IsEnglish?"Native page mode changed. Please restart Studio to apply it.":"Darstellung der nativen Seiten geändert. Bitte Studio neu starten.","MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);};
+            menu.Items.Add(nativeLook);
             menu.Items.Add(new ToolStripSeparator());
             var restart=new ToolStripMenuItem(Localization.T("Studio neu starten"));
             restart.Click+=delegate{RestartStudio();};
@@ -341,7 +344,7 @@ namespace MP1.ConfigurationStudio
                 foreach(Control c in new Control[]{header,toolbar,sidebar,context,footer})c.Scale(new SizeF(ratio,ratio));
                 center.Padding=new Padding(Px(24),Px(21),Px(24),Px(14));
                 foreach(Control c in center.Controls)if(c.Dock==DockStyle.Top)c.Height=(int)Math.Round(c.Height*ratio);
-                pageIcon.Width=Px(42);navigation.Font=font;navigation.Sync(tree.SelectedNode,true);foreach(Control page in preparedPages)if(CompatibilityPolicy.Resolve(page.GetType().FullName).Zoom&&!PageZoom.UsesManagedLayout(page))pageZoom.Apply(page,PageScale);
+                pageIcon.Width=Px(42);navigation.Font=font;navigation.Sync(tree.SelectedNode,true);foreach(Control page in preparedPages)if(!appearance.NativeOriginal&&CompatibilityPolicy.Resolve(page.GetType().FullName).Zoom&&!PageZoom.UsesManagedLayout(page))pageZoom.Apply(page,PageScale);
                 int selected=Array.IndexOf(new[]{100,115,125,150,175},percent);if(selected>=0)sizeChoice.SelectedIndex=selected;appearance.Save();RefreshPage();form.PerformLayout();LayoutToolbar();LayoutHelp();
             }}finally{settingSize=false;}
         }

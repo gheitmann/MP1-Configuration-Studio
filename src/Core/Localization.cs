@@ -113,6 +113,7 @@ namespace MP1.ConfigurationStudio
             {"Tastenkürzel", "Keyboard shortcuts"},
             {"Ungespeicherte Änderungen", "Unsaved changes"},
             {"Studio neu starten", "Restart Studio"},
+            {"Native Seiten im Original-Look", "Native pages in original look"},
             {"Schließen", "Close"},
             {"Verstanden", "Understood"},
             {"Warnung", "Warning"}

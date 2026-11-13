@@ -260,7 +260,7 @@ namespace MP1.ConfigurationStudio
                 }
             };
             nativeTools.ItemClicked+=delegate { if(form.IsHandleCreated)form.BeginInvoke((Action)delegate{RefreshPage();UpdateSearch();}); };
-            holder.ControlAdded+=delegate(object sender,ControlEventArgs e){Control added=e.Control;Watch(added);SectionPolicy addedPolicy=CompatibilityPolicy.Resolve(added.GetType().FullName);if(!String.Equals(addedPolicy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(added);else theme.Skip(added);LayoutNativePage();};
+            holder.ControlAdded+=delegate(object sender,ControlEventArgs e){Control added=e.Control;Watch(added);SectionPolicy addedPolicy=CompatibilityPolicy.Resolve(added.GetType().FullName);if(!appearance.NativeOriginal&&!String.Equals(addedPolicy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase))theme.Prepare(added);else theme.Skip(added);LayoutNativePage();};
             form.FormClosed+=delegate{
                 Application.Idle-=CompleteSelectionFrame;CompleteSelectionFrame(null,EventArgs.Empty);
                 if(form.WindowState==FormWindowState.Normal){appearance.Width=form.Width;appearance.Height=form.Height;}
@@ -296,7 +296,8 @@ namespace MP1.ConfigurationStudio
             if(section==null||section.IsDisposed||preparedPages.Contains(section))return;
             SectionPolicy policy=CompatibilityPolicy.Resolve(section.GetType().FullName);
             if(policy.Tier==CompatibilityTier.C)return;
-            bool themed=!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase);
+            bool original=appearance.NativeOriginal;
+            bool themed=!original&&!String.Equals(policy.ThemeMode,"native",StringComparison.OrdinalIgnoreCase);
             if(themed)theme.Include(section);else theme.Skip(section);
             if(policy.Zoom||policy.Tier==CompatibilityTier.A)
             {
@@ -307,7 +308,7 @@ namespace MP1.ConfigurationStudio
             }
             Watch(section);
             if(themed)theme.Prepare(section);
-            if(policy.Zoom&&!PageZoom.UsesManagedLayout(section)){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
+            if(!original&&policy.Zoom&&!PageZoom.UsesManagedLayout(section)){pageZoom.Capture(section);pageZoom.Apply(section,PageScale);}
             else{section.Font=form.Font;section.PerformLayout();if(!PageZoom.UsesManagedLayout(section))pageZoom.EnsureContentFits(section);}
             preparedPages.Add(section);
             StudioLog.Info("Prepared page "+section.GetType().FullName+" tier="+policy.Tier+" ("+preparedPages.Count+"/"+sections.Count+")");
@@ -384,7 +385,7 @@ namespace MP1.ConfigurationStudio
         {
             if(dialog==form||dialog.IsDisposed)return;
             if(!dialogs.Contains(dialog)){dialogs.Add(dialog);dialog.FormClosed+=delegate{dialogs.Remove(dialog);};}
-            using(FrameRendering.Suspend(dialog))theme.Apply(dialog);
+            using(FrameRendering.Suspend(dialog)){if(appearance.NativeOriginal)theme.Skip(dialog);else theme.Apply(dialog);}
         }
         private void DrawNode(object sender,DrawTreeNodeEventArgs e)
         {

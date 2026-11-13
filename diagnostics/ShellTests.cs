@@ -25,7 +25,7 @@ namespace MP1.ConfigurationStudio
             string directory=Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"test-results");Directory.CreateDirectory(directory);
             string prefs=Path.Combine(directory,"appearance-test.xml");
             Check(Program.RunnerFileName("Configuration.exe")!="Configuration.exe","renamed download cannot overwrite the original native executable");
-            var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.OnboardingSeen=true;initial.Language="de";initial.Save();
+            var initial=new Appearance(prefs);initial.Dark=true;initial.ContextVisible=true;initial.NativeOriginal=false;initial.OnboardingSeen=true;initial.Language="de";initial.Save();
             RunAppearanceSchemaChecks(directory);
             RunLoggingChecks(directory);
             RunVersionChecks();
@@ -299,9 +299,9 @@ namespace MP1.ConfigurationStudio
         private static void RunVersionChecks()
         {
             Version assemblyVersion=Assembly.GetExecutingAssembly().GetName().Version;
-            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==8&&assemblyVersion.Build==4,"assembly version targets 1.8.4.0");
+            Check(assemblyVersion.Major==1&&assemblyVersion.Minor==9&&assemblyVersion.Build==0,"assembly version targets 1.9.0.0");
             string fileVersion=FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            Check(fileVersion.StartsWith("1.8.4",StringComparison.Ordinal),"file version targets 1.8.4");
+            Check(fileVersion.StartsWith("1.9.0",StringComparison.Ordinal),"file version targets 1.9.0");
             Check(Program.IsClassic(new[]{"--classic"})&&!Program.IsClassic(new string[0]),"classic mode recognizes --classic");
             string mutexName="MP1ConfigurationStudio-Test-"+Guid.NewGuid().ToString("N");
             Check(SingleInstance.TryAcquire(mutexName),"single instance acquires a unique mutex");
@@ -404,7 +404,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("1.8.4"),"support bundle records the version");
+                Check(ReadEntry(archive,"version.txt").Contains("1.9.0"),"support bundle records the version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }

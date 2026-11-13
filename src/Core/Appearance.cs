@@ -15,6 +15,7 @@ namespace MP1.ConfigurationStudio
         public bool ContextVisible = false;
         public bool OnboardingSeen = false;
         public bool PreSaveBackup = true;
+        public bool NativeOriginal = true;
         public string Language = "de";
         public string ThemeMode = "Dunkel";
         public int Width = 1360;
@@ -43,6 +44,7 @@ namespace MP1.ConfigurationStudio
             ContextVisible = false;
             OnboardingSeen = false;
             PreSaveBackup = true;
+            NativeOriginal = true;
             Language = Localization.DefaultCode;
             ThemeMode = "Dunkel";
             Width = 1360;
@@ -76,6 +78,7 @@ namespace MP1.ConfigurationStudio
                 ContextVisible = root.GetAttribute("context") == "true";
                 OnboardingSeen = root.GetAttribute("onboarding") == "true";
                 PreSaveBackup = root.GetAttribute("preSaveBackup") != "false";
+                NativeOriginal = root.GetAttribute("nativeOriginal") != "false";
                 string language = root.GetAttribute("language");
                 Language = String.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en"
                     : String.Equals(language, "de", StringComparison.OrdinalIgnoreCase) ? "de"
@@ -126,6 +129,7 @@ namespace MP1.ConfigurationStudio
                     writer.WriteAttributeString("context", ContextVisible ? "true" : "false");
                     writer.WriteAttributeString("onboarding", OnboardingSeen ? "true" : "false");
                     writer.WriteAttributeString("preSaveBackup", PreSaveBackup ? "true" : "false");
+                    writer.WriteAttributeString("nativeOriginal", NativeOriginal ? "true" : "false");
                     writer.WriteAttributeString("language", Language);
                     writer.WriteAttributeString("width", Width.ToString(CultureInfo.InvariantCulture));
                     writer.WriteAttributeString("height", Height.ToString(CultureInfo.InvariantCulture));
