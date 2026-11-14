@@ -21,7 +21,7 @@ namespace MP1.ConfigurationStudio
         private Panel header, footer, sidebar;
         private StudioLogo logo;
         private FlowLayoutPanel footerActions;
-        private Button saveButton, closeButton;
+        private Button saveButton, closeButton, backupButton;
         private readonly Label title = new Label { AutoSize = true };
         private readonly Label subtitle = new Label { AutoSize = true };
         private readonly Label status = new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
@@ -41,6 +41,7 @@ namespace MP1.ConfigurationStudio
             Text = "MP1 Configuration Studio · Neue Oberfläche";
             Icon = StudioIcon.Value;
             FormBorderStyle = FormBorderStyle.Sizable;
+            KeyPreview = true;
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(1180, 780);
             MinimumSize = new Size(940, 600);
@@ -137,7 +138,7 @@ namespace MP1.ConfigurationStudio
             status.Font = small;
             status.ForeColor = palette.Muted;
             footer.Controls.Add(status);
-            footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(260) };
+            footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(360) };
             closeButton = new Button { Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             closeButton.FlatAppearance.BorderColor = palette.Border;
             closeButton.Click += delegate { Close(); };
@@ -146,6 +147,10 @@ namespace MP1.ConfigurationStudio
             saveButton.FlatAppearance.BorderSize = 0;
             saveButton.Click += delegate { SaveConfiguration(); };
             footerActions.Controls.Add(saveButton);
+            backupButton = new Button { Text = Localization.IsEnglish ? "Backup" : "Sicherung", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            backupButton.FlatAppearance.BorderColor = palette.Border;
+            backupButton.Click += delegate { CreateBackup(); };
+            footerActions.Controls.Add(backupButton);
             footer.Controls.Add(footerActions);
             Controls.Add(footer);
             Controls.Add(header);
@@ -178,7 +183,7 @@ namespace MP1.ConfigurationStudio
             }
             footer.Height = Px(62);
             footer.Padding = new Padding(Px(24), Px(12), Px(20), Px(10));
-            footerActions.Width = Px(260);
+            footerActions.Width = Px(360);
             status.Font = small;
             closeButton.Font = body;
             closeButton.Width = Px(110);
@@ -187,6 +192,10 @@ namespace MP1.ConfigurationStudio
             saveButton.Font = body;
             saveButton.Width = Px(120);
             saveButton.Height = Px(34);
+            backupButton.Font = body;
+            backupButton.Width = Px(110);
+            backupButton.Height = Px(34);
+            backupButton.Margin = new Padding(Px(8), 0, 0, 0);
             scroll.Padding = new Padding(Px(28), Px(18), Px(28), Px(18));
             table.ColumnStyles[0].Width = Px(300);
             LayoutTable();
@@ -335,6 +344,28 @@ namespace MP1.ConfigurationStudio
                 text.Validated += delegate { int value; if (!Int32.TryParse(text.Text, out value)) value = field.Minimum; value = Math.Max(field.Minimum, Math.Min(field.Maximum, value)); text.Text = value.ToString(); configuration.SetInt(field.Section, field.Entry, value); MarkDirty(); };
                 input = text;
             }
+            else if (field.Kind == NativeFieldKind.Folder)
+            {
+                var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), Height = Px(30) };
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(34)));
+                var folder = new TextBox { Text = configuration.Get(field.Section, field.Entry, ""), Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                folder.TextChanged += delegate { configuration.Set(field.Section, field.Entry, folder.Text); MarkDirty(); };
+                var browse = new Button { Text = "…", Font = body, FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
+                browse.FlatAppearance.BorderColor = palette.Border;
+                browse.Click += delegate
+                {
+                    using (var picker = new FolderBrowserDialog())
+                    {
+                        picker.Description = Localization.IsEnglish ? "Select a folder" : "Ordner auswählen";
+                        if (Directory.Exists(folder.Text)) picker.SelectedPath = folder.Text;
+                        if (picker.ShowDialog(FindForm()) == DialogResult.OK) folder.Text = picker.SelectedPath;
+                    }
+                };
+                row.Controls.Add(folder, 0, 0);
+                row.Controls.Add(browse, 1, 0);
+                input = row;
+            }
             else
             {
                 var text = new TextBox { Text = configuration.Get(field.Section, field.Entry, ""), Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
@@ -381,6 +412,25 @@ namespace MP1.ConfigurationStudio
             {
                 StudioLog.Error(ex, "Native configuration save failed");
                 MessageBox.Show(this, (Localization.IsEnglish ? "The configuration could not be saved.\r\n\r\n" : "Die Konfiguration konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void CreateBackup()
+        {
+            try
+            {
+                string folder = ConfigurationBackup.DefaultBackupDirectory;
+                Directory.CreateDirectory(folder);
+                string backup = System.IO.Path.Combine(folder, "native-manual-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".zip");
+                ConfigurationBackup.Create(configuration.Path, backup);
+                status.Text = (Localization.IsEnglish ? "Backup created · " : "Sicherung erstellt · ") + System.IO.Path.GetFileName(backup);
+                status.ForeColor = palette.Muted;
+                StudioLog.Info("Native manual backup: " + backup);
+            }
+            catch (Exception ex)
+            {
+                StudioLog.Error(ex, "Native manual backup failed");
+                MessageBox.Show(this, (Localization.IsEnglish ? "The backup could not be created.\r\n\r\n" : "Die Sicherung konnte nicht erstellt werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -490,6 +540,44 @@ namespace MP1.ConfigurationStudio
             if (selected == null) return;
             if (selected.Bounds.Top < 0 || selected.Bounds.Bottom > navigation.ClientSize.Height)
                 navigation.AutoScrollPosition = new Point(0, Math.Max(0, selected.Bounds.Top));
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.S)
+            {
+                SaveConfiguration();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.Control && e.KeyCode == Keys.W)
+            {
+                Close();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.Control && (e.KeyCode == Keys.PageDown || e.KeyCode == Keys.PageUp))
+            {
+                Navigate(e.KeyCode == Keys.PageDown ? 1 : -1);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            base.OnKeyDown(e);
+        }
+
+        private void Navigate(int delta)
+        {
+            int index = sections.IndexOf(current);
+            if (index < 0) return;
+            int next = Math.Max(0, Math.Min(sections.Count - 1, index + delta));
+            if (next == index) return;
+            NativeSection section = sections[next];
+            StudioAction item = navigation.Controls.OfType<StudioAction>().FirstOrDefault(candidate => Object.ReferenceEquals(candidate.Tag, section));
+            ShowSection(section, item);
+            EnsureNavigationVisible();
         }
     }
 

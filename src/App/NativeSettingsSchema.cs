@@ -10,7 +10,8 @@ namespace MP1.ConfigurationStudio
         Combo,
         Info,
         Shares,
-        DynamicBools
+        DynamicBools,
+        Folder
     }
 
     internal sealed class NativeOption
@@ -265,7 +266,7 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("music", "AddOpticalDiskDrives", "Optische Laufwerke einbinden", "Include optical drives", NativeFieldKind.Bool))
                         .Add(new NativeField("music", "SwitchRemovableDrives", "Wechseldatenträger einbinden", "Include removable drives", NativeFieldKind.Bool))
                         .Add(new NativeField("music", "extensions", "Audio-Endungen", "Audio extensions", NativeFieldKind.Text, "Kommagetrennte Liste der Audioformate.", "Comma-separated audio extensions."))
-                        .Add(new NativeField("music", "playlists", "Playlist-Ordner", "Playlist folder", NativeFieldKind.Text, "Ordner für gespeicherte Wiedergabelisten.", "Folder for saved playlists."))
+                        .Add(new NativeField("music", "playlists", "Playlist-Ordner", "Playlist folder", NativeFieldKind.Folder, "Ordner für gespeicherte Wiedergabelisten.", "Folder for saved playlists."))
                         .Add(new NativeField("music", "sharepath0", "Musikordner (klassisch bearbeiten)", "Music folders (edit in classic)", NativeFieldKind.Info, "Musikordner werden auf der Seite Medienordner verwaltet.", "Music folders are managed on the Media folders page."))),
                 new NativeSection("folders", "Medienordner", "Media folders", "Video-, Musik- und Bilderordner verwalten.", "Manage video, music, and picture folders.", "folder")
                     .Group(new NativeGroup("Videoordner", "Video folders")
@@ -281,8 +282,8 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("tvservice", "WOLTimeOut", "WOL-Timeout", "WOL timeout", NativeFieldKind.Integer).Range(0, 120, "s"))
                         .Add(new NativeField("tvservice", "isAutoMacAddressEnabled", "MAC-Adresse automatisch", "Automatic MAC address", NativeFieldKind.Bool))
                         .Add(new NativeField("tvservice", "macAddress", "MAC-Adresse", "MAC address", NativeFieldKind.Text))
-                        .Add(new NativeField("tvservice", "recordingpath", "Aufnahmeordner", "Recording folder", NativeFieldKind.Text, "Leer lassen für den MediaPortal-Standard.", "Leave empty for the MediaPortal default."))
-                        .Add(new NativeField("tvservice", "timeshiftingpath", "Timeshift-Ordner", "Timeshift folder", NativeFieldKind.Text))
+                        .Add(new NativeField("tvservice", "recordingpath", "Aufnahmeordner", "Recording folder", NativeFieldKind.Folder, "Leer lassen für den MediaPortal-Standard.", "Leave empty for the MediaPortal default."))
+                        .Add(new NativeField("tvservice", "timeshiftingpath", "Timeshift-Ordner", "Timeshift folder", NativeFieldKind.Folder))
                         .Add(new NativeField("tvservice", "preferac3", "AC3 bevorzugen", "Prefer AC3", NativeFieldKind.Bool))
                         .Add(new NativeField("tvservice", "preferAudioTypeOverLang", "Audiospur vor Sprache", "Prefer audio type over language", NativeFieldKind.Bool))
                         .Add(new NativeField("tvservice", "preferredaudiolanguages", "Bevorzugte Audiosprachen", "Preferred audio languages", NativeFieldKind.Text, "Kommagetrennte Sprachcodes, z. B. de,en.", "Comma-separated language codes, e.g. de,en."))
