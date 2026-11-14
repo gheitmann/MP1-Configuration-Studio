@@ -20,6 +20,12 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 - `--section=<id>` opens a page directly, for example `--section=plugins`.
 - Plugin configuration windows still open on the classic interface; the Plugins page links to it.
 
+## MediaPortal plugin (preview)
+
+A companion window plugin is in `plugin/`. It renders the same Studio schema inside MediaPortal, with toggle/combo/integer/text editing, numeric and virtual keyboards, and ZIP backups through MediaPortal's settings cache. Build and installation instructions are in [plugin/README.md](plugin/README.md).
+
+Limits: media-folder and dynamic plugin lists are read-only inside MP and point to the desktop Studio; the plugin needs a restart for some cached settings.
+
 Studio adds grouped navigation with icons, search, navigation history, light/dark themes, adjustable text and page scaling (100–175%, default 125%), and a collapsible help column. The original MediaPortal pages, controls and save handlers remain in use.
 
 ## Roadmap and support

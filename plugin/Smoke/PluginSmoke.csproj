@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>PluginSmoke</AssemblyName>
+    <MediaPortalDir Condition="'$(MediaPortalDir)' == ''">C:\Program Files\Team MediaPortal\MediaPortal</MediaPortalDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MP1.ConfigurationStudio.Plugin.csproj" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Core"><HintPath>$(MediaPortalDir)\Core.dll</HintPath></Reference>
+    <Reference Include="Utils"><HintPath>$(MediaPortalDir)\Utils.dll</HintPath></Reference>
+    <Reference Include="Dialogs"><HintPath>$(MediaPortalDir)\plugins\Windows\Dialogs.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

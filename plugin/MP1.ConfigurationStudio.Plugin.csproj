@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>MP1.ConfigurationStudio.Plugin</AssemblyName>
+    <RootNamespace>MP1.ConfigurationStudio.Plugin</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>1.39.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <InformationalVersion>2.0.0-beta.13</InformationalVersion>
+    <MediaPortalDir Condition="'$(MediaPortalDir)' == ''">C:\Program Files\Team MediaPortal\MediaPortal</MediaPortalDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Smoke\**" />
+    <None Remove="Smoke\**" />
+    <EmbeddedResource Remove="Smoke\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Core">
+      <HintPath>$(MediaPortalDir)\Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Utils">
+      <HintPath>$(MediaPortalDir)\Utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Dialogs">
+      <HintPath>$(MediaPortalDir)\plugins\Windows\Dialogs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Common.Utils">
+      <HintPath>$(MediaPortalDir)\Common.Utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\src\App\NativeSettingsSchema.cs" Link="NativeSettingsSchema.cs" />
+  </ItemGroup>
+</Project>
