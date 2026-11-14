@@ -1,7 +1,9 @@
 using System;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
@@ -11,6 +13,7 @@ namespace MP1.ConfigurationStudio
     internal sealed class NativeDspEditor : UserControl, IStudioFileEditor
     {
         private readonly string path;
+        private readonly string runtime;
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
         private readonly TextBox musicDirectory = new TextBox { BorderStyle = BorderStyle.FixedSingle };
@@ -21,20 +24,30 @@ namespace MP1.ConfigurationStudio
         private Encoding encoding = new UTF8Encoding(false);
         private bool dirty;
         private bool loading;
+        private bool building;
+        private CheckBox gainCheck;
+        private TrackBar gainTrack;
+        private Label gainLabel;
+        private CheckBox dynCheck;
+        private ComboBox dynCombo;
+        private CheckBox compCheck;
+        private TrackBar compTrack;
+        private Label compLabel;
 
-        public NativeDspEditor(string configDirectory, float scale)
+        public NativeDspEditor(string configDirectory, string runtime, float scale)
         {
             this.path = Path.Combine(configDirectory, "musicdsp.xml");
+            this.runtime = runtime;
             this.scale = scale;
             BackColor = palette.Background;
             ForeColor = palette.Text;
             var body = Typography.Create(10f * scale, FontStyle.Regular);
 
             var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(38), ColumnCount = 4, BackColor = palette.Background };
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 14));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Music folder" : "Musikordner", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
             musicDirectory.Dock = DockStyle.Fill;
             musicDirectory.Font = body;
@@ -53,7 +66,10 @@ namespace MP1.ConfigurationStudio
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { Reload(); }, body));
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add BASS effect" : "BASS-Effekt hinzufügen", delegate { AddElement("BASS", "EffectName"); }, body));
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add VST plugin" : "VST-Plugin hinzufügen", delegate { AddElement("VST", "PluginDll"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Scan VST" : "VST suchen", delegate { ScanPlugins("VST"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Scan Winamp" : "Winamp suchen", delegate { ScanPlugins("Winamp"); }, body));
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add Winamp plugin" : "Winamp-Plugin hinzufügen", delegate { AddElement("Winamp", "PluginDll"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Test playback" : "Testwiedergabe", delegate { TestPlayback(); }, body));
             status.AutoSize = false;
             status.Width = Px(160);
             status.Height = Px(28);
@@ -64,7 +80,7 @@ namespace MP1.ConfigurationStudio
             actions.Controls.Add(status);
 
             scroll.Controls.Add(cards);
-            scroll.Resize += delegate { cards.Width = Math.Max(Px(520), scroll.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Px(12)); };
+            scroll.Resize += delegate { ResizeCards(); };
             Controls.Add(scroll);
             Controls.Add(actions);
             Controls.Add(top);
@@ -144,32 +160,239 @@ namespace MP1.ConfigurationStudio
         private void BuildCards()
         {
             cards.SuspendLayout();
+            building = true;
             try
             {
                 cards.Controls.Clear();
                 if (document == null) return;
-                int count = 0;
+                cards.Controls.Add(BuildKnownEffects());
                 foreach (XmlNode node in document.DocumentElement.ChildNodes)
                 {
                     var element = node as XmlElement;
                     if (element == null) continue;
                     if (String.Equals(element.Name, "BASS", StringComparison.OrdinalIgnoreCase))
                     {
+                        string name = element.GetAttribute("EffectName");
+                        if (IsKnownEffect(name)) continue;
                         cards.Controls.Add(BuildEffectCard(element, "BASS"));
-                        count++;
                     }
                     else if (String.Equals(element.Name, "VST", StringComparison.OrdinalIgnoreCase) || String.Equals(element.Name, "Winamp", StringComparison.OrdinalIgnoreCase))
                     {
                         cards.Controls.Add(BuildPluginCard(element));
-                        count++;
                     }
                 }
-                if (count == 0)
-                    cards.Controls.Add(new Label { Text = L("Keine DSP-Effekte oder Plugins konfiguriert.", "No DSP effects or plugins configured."), Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(8), 0, Px(8)) });
             }
-            finally { cards.ResumeLayout(true); }
-            cards.Width = Math.Max(Px(520), scroll.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Px(12));
+            finally
+            {
+                building = false;
+                cards.ResumeLayout(true);
+            }
+            ResizeCards();
             status.Text = L("Musik-DSP", "Music DSP") + (dirty ? L("  ·  ungespeichert", "  ·  unsaved") : "");
+        }
+
+        private void ResizeCards()
+        {
+            int width = Math.Max(Px(440), scroll.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Px(12));
+            cards.Width = width;
+            foreach (Control control in cards.Controls)
+            {
+                if (!(control is TableLayoutPanel)) continue;
+                control.MinimumSize = new Size(width - Px(4), 0);
+                control.MaximumSize = new Size(width - Px(4), 0);
+                control.Width = width - Px(4);
+            }
+        }
+
+        private static bool IsKnownEffect(string name)
+        {
+            return String.Equals(name, "Gain", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(name, "DynAmp", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(name, "Compressor", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private Control BuildKnownEffects()
+        {
+            var card = new TableLayoutPanel { ColumnCount = 1, RowCount = 4, AutoSize = true, BackColor = palette.Panel, Margin = new Padding(0, 0, 0, Px(10)), Padding = new Padding(Px(12), Px(8), Px(12), Px(10)) };
+            card.Controls.Add(new Label { Text = L("Bekannte BASS-Effekte", "Known BASS effects"), Font = Typography.Create(11f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, Margin = new Padding(0, 0, 0, Px(6)) }, 0, 0);
+
+            double gain = 0;
+            XmlElement gainEffect = FindEffect("Gain");
+            if (gainEffect != null)
+                double.TryParse(ReadParameter(gainEffect, "Gain_dbV"), NumberStyles.Float, CultureInfo.InvariantCulture, out gain);
+            gainTrack = new TrackBar { Minimum = -160, Maximum = 160, TickFrequency = 20, SmallChange = 1, LargeChange = 10, Value = Math.Max(-160, Math.Min(160, (int)Math.Round(gain * 10))), Dock = DockStyle.Fill, BackColor = palette.Panel, Height = Px(30), Margin = new Padding(0) };
+            gainLabel = new Label { Text = gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB", ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
+            gainCheck = new CheckBox { Text = "Gain", Checked = gainEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
+            card.Controls.Add(KnownRow(gainCheck, gainTrack, gainLabel), 0, 1);
+            gainCheck.CheckedChanged += delegate
+            {
+                if (building) return;
+                gainTrack.Enabled = gainCheck.Checked;
+                gainLabel.Enabled = gainCheck.Checked;
+                if (gainCheck.Checked) SetEffect("Gain", "Gain_dbV", (gainTrack.Value / 10.0).ToString("0.0", CultureInfo.InvariantCulture));
+                else RemoveEffect("Gain");
+                MarkDirty();
+            };
+            gainTrack.ValueChanged += delegate
+            {
+                if (building) return;
+                double value = gainTrack.Value / 10.0;
+                gainLabel.Text = value.ToString("0.0", CultureInfo.InvariantCulture) + " dB";
+                if (gainCheck.Checked) SetEffect("Gain", "Gain_dbV", value.ToString("0.0", CultureInfo.InvariantCulture));
+                MarkDirty();
+            };
+            gainTrack.Enabled = gainEffect != null;
+            gainLabel.Enabled = gainEffect != null;
+
+            int preset = 0;
+            XmlElement dynEffect = FindEffect("DynAmp");
+            if (dynEffect != null) Int32.TryParse(ReadParameter(dynEffect, "Preset"), out preset);
+            dynCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill };
+            dynCombo.Items.AddRange(new object[] { "Soft", "Medium", "Hard" });
+            dynCombo.SelectedIndex = Math.Max(0, Math.Min(2, preset));
+            dynCheck = new CheckBox { Text = L("Dynamische Verstärkung", "Dynamic amplification"), Checked = dynEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
+            card.Controls.Add(KnownRow(dynCheck, dynCombo, new Label { Text = "Preset", ForeColor = palette.Muted, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight }), 0, 2);
+            dynCheck.CheckedChanged += delegate
+            {
+                if (building) return;
+                dynCombo.Enabled = dynCheck.Checked;
+                if (dynCheck.Checked) SetEffect("DynAmp", "Preset", dynCombo.SelectedIndex.ToString());
+                else RemoveEffect("DynAmp");
+                MarkDirty();
+            };
+            dynCombo.SelectedIndexChanged += delegate
+            {
+                if (building || !dynCheck.Checked) return;
+                SetEffect("DynAmp", "Preset", dynCombo.SelectedIndex.ToString());
+                MarkDirty();
+            };
+            dynCombo.Enabled = dynEffect != null;
+
+            int threshold = -60;
+            XmlElement compEffect = FindEffect("Compressor");
+            if (compEffect != null) Int32.TryParse(ReadParameter(compEffect, "Threshold"), out threshold);
+            compTrack = new TrackBar { Minimum = -250, Maximum = 0, TickFrequency = 25, SmallChange = 1, LargeChange = 10, Value = Math.Max(-250, Math.Min(0, threshold)), Dock = DockStyle.Fill, BackColor = palette.Panel, Height = Px(30), Margin = new Padding(0) };
+            compLabel = new Label { Text = (threshold / 10.0).ToString("0.0", CultureInfo.InvariantCulture) + " dB", ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
+            compCheck = new CheckBox { Text = L("Kompressor", "Compressor"), Checked = compEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
+            card.Controls.Add(KnownRow(compCheck, compTrack, compLabel), 0, 3);
+            compCheck.CheckedChanged += delegate
+            {
+                if (building) return;
+                compTrack.Enabled = compCheck.Checked;
+                compLabel.Enabled = compCheck.Checked;
+                if (compCheck.Checked) SetEffect("Compressor", "Threshold", compTrack.Value.ToString(CultureInfo.InvariantCulture));
+                else RemoveEffect("Compressor");
+                MarkDirty();
+            };
+            compTrack.ValueChanged += delegate
+            {
+                if (building) return;
+                compLabel.Text = (compTrack.Value / 10.0).ToString("0.0", CultureInfo.InvariantCulture) + " dB";
+                if (compCheck.Checked) SetEffect("Compressor", "Threshold", compTrack.Value.ToString(CultureInfo.InvariantCulture));
+                MarkDirty();
+            };
+            compTrack.Enabled = compEffect != null;
+            compLabel.Enabled = compEffect != null;
+            return card;
+        }
+
+        private Control KnownRow(CheckBox check, Control control, Label value)
+        {
+            var row = new TableLayoutPanel { ColumnCount = 3, RowCount = 1, AutoSize = true, Dock = DockStyle.Fill, BackColor = palette.Panel, Margin = new Padding(0, Px(4), 0, 0) };
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 47));
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+            row.Controls.Add(check, 0, 0);
+            control.Dock = DockStyle.Fill;
+            row.Controls.Add(control, 1, 0);
+            value.Dock = DockStyle.Fill;
+            row.Controls.Add(value, 2, 0);
+            return row;
+        }
+
+        private XmlElement FindEffect(string name)
+        {
+            if (document == null) return null;
+            foreach (XmlNode node in document.DocumentElement.ChildNodes)
+            {
+                var element = node as XmlElement;
+                if (element != null && String.Equals(element.Name, "BASS", StringComparison.OrdinalIgnoreCase)
+                    && String.Equals(element.GetAttribute("EffectName"), name, StringComparison.OrdinalIgnoreCase)) return element;
+            }
+            return null;
+        }
+
+        private void SetEffect(string name, string parameter, string value)
+        {
+            if (document == null) return;
+            XmlElement effect = FindEffect(name);
+            if (effect == null)
+            {
+                effect = document.CreateElement("BASS");
+                effect.SetAttribute("EffectName", name);
+                document.DocumentElement.AppendChild(effect);
+            }
+            XmlElement parameterNode = null;
+            foreach (XmlNode node in effect.ChildNodes)
+            {
+                var element = node as XmlElement;
+                if (element != null && String.Equals(element.Name, "Parameter", StringComparison.OrdinalIgnoreCase)
+                    && String.Equals(element.GetAttribute("Name"), parameter, StringComparison.OrdinalIgnoreCase)) { parameterNode = element; break; }
+            }
+            if (parameterNode == null)
+            {
+                parameterNode = document.CreateElement("Parameter");
+                parameterNode.SetAttribute("Name", parameter);
+                parameterNode.SetAttribute("Value", string.Empty);
+                effect.AppendChild(parameterNode);
+            }
+            parameterNode.SetAttribute("Value", value ?? string.Empty);
+        }
+
+        private string ReadParameter(XmlElement effect, string name)
+        {
+            foreach (XmlNode node in effect.ChildNodes)
+            {
+                var element = node as XmlElement;
+                if (element != null && String.Equals(element.Name, "Parameter", StringComparison.OrdinalIgnoreCase)
+                    && String.Equals(element.GetAttribute("Name"), name, StringComparison.OrdinalIgnoreCase)) return element.GetAttribute("Value");
+            }
+            return string.Empty;
+        }
+
+        private void RemoveEffect(string name)
+        {
+            XmlElement effect = FindEffect(name);
+            if (effect != null) document.DocumentElement.RemoveChild(effect);
+        }
+
+        private void ScanPlugins(string kind)
+        {
+            string root = Path.Combine(runtime, "musicplayer", "plugins", "dsp");
+            if (!Directory.Exists(root))
+            {
+                MessageBox.Show(FindForm(), (Localization.IsEnglish ? "DSP plugin folder not found:\r\n" : "DSP-Plugin-Ordner nicht gefunden:\r\n") + root, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string[] files = Directory.GetFiles(root, "*.dll", SearchOption.AllDirectories)
+                .Select(file => file.Substring(root.Length).TrimStart('\\'))
+                .OrderBy(file => file, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+            using (var dialog = new PluginPickerDialog(scale, kind, files))
+            {
+                if (dialog.ShowDialog(FindForm()) != DialogResult.OK) return;
+                XmlElement plugin = document.CreateElement(kind);
+                plugin.SetAttribute("PluginDll", dialog.SelectedFile);
+                document.DocumentElement.AppendChild(plugin);
+                MarkDirty();
+                BuildCards();
+            }
+        }
+
+        private void TestPlayback()
+        {
+            double gain = gainCheck != null && gainCheck.Checked && gainTrack != null ? gainTrack.Value / 10.0 : 0;
+            using (var dialog = new DspTestDialog(scale, runtime, gain)) dialog.ShowDialog(FindForm());
         }
 
         private Control BuildEffectCard(XmlElement effect, string kind)
@@ -339,6 +562,198 @@ namespace MP1.ConfigurationStudio
             {
                 status.Text = ex.Message;
                 MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The music DSP settings could not be saved.\r\n\r\n" : "Die Musik-DSP-Einstellungen konnten nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private sealed class PluginPickerDialog : Form
+        {
+            private readonly ListBox list = new ListBox();
+            private readonly float scale;
+            public string SelectedFile { get { return list.SelectedItem == null ? null : list.SelectedItem.ToString(); } }
+
+            public PluginPickerDialog(float scale, string kind, string[] files)
+            {
+                this.scale = scale;
+                Text = (Localization.IsEnglish ? "Select " : "Auswählen: ") + kind;
+                FormBorderStyle = FormBorderStyle.Sizable;
+                StartPosition = FormStartPosition.CenterParent;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+                ClientSize = new Size(Px(620), Px(420));
+                BackColor = Palette.For(true).Panel;
+                ForeColor = Palette.For(true).Text;
+                list.Dock = DockStyle.Fill;
+                list.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                list.BackColor = Palette.For(true).Input;
+                list.ForeColor = Palette.For(true).Text;
+                list.IntegralHeight = false;
+                foreach (string file in files) list.Items.Add(file);
+                if (list.Items.Count > 0) list.SelectedIndex = 0;
+                var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(48), FlowDirection = FlowDirection.RightToLeft, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(8), Px(10), Px(8)) };
+                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
+                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                ok.FlatAppearance.BorderColor = Palette.For(true).Border;
+                ok.Click += delegate { if (list.SelectedItem == null) return; DialogResult = DialogResult.OK; Close(); };
+                bottom.Controls.Add(cancel);
+                bottom.Controls.Add(ok);
+                Controls.Add(list);
+                Controls.Add(bottom);
+                AcceptButton = ok;
+                CancelButton = cancel;
+            }
+
+            private int Px(float value) { return (int)Math.Round(value * scale); }
+        }
+
+        private sealed class DspTestDialog : Form
+        {
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            private static extern bool SetDllDirectory(string path);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_Init(int device, uint frequency, uint flags, IntPtr window, IntPtr clsid);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_Free();
+            [DllImport("bass.dll", CharSet = CharSet.Unicode)]
+            private static extern int BASS_StreamCreateFile(bool memory, string file, long offset, long length, uint flags);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_StreamFree(int handle);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_ChannelPlay(int handle, bool restart);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_ChannelStop(int handle);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_ChannelSetAttribute(int handle, uint attribute, float value);
+            [DllImport("bass.dll")]
+            private static extern int BASS_ErrorGetCode();
+
+            private readonly float scale;
+            private readonly string runtime;
+            private readonly double gain;
+            private readonly TextBox file = new TextBox();
+            private readonly Label status = new Label();
+            private readonly Button play;
+            private readonly Button stop;
+            private bool initialized;
+            private int stream;
+
+            public DspTestDialog(float scale, string runtime, double gain)
+            {
+                this.scale = scale;
+                this.runtime = runtime;
+                this.gain = gain;
+                Text = Localization.IsEnglish ? "DSP test playback" : "DSP-Testwiedergabe";
+                FormBorderStyle = FormBorderStyle.FixedDialog;
+                StartPosition = FormStartPosition.CenterParent;
+                MaximizeBox = false;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+                BackColor = Palette.For(true).Panel;
+                ForeColor = Palette.For(true).Text;
+                ClientSize = new Size(Px(620), Px(240));
+                var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(40), ColumnCount = 2, Padding = new Padding(Px(14), Px(10), Px(14), 0), BackColor = Palette.For(true).Panel };
+                top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
+                file.Dock = DockStyle.Fill;
+                file.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                file.BackColor = Palette.For(true).Input;
+                file.ForeColor = Palette.For(true).Text;
+                file.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+                top.Controls.Add(file, 0, 0);
+                var browse = new Button { Text = Localization.IsEnglish ? "Browse …" : "Datei …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
+                browse.FlatAppearance.BorderColor = Palette.For(true).Border;
+                browse.Click += delegate
+                {
+                    using (var dialog = new OpenFileDialog { Title = Localization.IsEnglish ? "Select test file" : "Testdatei wählen", Filter = "Audio (*.mp3;*.wav;*.flac;*.ogg;*.m4a)|*.mp3;*.wav;*.flac;*.ogg;*.m4a|All files (*.*)|*.*", CheckFileExists = true })
+                    {
+                        if (Directory.Exists(Path.GetDirectoryName(file.Text))) dialog.InitialDirectory = Path.GetDirectoryName(file.Text);
+                        if (dialog.ShowDialog(this) == DialogResult.OK) file.Text = dialog.FileName;
+                    }
+                };
+                top.Controls.Add(browse, 1, 0);
+
+                var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(48), FlowDirection = FlowDirection.LeftToRight, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(14), 0, Px(14), 0) };
+                play = new Button { Text = Localization.IsEnglish ? "Play" : "Wiedergabe", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(130), Height = Px(30) };
+                play.FlatAppearance.BorderColor = Palette.For(true).Border;
+                play.Click += delegate { StartPlayback(); };
+                stop = new Button { Text = Localization.IsEnglish ? "Stop" : "Stopp", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30), Enabled = false };
+                stop.FlatAppearance.BorderColor = Palette.For(true).Border;
+                stop.Click += delegate { StopPlayback(); };
+                actions.Controls.Add(play);
+                actions.Controls.Add(stop);
+                var close = new Button { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                close.FlatAppearance.BorderColor = Palette.For(true).Border;
+                actions.Controls.Add(close);
+                status.AutoSize = true;
+                status.ForeColor = Palette.For(true).Muted;
+                status.Font = Typography.Create(9f * scale, FontStyle.Regular);
+                status.Text = (Localization.IsEnglish ? "Gain: " : "Gain: ") + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (Localization.IsEnglish ? "DynAmp/Compressor are applied by MediaPortal, not in this preview." : "DynAmp/Kompressor werden von MediaPortal angewendet, nicht in dieser Vorschau.");
+                actions.Controls.Add(status);
+                Controls.Add(actions);
+                Controls.Add(top);
+                CancelButton = close;
+                FormClosing += delegate { StopPlayback(); };
+            }
+
+            private int Px(float value) { return (int)Math.Round(value * scale); }
+
+            private void StartPlayback()
+            {
+                StopPlayback();
+                if (!File.Exists(file.Text))
+                {
+                    status.Text = Localization.IsEnglish ? "File not found." : "Datei nicht gefunden.";
+                    return;
+                }
+                try
+                {
+                    SetDllDirectory(runtime);
+                    if (!initialized)
+                    {
+                        if (!BASS_Init(-1, 44100, 0, IntPtr.Zero, IntPtr.Zero))
+                        {
+                            status.Text = (Localization.IsEnglish ? "BASS could not initialise (error " : "BASS konnte nicht initialisieren (Fehler ") + BASS_ErrorGetCode() + ").";
+                            return;
+                        }
+                        initialized = true;
+                    }
+                    stream = BASS_StreamCreateFile(false, file.Text, 0, 0, 0x100 | 0x40000 | 0x4 | 0x80000000);
+                    if (stream == 0)
+                    {
+                        status.Text = (Localization.IsEnglish ? "Cannot open audio file (BASS error " : "Audiodatei kann nicht geöffnet werden (BASS-Fehler ") + BASS_ErrorGetCode() + ").";
+                        return;
+                    }
+                    BASS_ChannelSetAttribute(stream, 2, (float)Math.Pow(10, gain / 20.0));
+                    BASS_ChannelPlay(stream, false);
+                    play.Enabled = false;
+                    stop.Enabled = true;
+                    status.Text = Localization.IsEnglish ? "Playing with gain …" : "Wiedergabe mit Gain …";
+                }
+                catch (Exception ex)
+                {
+                    status.Text = ex.Message;
+                }
+            }
+
+            private void StopPlayback()
+            {
+                try
+                {
+                    if (stream != 0)
+                    {
+                        BASS_ChannelStop(stream);
+                        BASS_StreamFree(stream);
+                        stream = 0;
+                    }
+                    if (initialized)
+                    {
+                        BASS_Free();
+                        initialized = false;
+                    }
+                }
+                catch { }
+                if (play != null) play.Enabled = true;
+                if (stop != null) stop.Enabled = false;
             }
         }
     }

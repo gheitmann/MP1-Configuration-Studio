@@ -69,6 +69,8 @@ namespace MP1.ConfigurationStudio
             var add = ButtonFor(Localization.IsEnglish ? "Add action" : "Aktion hinzufügen", delegate { AddAction(); }, body);
             actions.Controls.Add(reload);
             actions.Controls.Add(add);
+            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add window" : "Fenster hinzufügen", delegate { AddWindow(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Delete window" : "Fenster löschen", delegate { DeleteWindow(); }, body));
             status.AutoSize = false;
             status.Width = Px(260);
             status.Height = Px(28);
@@ -136,25 +138,7 @@ namespace MP1.ConfigurationStudio
                 string text = NativeXmlFileStore.ReadText(path, out encoding);
                 document = new XmlDocument { XmlResolver = null, PreserveWhitespace = true };
                 document.LoadXml(text);
-                contexts.Clear();
-                foreach (XmlNode node in document.DocumentElement.ChildNodes)
-                {
-                    var element = node as XmlElement;
-                    if (element == null) continue;
-                    if (String.Equals(element.Name, "global", StringComparison.OrdinalIgnoreCase))
-                        contexts.Add(new Context { Label = Localization.IsEnglish ? "Global" : "Global", Element = element });
-                    else if (String.Equals(element.Name, "window", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string description = ChildText(element, "description");
-                        string id = ChildText(element, "id");
-                        contexts.Add(new Context { Label = (String.IsNullOrEmpty(description) ? (Localization.IsEnglish ? "Window" : "Fenster") : description) + (String.IsNullOrEmpty(id) ? "" : "  ·  #" + id), Element = element });
-                    }
-                }
-                building = true;
-                contextChoice.Items.Clear();
-                foreach (Context context in contexts) contextChoice.Items.Add(context.Label);
-                if (contextChoice.Items.Count > 0) contextChoice.SelectedIndex = 0;
-                building = false;
+                BuildContexts();
                 dirty = false;
                 BuildTable();
             }
@@ -168,6 +152,64 @@ namespace MP1.ConfigurationStudio
         {
             if (!ConfirmDiscardChanges()) return;
             LoadFile();
+        }
+
+        private void BuildContexts()
+        {
+            string previous = contextChoice.SelectedItem as string;
+            contexts.Clear();
+            foreach (XmlNode node in document.DocumentElement.ChildNodes)
+            {
+                var element = node as XmlElement;
+                if (element == null) continue;
+                if (String.Equals(element.Name, "global", StringComparison.OrdinalIgnoreCase))
+                    contexts.Add(new Context { Label = Localization.IsEnglish ? "Global" : "Global", Element = element });
+                else if (String.Equals(element.Name, "window", StringComparison.OrdinalIgnoreCase))
+                {
+                    string description = ChildText(element, "description");
+                    string id = ChildText(element, "id");
+                    contexts.Add(new Context { Label = (String.IsNullOrEmpty(description) ? (Localization.IsEnglish ? "Window" : "Fenster") : description) + (String.IsNullOrEmpty(id) ? "" : "  ·  #" + id), Element = element });
+                }
+            }
+            building = true;
+            contextChoice.Items.Clear();
+            foreach (Context context in contexts) contextChoice.Items.Add(context.Label);
+            int index = previous == null ? 0 : Math.Max(0, contextChoice.Items.IndexOf(previous));
+            if (contextChoice.Items.Count > 0) contextChoice.SelectedIndex = index;
+            building = false;
+        }
+
+        private void AddWindow()
+        {
+            using (var dialog = new WindowDialog(scale))
+            {
+                if (dialog.ShowDialog(FindForm()) != DialogResult.OK) return;
+                XmlElement window = document.CreateElement("window");
+                AppendText(window, "id", dialog.WindowId);
+                AppendText(window, "description", dialog.Description);
+                document.DocumentElement.AppendChild(window);
+                dirty = true;
+                BuildContexts();
+                contextChoice.SelectedIndex = contexts.Count - 1;
+                BuildTable();
+                status.Text = (Localization.IsEnglish ? "Window added · unsaved" : "Fenster hinzugefügt · ungespeichert");
+            }
+        }
+
+        private void DeleteWindow()
+        {
+            Context context = SelectedContext();
+            if (context == null || context.Element == null || !String.Equals(context.Element.Name, "window", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show(FindForm(), Localization.IsEnglish ? "Only window contexts can be deleted; Global is required." : "Nur Fenster-Bereiche können gelöscht werden; Global ist erforderlich.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "Delete the window “" : "Fenster „") + context.Label + (Localization.IsEnglish ? "” and all its mappings?" : "“ und alle Zuordnungen löschen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            context.Element.ParentNode.RemoveChild(context.Element);
+            dirty = true;
+            BuildContexts();
+            BuildTable();
+            status.Text = (Localization.IsEnglish ? "Window deleted · unsaved" : "Fenster gelöscht · ungespeichert");
         }
 
         private void BuildTable()
@@ -416,6 +458,74 @@ namespace MP1.ConfigurationStudio
                 status.Text = ex.Message;
                 MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The key mapping could not be saved.\r\n\r\n" : "Die Tastenbelegung konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+        }
+
+        private sealed class WindowDialog : Form
+        {
+            private readonly float scale;
+            private readonly TextBox id = new TextBox();
+            private readonly TextBox description = new TextBox();
+            public string WindowId { get { return id.Text.Trim(); } }
+            public string Description { get { return description.Text.Trim(); } }
+
+            public WindowDialog(float scale)
+            {
+                this.scale = scale;
+                Text = Localization.IsEnglish ? "Add window" : "Fenster hinzufügen";
+                FormBorderStyle = FormBorderStyle.FixedDialog;
+                StartPosition = FormStartPosition.CenterParent;
+                MaximizeBox = false;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+                BackColor = Palette.For(true).Panel;
+                ForeColor = Palette.For(true).Text;
+                ClientSize = new Size(Px(480), Px(220));
+                var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Window ID" : "Fenster-ID", ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+                id.Dock = DockStyle.Fill;
+                id.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                id.BackColor = Palette.For(true).Input;
+                id.ForeColor = Palette.For(true).Text;
+                table.Controls.Add(id, 1, 0);
+                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Description" : "Beschreibung", ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
+                description.Dock = DockStyle.Fill;
+                description.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                description.BackColor = Palette.For(true).Input;
+                description.ForeColor = Palette.For(true).Text;
+                table.Controls.Add(description, 1, 1);
+                var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
+                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
+                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                ok.FlatAppearance.BorderColor = Palette.For(true).Border;
+                ok.Click += delegate
+                {
+                    int value;
+                    if (!Int32.TryParse(id.Text.Trim(), out value) || value <= 0)
+                    {
+                        MessageBox.Show(this, Localization.IsEnglish ? "The window ID must be a positive number." : "Die Fenster-ID muss eine positive Zahl sein.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (String.IsNullOrWhiteSpace(description.Text))
+                    {
+                        MessageBox.Show(this, Localization.IsEnglish ? "Please enter a description." : "Bitte eine Beschreibung eingeben.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    DialogResult = DialogResult.OK;
+                    Close();
+                };
+                buttons.Controls.Add(cancel);
+                buttons.Controls.Add(ok);
+                table.Controls.Add(buttons, 0, 3);
+                table.SetColumnSpan(buttons, 2);
+                Controls.Add(table);
+                AcceptButton = ok;
+                CancelButton = cancel;
+            }
+
+            private int Px(float value) { return (int)Math.Round(value * scale); }
         }
 
         private sealed class ActionDialog : Form

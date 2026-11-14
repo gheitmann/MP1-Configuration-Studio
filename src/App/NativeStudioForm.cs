@@ -378,7 +378,7 @@ namespace MP1.ConfigurationStudio
             }
             if (field.Kind == NativeFieldKind.Dsp)
             {
-                var editor = new NativeDspEditor(Path.GetDirectoryName(configuration.Path), scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                var editor = new NativeDspEditor(Path.GetDirectoryName(configuration.Path), runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
                 table.Controls.Add(editor, 0, table.RowCount);
                 table.SetColumnSpan(editor, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(580)));
