@@ -63,7 +63,7 @@ The script removes the plugin DLL, removes `MP1StudioSettings.xml` from every sk
 
 ## Skin
 
-`plugin\Skin\MP1StudioSettings.xml` is written for 1920×1080 skins (Backdrop, Titan, DefaultWideHD, MayaHD, Apollo, PureVisionHD) and uses the common `list_background_focus_ledon.png` / `list_background_nofocus_ledon.png` textures. For other resolutions, scale the positions in the XML.
+`plugin\Skin\MP1StudioSettings.xml` is written for 1920×1080 skins (Backdrop, Titan, DefaultWideHD, MayaHD, Apollo, PureVisionHD). It uses `font22` and `font14`, which are present in Backdrop and Titan, and white/gray focused text so the selection stays visible even when a skin does not ship the Backdrop list-focus textures. For other resolutions, scale the positions in the XML.
 
 ## Current limits
 
