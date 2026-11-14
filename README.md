@@ -2,9 +2,23 @@
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
-> **Current release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
+> **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
+>
+> **2.0 previews:** [2.0.0-beta.8](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.8) adds a new native configuration interface. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Start it with `--native` or Tools → New interface (beta). The stable 1.9.0 shell remains the default.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
+
+## New native interface (2.0 beta)
+
+The 2.0 previews replace the re-themed native pages with a dedicated Studio interface:
+
+- Core pages for General, Volume, Pictures, Interface, Start menu, Video, Music, Media folders, TV, Radio, TV recordings, Subtitles, Remote, Codecs, BD/DVD, and Plugins.
+- Media-folder editor with add, edit, remove, folder picker, scan toggle, and preservation of pincode/server/login/port and other share fields.
+- Dynamic plugin activation lists and a start-menu editor read directly from the configuration.
+- Editable 100–175% text size, live settings search, sidebar wheel scrolling, dark scrollbars and title bars.
+- Manual ZIP backup, save with automatic pre-save backup, atomic replacement of `MediaPortal.xml`, and keyboard shortcuts (`Ctrl+S`, `Ctrl+W`, `Ctrl+PageUp/PageDown`).
+- `--section=<id>` opens a page directly, for example `--section=plugins`.
+- Plugin configuration windows still open on the classic interface; the Plugins page links to it.
 
 Studio adds grouped navigation with icons, search, navigation history, light/dark themes, adjustable text and page scaling (100–175%, default 125%), and a collapsible help column. The original MediaPortal pages, controls and save handlers remain in use.
 
