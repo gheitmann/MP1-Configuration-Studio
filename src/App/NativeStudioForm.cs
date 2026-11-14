@@ -33,6 +33,9 @@ namespace MP1.ConfigurationStudio
         private float scale;
         private Font body, heading, small;
         private bool dirty;
+        private bool suppressClosePrompt;
+        public bool StartStudioRequested { get; private set; }
+        public string PreferencesPath { get { return appearance.PathName; } }
 
         public NativeStudioForm(string runtime, string preferences) : this(runtime, preferences, null) { }
 
@@ -133,6 +136,9 @@ namespace MP1.ConfigurationStudio
             var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
             classic.Click += delegate { StartClassic(); };
             navigation.Controls.Add(classic);
+            var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
+            legacy.Click += delegate { StartStudioShell(); };
+            navigation.Controls.Add(legacy);
             bodyPanel.Controls.Add(scroll);
             bodyPanel.Controls.Add(sidebar);
 
@@ -193,13 +199,15 @@ namespace MP1.ConfigurationStudio
             sidebar.Width = Px(230);
             sidebar.Padding = new Padding(Px(10), Px(14), Px(8), Px(10));
             int navigationWidth = Math.Max(Px(120), sidebar.ClientSize.Width - sidebar.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
+            int secondaryIndex = 0;
             foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
             {
                 bool secondary = item.Secondary;
                 item.Font = body;
                 item.Height = Px(38);
                 item.Width = navigationWidth;
-                item.Margin = secondary ? new Padding(0, Px(18), 0, Px(2)) : new Padding(0, Px(2), 0, Px(2));
+                int topMargin = secondary ? (secondaryIndex++ == 0 ? Px(18) : Px(4)) : Px(2);
+                item.Margin = new Padding(0, topMargin, 0, Px(2));
             }
             footer.Height = Px(62);
             footer.Padding = new Padding(Px(24), Px(12), Px(20), Px(10));
@@ -469,12 +477,24 @@ namespace MP1.ConfigurationStudio
             ShowSection(current);
         }
 
+        private void StartStudioShell()
+        {
+            if (dirty)
+            {
+                if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes and open the 1.9 interface?" : "Ungespeicherte Änderungen verwerfen und die 1.9-Oberfläche öffnen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            }
+            suppressClosePrompt = true;
+            StartStudioRequested = true;
+            Close();
+        }
+
         private void StartClassic()
         {
             if (dirty)
             {
                 if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes and open the classic interface?" : "Ungespeicherte Änderungen verwerfen und die klassische Oberfläche öffnen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             }
+            suppressClosePrompt = true;
             string executable = Path.Combine(runtime, "Configuration.exe");
             Program.StartNative(executable, runtime);
             Close();
@@ -482,7 +502,7 @@ namespace MP1.ConfigurationStudio
 
         private void OnClosing(object sender, FormClosingEventArgs e)
         {
-            if (!dirty) return;
+            if (!dirty || suppressClosePrompt) return;
             if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes?" : "Ungespeicherte Änderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) e.Cancel = true;
         }
 

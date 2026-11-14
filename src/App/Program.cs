@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.9")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.10")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -75,12 +75,32 @@ namespace MP1.ConfigurationStudio
                             "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
                         return 0;
                     }
+                    bool restartStudio = false;
+                    string restartPreferences = null;
                     try
                     {
-                        using(var form=new NativeStudioForm(runtime,preferences,nativeSection))form.ShowDialog();
+                        using(var form=new NativeStudioForm(runtime,preferences,nativeSection))
+                        {
+                            form.ShowDialog();
+                            restartStudio = form.StartStudioRequested;
+                            restartPreferences = form.PreferencesPath;
+                        }
                         return 0;
                     }
-                    finally{SingleInstance.Release();}
+                    finally
+                    {
+                        SingleInstance.Release();
+                        if (restartStudio)
+                        {
+                            try
+                            {
+                                string arguments = "--studio --runtime=\"" + runtime + "\"";
+                                if (!String.IsNullOrEmpty(restartPreferences)) arguments += " --preferences=\"" + restartPreferences + "\"";
+                                Process.Start(new ProcessStartInfo { FileName = Application.ExecutablePath, Arguments = arguments, UseShellExecute = true, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory });
+                            }
+                            catch (Exception ex) { StudioLog.Error(ex, "Could not start the 1.9 Studio interface"); }
+                        }
+                    }
                 }
                 if (version.FileMajorPart != 1 || version.FileMinorPart != 39)
                 {
