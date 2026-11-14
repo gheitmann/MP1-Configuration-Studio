@@ -28,6 +28,7 @@ namespace MP1.ConfigurationStudio
         private readonly Label pageTitle = new Label { AutoSize = true };
         private readonly Label pageLead = new Label { AutoSize = true };
         private readonly ComboBox sizeChoice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+        private TextBox searchBox;
         private NativeSection current;
         private float scale;
         private Font body, heading, small;
@@ -102,6 +103,19 @@ namespace MP1.ConfigurationStudio
             sizeChoice.Location = new Point(ClientSize.Width - Px(140), Px(24));
             sizeChoice.SelectedIndexChanged += delegate { ChangeScale(); };
             header.Controls.Add(sizeChoice);
+            searchBox = new TextBox { Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, AccessibleName = Localization.IsEnglish ? "Search settings" : "Einstellungen durchsuchen" };
+            searchBox.TextChanged += delegate { ApplySearch(); };
+            searchBox.KeyDown += delegate(object sender, KeyEventArgs e)
+            {
+                if (e.KeyCode == Keys.Escape) { searchBox.Clear(); e.SuppressKeyPress = true; }
+                else if (e.KeyCode == Keys.Enter)
+                {
+                    StudioAction first = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => item.Visible && item.Tag is NativeSection);
+                    if (first != null) ShowSection((NativeSection)first.Tag, first);
+                    e.SuppressKeyPress = true;
+                }
+            };
+            header.Controls.Add(searchBox);
             header.Resize += delegate { sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24); };
 
             var bodyPanel = new Panel { Dock = DockStyle.Fill, BackColor = palette.Background };
@@ -170,6 +184,12 @@ namespace MP1.ConfigurationStudio
             sizeChoice.Width = Px(110);
             sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24);
             sizeChoice.Top = Px(24);
+            searchBox.Font = body;
+            int titleRight = title.Left + TextRenderer.MeasureText(title.Text, title.Font).Width;
+            int searchLeft = titleRight + Px(24);
+            int searchRight = sizeChoice.Left - Px(12);
+            int searchWidth = Math.Min(Px(280), Math.Max(Px(90), searchRight - searchLeft));
+            searchBox.Bounds = new Rectangle(searchLeft, Px(24), searchWidth, Px(28));
             sidebar.Width = Px(230);
             sidebar.Padding = new Padding(Px(10), Px(14), Px(8), Px(10));
             int navigationWidth = Math.Max(Px(120), sidebar.ClientSize.Width - sidebar.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
@@ -519,6 +539,9 @@ namespace MP1.ConfigurationStudio
         [DllImport("user32.dll")]
         private static extern IntPtr WindowFromPoint(Point point);
 
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern IntPtr SendMessage(IntPtr handle, uint message, IntPtr wParam, string lParam);
+
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
@@ -532,6 +555,7 @@ namespace MP1.ConfigurationStudio
             NativeDarkMode.Apply(navigation.Handle);
             NativeDarkMode.Apply(scroll.Handle);
             EnsureNavigationVisible();
+            ApplyCueBanner();
         }
 
         private void EnsureNavigationVisible()
@@ -540,6 +564,61 @@ namespace MP1.ConfigurationStudio
             if (selected == null) return;
             if (selected.Bounds.Top < 0 || selected.Bounds.Bottom > navigation.ClientSize.Height)
                 navigation.AutoScrollPosition = new Point(0, Math.Max(0, selected.Bounds.Top));
+        }
+
+        private void ApplySearch()
+        {
+            string query = searchBox.Text.Trim();
+            bool active = query.Length > 0;
+            int matches = 0;
+            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
+            {
+                NativeSection section = item.Tag as NativeSection;
+                bool visible = true;
+                if (active && section != null)
+                {
+                    visible = MatchesSection(section, query);
+                    if (visible) matches++;
+                }
+                item.Visible = visible;
+            }
+            navigation.AutoScrollPosition = Point.Empty;
+            if (active)
+            {
+                status.Text = matches == 0
+                    ? (Localization.IsEnglish ? "No matches" : "Keine Treffer")
+                    : (Localization.IsEnglish ? "Search: " : "Suche: ") + matches + (Localization.IsEnglish ? (matches == 1 ? " page" : " pages") : (matches == 1 ? " Seite" : " Seiten"));
+                status.ForeColor = palette.Muted;
+            }
+            else
+            {
+                status.Text = dirty ? (Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen") : (Localization.IsEnglish ? "Ready" : "Bereit");
+                status.ForeColor = dirty ? palette.Accent : palette.Muted;
+            }
+        }
+
+        private static bool MatchesSection(NativeSection section, string query)
+        {
+            if (Contains(section.TitleDe, query) || Contains(section.TitleEn, query) || Contains(section.SubtitleDe, query) || Contains(section.SubtitleEn, query)) return true;
+            foreach (NativeGroup group in section.Groups)
+            {
+                if (Contains(group.TitleDe, query) || Contains(group.TitleEn, query)) return true;
+                foreach (NativeField field in group.Fields)
+                    if (Contains(field.LabelDe, query) || Contains(field.LabelEn, query) || Contains(field.HelpDe, query) || Contains(field.HelpEn, query)) return true;
+            }
+            return false;
+        }
+
+        private static bool Contains(string text, string query)
+        {
+            return !String.IsNullOrEmpty(text) && text.IndexOf(query, StringComparison.CurrentCultureIgnoreCase) >= 0;
+        }
+
+        private void ApplyCueBanner()
+        {
+            try { SendMessage(searchBox.Handle, 0x1501, new IntPtr(1), Localization.IsEnglish ? "Search settings…" : "Einstellungen durchsuchen…"); }
+            catch (DllNotFoundException) { }
+            catch (EntryPointNotFoundException) { }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
