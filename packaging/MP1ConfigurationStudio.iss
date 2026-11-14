@@ -53,7 +53,9 @@ LicenseFile={#ProjectRoot}\LICENSE
 
 [Components]
 Name: "application"; Description: "MP1 Configuration Studio (desktop)"; Types: full compact custom; Flags: fixed
+#ifndef ExcludePlugin
 Name: "mpPlugin"; Description: "MediaPortal plugin (optional)"; Types: full
+#endif
 
 [Files]
 Source: "{#ProjectRoot}\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
@@ -64,8 +66,10 @@ Source: "{#ProjectRoot}\SUPPORT.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\docs\RELEASE-{#AppVersion}.md"; DestDir: "{app}"; DestName: "RELEASE-NOTES.md"; Flags: ignoreversion
 Source: "{#ProjectRoot}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+#ifndef ExcludePlugin
 Source: "{#ProjectRoot}\plugin\bin\Release\MP1.ConfigurationStudio.Plugin.dll"; DestDir: "{app}\plugins\Windows"; Flags: ignoreversion; Components: mpPlugin
 Source: "{#ProjectRoot}\plugin\Skin\MP1StudioSettings.xml"; DestDir: "{app}\plugins\Windows"; Flags: ignoreversion; Components: mpPlugin
+#endif
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"

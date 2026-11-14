@@ -26,9 +26,11 @@ namespace MP1.ConfigurationStudio.Plugin
         private const int StatusId = 7;
 
         private readonly List<Row> rows = new List<Row>();
-        private MPSettings settings;
+        private PluginSettingsStore settings;
+        private string loadError;
         private NativeSection section;
         private int page;
+        private int focus;
         private bool dirty;
         private string status;
 
@@ -43,7 +45,8 @@ namespace MP1.ConfigurationStudio.Plugin
         public StudioSettingsPlugin()
         {
             GetID = WindowId;
-            settings = new MPSettings();
+            try { settings = new PluginSettingsStore(); }
+            catch (Exception ex) { loadError = ex.Message; }
             ShowSections();
         }
 
@@ -59,6 +62,7 @@ namespace MP1.ConfigurationStudio.Plugin
                 case GUIMessage.MessageType.GUI_MSG_WINDOW_INIT:
                     base.OnMessage(message);
                     ShowSections();
+                    focus = 0;
                     RefreshControls();
                     return true;
                 case GUIMessage.MessageType.GUI_MSG_WINDOW_DEINIT:
@@ -78,9 +82,26 @@ namespace MP1.ConfigurationStudio.Plugin
                 case MediaPortalAction.ActionType.ACTION_PREVIOUS_MENU:
                     GoBack();
                     return;
+                case MediaPortalAction.ActionType.ACTION_MOVE_UP:
+                    MoveFocus(-1);
+                    return;
+                case MediaPortalAction.ActionType.ACTION_MOVE_DOWN:
+                    MoveFocus(1);
+                    return;
                 case MediaPortalAction.ActionType.ACTION_MOVE_LEFT:
+                    AdjustFocused(-1);
+                    return;
                 case MediaPortalAction.ActionType.ACTION_MOVE_RIGHT:
-                    AdjustFocused(action.wID == MediaPortalAction.ActionType.ACTION_MOVE_LEFT ? -1 : 1);
+                    AdjustFocused(1);
+                    return;
+                case MediaPortalAction.ActionType.ACTION_SELECT_ITEM:
+                    ActivateFocused();
+                    return;
+                case MediaPortalAction.ActionType.ACTION_PAGE_UP:
+                    ChangePage(-1);
+                    return;
+                case MediaPortalAction.ActionType.ACTION_PAGE_DOWN:
+                    ChangePage(1);
                     return;
             }
             base.OnAction(action);
@@ -88,41 +109,101 @@ namespace MP1.ConfigurationStudio.Plugin
 
         private void OnClicked(int controlId)
         {
-            if (controlId == PageUpId) { if (page > 0) { page--; selectedRow(0); RefreshControls(); } return; }
-            if (controlId == PageDownId) { if ((page + 1) * VisibleRows < rows.Count) { page++; selectedRow(0); RefreshControls(); } return; }
+            if (controlId == PageUpId) { ChangePage(-1); return; }
+            if (controlId == PageDownId) { ChangePage(1); return; }
             if (controlId == SaveId) { SaveChanges(); return; }
             if (controlId == BackId) { GoBack(); return; }
             if (controlId >= RowBase && controlId < RowBase + VisibleRows)
             {
                 int index = page * VisibleRows + (controlId - RowBase);
                 if (index < 0 || index >= rows.Count) return;
+                focus = controlId - RowBase;
                 ActivateRow(rows[index]);
             }
         }
 
-        private void selectedRow(int value)
+        private int VisibleCount()
         {
-            int id = RowBase + Math.Max(0, Math.Min(VisibleRows - 1, value));
-            GUIControl.SelectControl(GetID, id);
+            return Math.Max(0, Math.Min(VisibleRows, rows.Count - page * VisibleRows));
         }
 
-        private int FocusedIndex()
+        private bool HasPreviousPage { get { return page > 0; } }
+        private bool HasNextPage { get { return (page + 1) * VisibleRows < rows.Count; } }
+
+        private int FocusCount()
         {
-            int focus = GetFocusControlId();
-            if (focus < RowBase || focus >= RowBase + VisibleRows) return -1;
-            int index = page * VisibleRows + (focus - RowBase);
-            return index < rows.Count ? index : -1;
+            return VisibleCount() + (HasPreviousPage ? 1 : 0) + (HasNextPage ? 1 : 0) + 2;
+        }
+
+        private int FocusControlId(int index)
+        {
+            int count = VisibleCount();
+            if (index < count) return RowBase + index;
+            index -= count;
+            if (HasPreviousPage)
+            {
+                if (index == 0) return PageUpId;
+                index--;
+            }
+            if (HasNextPage)
+            {
+                if (index == 0) return PageDownId;
+                index--;
+            }
+            return index <= 0 ? SaveId : BackId;
+        }
+
+        private void SelectFocused()
+        {
+            int count = FocusCount();
+            if (count <= 0) return;
+            if (focus < 0) focus = 0;
+            if (focus >= count) focus = count - 1;
+            int id = FocusControlId(focus);
+            GUIControl control = GetControl(id);
+            if (control == null || !control.Visible) return;
+            var message = new GUIMessage(GUIMessage.MessageType.GUI_MSG_SETFOCUS, GetID, 0, id, 0, 0, null);
+            OnMessage(message);
+        }
+
+        private void MoveFocus(int direction)
+        {
+            int count = FocusCount();
+            if (count <= 0) return;
+            focus = (focus + direction + count) % count;
+            SelectFocused();
+        }
+
+        private void ChangePage(int direction)
+        {
+            int pages = Math.Max(1, (rows.Count + VisibleRows - 1) / VisibleRows);
+            int target = Math.Max(0, Math.Min(pages - 1, page + direction));
+            if (target == page) return;
+            page = target;
+            focus = 0;
+            RefreshControls();
+        }
+
+        private int FocusedRowIndex()
+        {
+            int count = VisibleCount();
+            return focus >= 0 && focus < count ? page * VisibleRows + focus : -1;
         }
 
         private void AdjustFocused(int direction)
         {
-            int index = FocusedIndex();
+            if (settings == null)
+            {
+                ShowInfo(LocalizationText("Konfiguration nicht verfügbar", "Configuration unavailable"), loadError ?? String.Empty);
+                return;
+            }
+            int index = FocusedRowIndex();
             if (index < 0) return;
             Row row = rows[index];
             if (row.Field == null) return;
             if (row.Field.Kind == NativeFieldKind.Bool)
             {
-                settings.SetValueAsBool(row.Field.Section, row.Field.Entry, !settings.GetValueAsBool(row.Field.Section, row.Field.Entry, false));
+                settings.SetBool(row.Field.Section, row.Field.Entry, !settings.GetBool(row.Field.Section, row.Field.Entry, false));
                 dirty = true;
                 RefreshControls();
             }
@@ -132,12 +213,27 @@ namespace MP1.ConfigurationStudio.Plugin
             }
             else if (row.Field.Kind == NativeFieldKind.Integer)
             {
-                int value = settings.GetValueAsInt(row.Field.Section, row.Field.Entry, row.Field.Minimum) + direction;
+                int value = settings.GetInt(row.Field.Section, row.Field.Entry, row.Field.Minimum) + direction;
                 value = Math.Max(row.Field.Minimum, Math.Min(row.Field.Maximum, value));
-                settings.SetValue(row.Field.Section, row.Field.Entry, value.ToString(CultureInfo.InvariantCulture));
+                settings.Set(row.Field.Section, row.Field.Entry, value.ToString(CultureInfo.InvariantCulture));
                 dirty = true;
                 RefreshControls();
             }
+        }
+
+        private void ActivateFocused()
+        {
+            int count = VisibleCount();
+            if (focus >= 0 && focus < count)
+            {
+                ActivateRow(rows[page * VisibleRows + focus]);
+                return;
+            }
+            int id = FocusControlId(focus);
+            if (id == PageUpId) ChangePage(-1);
+            else if (id == PageDownId) ChangePage(1);
+            else if (id == SaveId) SaveChanges();
+            else if (id == BackId) GoBack();
         }
 
         private void ActivateRow(Row row)
@@ -147,15 +243,20 @@ namespace MP1.ConfigurationStudio.Plugin
                 section = row.Section;
                 page = 0;
                 ShowFields(section);
+                focus = 0;
                 RefreshControls();
-                selectedRow(0);
                 return;
             }
             NativeField field = row.Field;
             if (field == null) return;
+            if (settings == null)
+            {
+                ShowInfo(LocalizationText("Konfiguration nicht verfügbar", "Configuration unavailable"), loadError ?? String.Empty);
+                return;
+            }
             if (field.Kind == NativeFieldKind.Bool)
             {
-                settings.SetValueAsBool(field.Section, field.Entry, !settings.GetValueAsBool(field.Section, field.Entry, false));
+                settings.SetBool(field.Section, field.Entry, !settings.GetBool(field.Section, field.Entry, false));
                 dirty = true;
             }
             else if (field.Kind == NativeFieldKind.Combo)
@@ -170,7 +271,7 @@ namespace MP1.ConfigurationStudio.Plugin
                     int number;
                     if (!Int32.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out number)) number = field.Minimum;
                     number = Math.Max(field.Minimum, Math.Min(field.Maximum, number));
-                    settings.SetValue(field.Section, field.Entry, number.ToString(CultureInfo.InvariantCulture));
+                    settings.Set(field.Section, field.Entry, number.ToString(CultureInfo.InvariantCulture));
                     dirty = true;
                 }
             }
@@ -179,7 +280,7 @@ namespace MP1.ConfigurationStudio.Plugin
                 string value;
                 if (EditValue(GetValue(field), false, out value))
                 {
-                    settings.SetValue(field.Section, field.Entry, value);
+                    settings.Set(field.Section, field.Entry, value);
                     dirty = true;
                 }
             }
@@ -194,19 +295,20 @@ namespace MP1.ConfigurationStudio.Plugin
         private void CycleCombo(NativeField field, int direction)
         {
             if (field.Options.Count == 0) return;
-            string current = settings.GetValueAsString(field.Section, field.Entry, string.Empty);
+            string current = settings.Get(field.Section, field.Entry, string.Empty);
             int index = field.Options.FindIndex(option => String.Equals(option.Value, current, StringComparison.OrdinalIgnoreCase));
             if (index < 0) index = 0;
             index = (index + direction + field.Options.Count) % field.Options.Count;
-            settings.SetValue(field.Section, field.Entry, field.Options[index].Value);
+            settings.Set(field.Section, field.Entry, field.Options[index].Value);
             dirty = true;
         }
 
         private string GetValue(NativeField field)
         {
-            if (field.Kind == NativeFieldKind.Bool) return settings.GetValueAsBool(field.Section, field.Entry, false) ? "yes" : "no";
-            if (field.Kind == NativeFieldKind.Integer) return settings.GetValueAsInt(field.Section, field.Entry, field.Minimum).ToString(CultureInfo.InvariantCulture);
-            return settings.GetValueAsString(field.Section, field.Entry, string.Empty);
+            if (settings == null) return string.Empty;
+            if (field.Kind == NativeFieldKind.Bool) return settings.GetBool(field.Section, field.Entry, false) ? "yes" : "no";
+            if (field.Kind == NativeFieldKind.Integer) return settings.GetInt(field.Section, field.Entry, field.Minimum).ToString(CultureInfo.InvariantCulture);
+            return settings.Get(field.Section, field.Entry, string.Empty);
         }
 
         private string DisplayValue(NativeField field)
@@ -262,10 +364,15 @@ namespace MP1.ConfigurationStudio.Plugin
                 string groupTitle = LocalizationEnglish ? group.TitleEn : group.TitleDe;
                 foreach (NativeField field in group.Fields)
                 {
-                    string label = LocalizationEnglish ? field.LabelEn : field.LabelDe;
-                    rows.Add(new Row { Field = field, Group = groupTitle, Text = groupTitle + " · " + label + ": " + DisplayValue(field) });
+                    rows.Add(new Row { Field = field, Group = groupTitle, Text = RowText(field, groupTitle) });
                 }
             }
+        }
+
+        private string RowText(NativeField field, string groupTitle)
+        {
+            string label = LocalizationEnglish ? field.LabelEn : field.LabelDe;
+            return groupTitle + " · " + label + ": " + DisplayValue(field);
         }
 
         private void RefreshControls()
@@ -278,7 +385,8 @@ namespace MP1.ConfigurationStudio.Plugin
             bool hasNextPage = (page + 1) * VisibleRows < rows.Count;
             int visibleCount = Math.Max(0, Math.Min(VisibleRows, rows.Count - page * VisibleRows));
             string pageText = String.Format(CultureInfo.InvariantCulture, "{0} {1}/{2}", LocalizationText("Seite", "Page"), page + 1, pages);
-            if (statusLabel != null) statusLabel.Label = (status ?? pageText) + (dirty ? "  ·  " + LocalizationText("ungespeichert", "unsaved") : string.Empty);
+            string statusText = String.IsNullOrEmpty(loadError) ? (status ?? pageText) : (LocalizationText("Konfiguration nicht verfügbar", "Configuration unavailable") + ": " + loadError);
+            if (statusLabel != null) statusLabel.Label = statusText + (dirty ? "  ·  " + LocalizationText("ungespeichert", "unsaved") : string.Empty);
 
             for (int i = 0; i < VisibleRows; i++)
             {
@@ -287,8 +395,10 @@ namespace MP1.ConfigurationStudio.Plugin
                 int index = page * VisibleRows + i;
                 if (index < rows.Count)
                 {
+                    Row row = rows[index];
+                    if (row.Field != null) row.Text = RowText(row.Field, row.Group);
                     button.Visible = true;
-                    button.Label = rows[index].Text;
+                    button.Label = row.Text;
                     button.NavigateUp = i == 0 ? (hasPreviousPage ? PageUpId : RowBase) : RowBase + i - 1;
                     button.NavigateDown = i == visibleCount - 1 ? (hasNextPage ? PageDownId : RowBase + i) : RowBase + i + 1;
                     button.NavigateLeft = RowBase + i;
@@ -309,6 +419,7 @@ namespace MP1.ConfigurationStudio.Plugin
             if (save != null) save.Label = LocalizationText("Sichern", "Save");
             GUIButtonControl back = GetControl(BackId) as GUIButtonControl;
             if (back != null) back.Label = section == null ? LocalizationText("Schließen", "Close") : LocalizationText("Zurück", "Back");
+            SelectFocused();
         }
 
         private void GoBack()
@@ -317,8 +428,8 @@ namespace MP1.ConfigurationStudio.Plugin
             {
                 section = null;
                 ShowSections();
+                focus = 0;
                 RefreshControls();
-                selectedRow(0);
                 return;
             }
             if (!ConfirmDiscard()) return;
@@ -350,10 +461,10 @@ namespace MP1.ConfigurationStudio.Plugin
             }
             try
             {
-                string backup = CreateBackup();
-                MediaPortal.Profile.Settings.SaveCache();
+                if (settings == null) throw new InvalidOperationException(loadError ?? "MediaPortal.xml is unavailable.");
+                string backup = settings.Save();
                 dirty = false;
-                status = LocalizationText("Gespeichert · Sicherung: ", "Saved · backup: ") + Path.GetFileName(backup);
+                status = LocalizationText("Gespeichert · Neustart erforderlich · Sicherung: ", "Saved · restart required · backup: ") + Path.GetFileName(backup);
                 RefreshControls();
                 return true;
             }
@@ -364,21 +475,6 @@ namespace MP1.ConfigurationStudio.Plugin
                 RefreshControls();
                 return false;
             }
-        }
-
-        private static string CreateBackup()
-        {
-            string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MP1 Configuration Studio", "backups");
-            Directory.CreateDirectory(root);
-            string path = Path.Combine(root, "mp-plugin-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", CultureInfo.InvariantCulture) + ".zip");
-            using (ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Create))
-            {
-                ZipArchiveEntry entry = archive.CreateEntry("MediaPortal.xml", CompressionLevel.Optimal);
-                using (Stream output = entry.Open())
-                using (Stream input = File.OpenRead(MPSettings.ConfigPathName))
-                    input.CopyTo(output);
-            }
-            return path;
         }
 
         private bool EditValue(string current, bool numeric, out string result)

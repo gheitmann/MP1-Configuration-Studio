@@ -10,7 +10,16 @@ This plugin makes the Studio schema available **inside MediaPortal**. It is a wi
 - Integer values open the MediaPortal numeric keyboard; text and folder values open the virtual keyboard.
 - Media-folder lists, dynamic plugin lists, and info rows are visible but point back to the desktop Studio, because they need the dedicated editors.
 
-All settings are read from and written to the live configuration. **Sichern** creates a ZIP backup in `%LOCALAPPDATA%\MP1 Configuration Studio\backups` and then calls `Settings.SaveCache()`. Some changes only take effect after restarting MediaPortal.
+All settings are read from and written to the live configuration. **Sichern** creates a ZIP backup in `%LOCALAPPDATA%\MP1 Configuration Studio\backups` and writes `MediaPortal.xml` atomically. MediaPortal must be restarted for changes to take effect.
+
+The plugin reads and writes the XML file directly and deliberately does not use MediaPortal's shared settings cache. This guarantees that unrelated settings are never rewritten with defaults when MediaPortal shuts down.
+
+## Navigation
+
+- **Up/Down**: move between rows, page controls, **Sichern**, and **Zurück/Schließen**
+- **Left/Right**: change the selected boolean, combo, or integer value
+- **OK/Enter**: open a section, toggle a boolean, cycle a combo, or edit text
+- **Back/Esc**: leave the section or close the plugin and return to the MediaPortal home screen
 
 ## Build
 
