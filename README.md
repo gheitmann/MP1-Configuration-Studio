@@ -4,7 +4,7 @@ A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.25](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.25) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.26](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.26) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -25,6 +25,7 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 - Native **Music DSP** editor: music folder, effect-specific Gain/DynAmp/Compressor controls with presets, VST/Winamp discovery, generic effect parameters, and BASS test playback with gain.
 - **TV** page shows TV Server, service, and database status, read-only counts and detail lists for channels, groups, recordings, schedules, and cards from the TV Server business layer, and opens SetupTv or the TV Server folder.
 - **Plugins** page lists plugins with their own configuration window and opens the selected plugin directly through an isolated helper; classic configuration remains the fallback.
+- **System und Laufwerke** page: Autoplay options, CD/DVD speed tables, and system checks with MPTray autostart and Media Center service status.
 - **Plugin data** page provides forms for Trakt, OnlineVideos, plugin sorting, plugin windows, menu entries, IMDb+, Last.fm, FFDShow, mpSettings, and configurator state.
 - Codec and renderer lists come from MediaPortal's filter helper; the button next to each filter opens its real DirectShow property pages.
 - Plugin configuration windows still open on the classic interface; the Plugins page opens the classic configurator directly.

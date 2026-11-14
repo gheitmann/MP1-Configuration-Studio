@@ -22,7 +22,8 @@ namespace MP1.ConfigurationStudio
         Dsp,
         TvServer,
         PluginConfig,
-        GroupedSection
+        GroupedSection,
+        SystemChecks
     }
 
     internal enum NativeFilterKind
@@ -209,14 +210,22 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("general", "IdlePlugin", "Leerlauf-Plugin aktivieren", "Enable idle plugin", NativeFieldKind.Bool))
                         .Add(new NativeField("general", "IdlePluginWindow", "Leerlauf-Plugin-Fenster", "Idle plugin window", NativeFieldKind.Integer).Range(0, 99999))
                         .Add(new NativeField("general", "autoplay_audio", "Audio automatisch wiedergeben", "Autoplay audio", NativeFieldKind.Combo)
-                            .Option("Ask", "Fragen", "Ask").Option("yes", "Ja", "Yes").Option("no", "Nein", "No"))
+                            .Option("Ask", "Fragen", "Ask").Option("Yes", "Wiedergeben", "Play").Option("No", "Nicht wiedergeben", "Do not play"))
                         .Add(new NativeField("general", "autoplay_video", "Video automatisch wiedergeben", "Autoplay video", NativeFieldKind.Combo)
-                            .Option("Ask", "Fragen", "Ask").Option("yes", "Ja", "Yes").Option("no", "Nein", "No"))
+                            .Option("Ask", "Fragen", "Ask").Option("Yes", "Wiedergeben", "Play").Option("No", "Nicht wiedergeben", "Do not play"))
                         .Add(new NativeField("general", "autoplay_photo", "Bilder automatisch wiedergeben", "Autoplay photos", NativeFieldKind.Combo)
-                            .Option("Ask", "Fragen", "Ask").Option("yes", "Ja", "Yes").Option("no", "Nein", "No")))
+                            .Option("Ask", "Fragen", "Ask").Option("Yes", "Wiedergeben", "Play").Option("No", "Nicht wiedergeben", "Do not play")))
                     .Group(new NativeGroup("TV-Server", "TV server")
                         .Add(new NativeField("general", "HostDetectMethod", "Host-Erkennung", "Host detection", NativeFieldKind.Text, "Zum Beispiel Ping.", "For example Ping."))
                         .Add(new NativeField("general", "wait for tvserver", "Auf TV-Server warten", "Wait for TV server", NativeFieldKind.Bool, "Beim Start auf den TV-Server warten.", "Wait for the TV server during startup."))),
+                new NativeSection("system", "System und Laufwerke", "System and drives", "Autoplay, CD-/DVD-Geschwindigkeit und Systemprüfungen.", "Autoplay, CD/DVD speed, and system checks.", "settings")
+                    .Group(new NativeGroup("CD/DVD-Geschwindigkeit", "CD/DVD speed")
+                        .Add(new NativeField("cdspeed", "drivespeedCD", "CD-Geschwindigkeit", "CD speed", NativeFieldKind.Text, "Kommagetrennte Geschwindigkeiten pro Laufwerk, z. B. 4,8,16.", "Comma-separated speeds per drive, e.g. 4,8,16."))
+                        .Add(new NativeField("cdspeed", "drivespeedDVD", "DVD-Geschwindigkeit", "DVD speed", NativeFieldKind.Text, "Kommagetrennte Geschwindigkeiten pro Laufwerk.", "Comma-separated speeds per drive."))
+                        .Add(new NativeField("cdspeed", "disableCD", "CD-Geschwindigkeit nicht ändern", "Do not change CD speed", NativeFieldKind.Text, "Kommagetrennte Flags pro Laufwerk: 1 deaktiviert die Regelung.", "Comma-separated flags per drive: 1 disables speed control."))
+                        .Add(new NativeField("cdspeed", "disableDVD", "DVD-Geschwindigkeit nicht ändern", "Do not change DVD speed", NativeFieldKind.Text, "Kommagetrennte Flags pro Laufwerk: 1 deaktiviert die Regelung.", "Comma-separated flags per drive: 1 disables speed control.")))
+                    .Group(new NativeGroup("Systemprüfungen", "System checks")
+                        .Add(new NativeField("system", "checks", "Systemprüfungen", "System checks", NativeFieldKind.SystemChecks, "Media-Center-Dienste, MPTray-Autostart und Zugriff auf die klassischen Prüfungen.", "Media Center services, MPTray autostart, and access to the classic checks."))),
                 new NativeSection("volume", "Lautstärke", "Volume", "Lautstärkeverhalten und Bildschirmanzeige.", "Volume behavior and on-screen display.", "play")
                     .Group(new NativeGroup("Wiedergabe", "Playback")
                         .Add(new NativeField("volume", "digital", "Digitale Lautstärke", "Digital volume", NativeFieldKind.Bool, "Digitale Lautstärkeregelung verwenden, sofern verfügbar.", "Use digital volume control when available."))
