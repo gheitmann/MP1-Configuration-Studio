@@ -20,8 +20,9 @@ namespace MP1.ConfigurationStudio
         private readonly List<NativeSection> sections = NativeSettingsSchema.Sections();
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
-        private readonly FlowLayoutPanel navigation = new SidebarPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+        private readonly GlassFlowPanel navigation = new GlassFlowPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
         private GlassPanel header, footer, sidebar, glassBody;
+        private StudioScrollHost contentScroll, sidebarScroll;
         private Button glassButton;
         private StudioLogo logo;
         private FlowLayoutPanel footerActions;
@@ -31,8 +32,11 @@ namespace MP1.ConfigurationStudio
         private readonly Label status = new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
         private readonly Label pageTitle = new Label { AutoSize = true };
         private readonly Label pageLead = new Label { AutoSize = true };
-        private readonly ComboBox sizeChoice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
-        private TextBox searchBox;
+        private StudioChoice sizeChoice;
+        private StudioTextInput searchBox;
+        private StudioTabStrip tabStrip;
+        private int tabRowIndex = -1;
+        private readonly Dictionary<string, int> tabSelection = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private NativeSection current;
         private float scale;
         private Font body, heading, small;
@@ -93,31 +97,34 @@ namespace MP1.ConfigurationStudio
             logo = new StudioLogo { Colors = () => palette, Bounds = new Rectangle(Px(22), Px(20), Px(40), Px(40)), Font = Typography.Create(13f * scale, FontStyle.Bold) };
             header.Controls.Add(logo);
             title.Text = "MP1 / CONFIGURATION";
-            title.Font = Typography.Create(16f * scale, FontStyle.Regular);
+            title.Font = Typography.Create(16f * Math.Min(scale, 1.25f), FontStyle.Regular);
             title.ForeColor = palette.Text;
             title.BackColor = Color.Transparent;
             title.Location = new Point(Px(76), Px(14));
             header.Controls.Add(title);
             subtitle.Text = Localization.IsEnglish ? "New interface · MediaPortal 1.39" : "Neue Oberfläche · MediaPortal 1.39";
-            subtitle.Font = small;
+            subtitle.Font = Typography.Create(9f * Math.Min(scale, 1.4f), FontStyle.Regular);
             subtitle.ForeColor = palette.Muted;
             subtitle.BackColor = Color.Transparent;
             subtitle.Location = new Point(Px(78), Px(44));
             header.Controls.Add(subtitle);
-            sizeChoice.Items.AddRange(new object[] { "100 %", "115 %", "125 %", "150 %", "175 %" });
-            sizeChoice.SelectedIndex = Math.Max(0, Array.IndexOf(new[] { 100, 115, 125, 150, 175 }, appearance.TextScale));
+            sizeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Height = Px(30), Width = Px(120) };
+            sizeChoice.SetOptions(new[]
+            {
+                new ChoiceOption("100", "100 %"),
+                new ChoiceOption("115", "115 %"),
+                new ChoiceOption("125", "125 %"),
+                new ChoiceOption("150", "150 %"),
+                new ChoiceOption("175", "175 %")
+            }, appearance.TextScale.ToString());
             sizeChoice.AccessibleName = Localization.IsEnglish ? "Text size" : "Schriftgröße";
-            sizeChoice.Font = body;
-            sizeChoice.BackColor = palette.Input;
-            sizeChoice.ForeColor = palette.Text;
-            sizeChoice.Width = Px(110);
             sizeChoice.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            sizeChoice.Location = new Point(ClientSize.Width - Px(140), Px(24));
+            sizeChoice.Location = new Point(ClientSize.Width - Px(150), Px(24));
             sizeChoice.SelectedIndexChanged += delegate { ChangeScale(); };
             header.Controls.Add(sizeChoice);
-            searchBox = new TextBox { Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, AccessibleName = Localization.IsEnglish ? "Search settings" : "Einstellungen durchsuchen" };
-            searchBox.TextChanged += delegate { ApplySearch(); };
-            searchBox.KeyDown += delegate(object sender, KeyEventArgs e)
+            searchBox = new StudioTextInput(scale, body, palette) { Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Search settings" : "Einstellungen durchsuchen" };
+            searchBox.Box.TextChanged += delegate { ApplySearch(); };
+            searchBox.Box.KeyDown += delegate(object sender, KeyEventArgs e)
             {
                 if (e.KeyCode == Keys.Escape) { searchBox.Clear(); e.SuppressKeyPress = true; }
                 else if (e.KeyCode == Keys.Enter)
@@ -136,25 +143,25 @@ namespace MP1.ConfigurationStudio
 
             glassBody = new GlassPanel { Dock = DockStyle.Fill, BackColor = palette.Background, Colors = () => palette, Glass = appearance.Glass };
             sidebar = new GlassPanel { Dock = DockStyle.Left, Width = Px(230), BackColor = palette.Panel, Padding = new Padding(Px(10), Px(14), Px(8), Px(10)), Colors = () => palette, Glass = appearance.Glass };
+            navigation.Colors = () => palette;
+            navigation.GlassMode = () => appearance.Glass;
             navigation.BackColor = palette.Panel;
             navigation.Padding = new Padding(0);
             sidebar.Controls.Add(navigation);
             foreach (NativeSection section in sections)
             {
-                var item = new StudioAction { Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
+                var item = new StudioAction { Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe, IconName = section.Icon, Colors = () => palette, GlassMode = () => appearance.Glass, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
                 item.Click += delegate { ShowSection(section, item); };
                 item.Tag = section;
                 navigation.Controls.Add(item);
             }
-            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
+            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, GlassMode = () => appearance.Glass, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
             classic.Click += delegate { StartClassic(); };
             navigation.Controls.Add(classic);
-            var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
+            var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, GlassMode = () => appearance.Glass, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
             legacy.Click += delegate { StartStudioShell(); };
             navigation.Controls.Add(legacy);
             navigation.MouseLeave += delegate { ClearNavigationHover(); };
-            glassBody.Controls.Add(scroll);
-            glassBody.Controls.Add(sidebar);
 
             scroll.BackColor = palette.Background;
             scroll.Padding = new Padding(Px(28), Px(18), Px(28), Px(18));
@@ -164,13 +171,28 @@ namespace MP1.ConfigurationStudio
             table.Padding = new Padding(0);
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
+            contentScroll = new StudioScrollHost(scroll, delegate { return new Size(scroll.Padding.Horizontal + table.Width, scroll.Padding.Vertical + table.Height); }, () => palette, false, (Color?)palette.Background);
+            sidebarScroll = new StudioScrollHost(navigation, delegate
+            {
+                int height = navigation.Padding.Vertical;
+                foreach (Control item in navigation.Controls)
+                    if (item.Visible) height += item.Height + item.Margin.Vertical;
+                return new Size(navigation.ClientSize.Width, height);
+            }, () => palette, false, (Color?)palette.Panel);
+            sidebar.Controls.Add(sidebarScroll);
+            glassBody.Controls.Add(contentScroll);
+            glassBody.Controls.Add(sidebar);
             Controls.Add(glassBody);
 
             footer = new GlassPanel { Dock = DockStyle.Bottom, Height = Px(62), BackColor = palette.Background, Padding = new Padding(Px(24), Px(12), Px(20), Px(10)), Colors = () => palette, Glass = appearance.Glass };
-            footer.Paint += delegate(object sender, PaintEventArgs e) { using (var pen = new Pen(palette.Border)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0); };
+            footer.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                using (var pen = new Pen(appearance.Glass ? Color.FromArgb(80, palette.Border) : palette.Border)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
+            };
             status.Text = Localization.IsEnglish ? "Ready" : "Bereit";
             status.Font = small;
             status.ForeColor = palette.Muted;
+            status.BackColor = Color.Transparent;
             footer.Controls.Add(status);
             footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(520) };
             closeButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
@@ -193,6 +215,7 @@ namespace MP1.ConfigurationStudio
             Controls.Add(footer);
             Controls.Add(header);
             ApplyMetrics();
+            ApplyChromeStyle();
         }
 
         private void ApplyMetrics()
@@ -200,12 +223,13 @@ namespace MP1.ConfigurationStudio
             header.Height = Px(82);
             logo.Bounds = new Rectangle(Px(22), Px(20), Px(40), Px(40));
             logo.Font = Typography.Create(13f * scale, FontStyle.Bold);
-            title.Font = Typography.Create(16f * scale, FontStyle.Regular);
+            title.Font = Typography.Create(16f * Math.Min(scale, 1.25f), FontStyle.Regular);
             title.Location = new Point(Px(76), Px(14));
-            subtitle.Font = small;
+            subtitle.Font = Typography.Create(9f * Math.Min(scale, 1.4f), FontStyle.Regular);
             subtitle.Location = new Point(Px(78), Px(44));
             sizeChoice.Font = body;
-            sizeChoice.Width = Px(110);
+            sizeChoice.Width = Px(120);
+            sizeChoice.Height = Px(30);
             sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24);
             sizeChoice.Top = Px(24);
             glassButton.Font = body;
@@ -217,8 +241,8 @@ namespace MP1.ConfigurationStudio
             int titleRight = title.Left + TextRenderer.MeasureText(title.Text, title.Font).Width;
             int searchLeft = titleRight + Px(24);
             int searchRight = glassButton.Left - Px(12);
-            int searchWidth = Math.Min(Px(280), Math.Max(Px(90), searchRight - searchLeft));
-            searchBox.Bounds = new Rectangle(searchLeft, Px(24), searchWidth, Px(28));
+            int searchWidth = Math.Min(Px(300), Math.Max(Px(90), searchRight - searchLeft));
+            searchBox.Bounds = new Rectangle(searchLeft, Px(24), searchWidth, Px(30));
             sidebar.Width = Px(230);
             sidebar.Padding = new Padding(Px(10), Px(14), Px(8), Px(10));
             int navigationWidth = Math.Max(Px(120), sidebar.ClientSize.Width - sidebar.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
@@ -254,37 +278,77 @@ namespace MP1.ConfigurationStudio
 
         private void LayoutTable()
         {
-            table.Width = Math.Max(Px(300), scroll.ClientSize.Width - scroll.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
+            int available = contentScroll != null ? contentScroll.Width - SystemInformation.VerticalScrollBarWidth : scroll.ClientSize.Width;
+            table.Width = Math.Max(Px(300), available - scroll.Padding.Horizontal - Px(4));
             float labelWidth = Math.Max(Px(220), Math.Min(Px(320), table.Width * 0.4f));
             if (table.ColumnStyles.Count > 0) table.ColumnStyles[0].Width = (int)Math.Round(labelWidth);
             table.PerformLayout();
+            if (tabStrip != null && tabStrip.Parent == table)
+            {
+                tabStrip.Width = table.Width;
+                int height = tabStrip.Reflow();
+                if (tabRowIndex >= 0 && tabRowIndex < table.RowStyles.Count) table.RowStyles[tabRowIndex].Height = Math.Max(Px(36), height);
+            }
             if (scroll.HorizontalScroll.Visible) scroll.AutoScrollPosition = Point.Empty;
+        }
+
+        private sealed class SectionTab
+        {
+            public string TitleDe;
+            public string TitleEn;
+            public NativeGroup Group;
+            public List<KeyValuePair<string, List<KeyValuePair<string, string>>>> Remaining;
+            public string Title { get { return Localization.IsEnglish ? TitleEn : TitleDe; } }
         }
 
         private void ShowSection(NativeSection section, StudioAction selected = null)
         {
-            if (current != null && !Object.ReferenceEquals(current, section))
+            ShowSection(section, selected, -1);
+        }
+
+        private void ShowSection(NativeSection section, StudioAction selected, int requestedTab)
+        {
+            if (current != null && !Object.ReferenceEquals(current, section) && !ConfirmDiscardEditors())
             {
-                IStudioFileEditor xmlEditor = table.Controls.OfType<IStudioFileEditor>().FirstOrDefault();
-                if (xmlEditor != null && xmlEditor.HasUnsavedChanges && !xmlEditor.ConfirmDiscardChanges())
+                StudioAction currentItem = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, current));
+                foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
                 {
-                    StudioAction currentItem = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, current));
-                    foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
-                    {
-                        item.Selected = Object.ReferenceEquals(item, currentItem);
-                        item.ClearHover();
-                    }
-                    navigation.Invalidate();
-                    return;
+                    item.Selected = Object.ReferenceEquals(item, currentItem);
+                    item.ClearHover();
+                }
+                navigation.Invalidate();
+                return;
+            }
+            if (Object.ReferenceEquals(current, section) && requestedTab >= 0 && !ConfirmDiscardEditors()) return;
+
+            current = section;
+            List<SectionTab> tabs = BuildTabs(section);
+            int tabIndex = requestedTab;
+            if (tabIndex < 0)
+            {
+                bool remembered = tabSelection.TryGetValue(section.Id, out tabIndex);
+                string query = searchBox == null ? String.Empty : searchBox.Text.Trim();
+                if (query.Length > 0)
+                {
+                    int match = tabs.FindIndex(tab => TabMatches(tab, query));
+                    if (match >= 0) tabIndex = match;
+                }
+                else if (!remembered)
+                {
+                    tabIndex = 0;
                 }
             }
-            current = section;
+            if (tabIndex < 0 || tabIndex >= tabs.Count) tabIndex = 0;
+            tabSelection[section.Id] = tabIndex;
+
             table.SuspendLayout();
             try
             {
                 table.Controls.Clear();
                 table.RowStyles.Clear();
                 table.RowCount = 0;
+                tabStrip = null;
+                tabRowIndex = -1;
                 pageTitle.Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe;
                 pageTitle.Font = heading;
                 pageTitle.ForeColor = palette.Text;
@@ -296,13 +360,18 @@ namespace MP1.ConfigurationStudio
                 pageLead.Text = Localization.IsEnglish ? section.SubtitleEn : section.SubtitleDe;
                 pageLead.Font = small;
                 pageLead.ForeColor = palette.Muted;
-                pageLead.Margin = new Padding(0, 0, 0, Px(18));
+                pageLead.Margin = new Padding(0, 0, 0, tabs.Count > 1 ? Px(10) : Px(18));
                 table.Controls.Add(pageLead, 0, table.RowCount);
                 table.SetColumnSpan(pageLead, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 table.RowCount++;
-                foreach (NativeGroup group in section.Groups) AddGroup(group);
-                AddRemainingEntries(section);
+                if (tabs.Count > 1) AddTabStrip(tabs, tabIndex, selected);
+                if (tabs.Count > 0)
+                {
+                    SectionTab tab = tabs[tabIndex];
+                    if (tab.Group != null) AddGroup(tab.Group, tabs.Count == 1);
+                    else AddRemaining(tab.Remaining, tabs.Count == 1);
+                }
             }
             finally { table.ResumeLayout(true); }
             StudioAction targetItem = selected ?? navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, section));
@@ -319,17 +388,92 @@ namespace MP1.ConfigurationStudio
             if (IsHandleCreated) BeginInvoke(new Action(delegate { scroll.AutoScrollPosition = Point.Empty; }));
         }
 
+        private bool ConfirmDiscardEditors()
+        {
+            IStudioFileEditor editor = table.Controls.OfType<IStudioFileEditor>().FirstOrDefault();
+            return editor == null || !editor.HasUnsavedChanges || editor.ConfirmDiscardChanges();
+        }
+
+        private List<SectionTab> BuildTabs(NativeSection section)
+        {
+            var tabs = new List<SectionTab>();
+            foreach (NativeGroup group in section.Groups)
+                tabs.Add(new SectionTab { TitleDe = group.TitleDe, TitleEn = group.TitleEn, Group = group });
+            List<KeyValuePair<string, List<KeyValuePair<string, string>>>> remaining = ComputeRemaining(section);
+            if (remaining.Count > 0)
+                tabs.Add(new SectionTab { TitleDe = "Weitere Einstellungen", TitleEn = "More settings", Remaining = remaining });
+            return tabs;
+        }
+
+        private static bool TabMatches(SectionTab tab, string query)
+        {
+            if (tab.Group == null) return false;
+            if (Contains(tab.TitleDe, query) || Contains(tab.TitleEn, query)) return true;
+            foreach (NativeField field in tab.Group.Fields)
+                if (Contains(field.LabelDe, query) || Contains(field.LabelEn, query) || Contains(field.HelpDe, query) || Contains(field.HelpEn, query)) return true;
+            return false;
+        }
+
+        private void AddTabStrip(List<SectionTab> tabs, int active, StudioAction navigationItem)
+        {
+            var strip = new StudioTabStrip(Px(6))
+            {
+                Dock = DockStyle.Fill,
+                BackColor = palette.Background,
+                AccessibleName = Localization.IsEnglish ? "Subsections" : "Unterbereiche",
+                Margin = new Padding(0, 0, 0, Px(8))
+            };
+            for (int i = 0; i < tabs.Count; i++)
+            {
+                int index = i;
+                string caption = tabs[i].Title;
+                var tab = new StudioSubTab(scale)
+                {
+                    Text = caption,
+                    Font = body,
+                    BackColor = palette.Background,
+                    Colors = () => palette,
+                    Selected = i == active,
+                    AccessibleName = caption,
+                    Name = "studioSubTab",
+                    Margin = new Padding(0)
+                };
+                tab.Width = Math.Min(Px(340), Math.Max(Px(64), TextRenderer.MeasureText(caption, body).Width + Px(30)));
+                tab.Click += delegate { if (current != null) ShowSection(current, navigationItem, index); };
+                strip.Add(tab);
+            }
+            table.Controls.Add(strip, 0, table.RowCount);
+            table.SetColumnSpan(strip, 2);
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(36)));
+            tabStrip = strip;
+            tabRowIndex = table.RowCount;
+            table.RowCount++;
+            strip.SizeChanged += delegate
+            {
+                if (tabRowIndex < 0 || tabRowIndex >= table.RowStyles.Count) return;
+                if (table.RowStyles[tabRowIndex].Height != strip.Height) table.RowStyles[tabRowIndex].Height = strip.Height;
+            };
+        }
+
         private void AddGroup(NativeGroup group)
         {
-            var groupTitle = new Label { Text = Localization.IsEnglish ? group.TitleEn : group.TitleDe, Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
-            groupTitle.Paint += delegate(object sender, PaintEventArgs e)
+            AddGroup(group, true);
+        }
+
+        private void AddGroup(NativeGroup group, bool showTitle)
+        {
+            if (showTitle)
             {
-                using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
-            };
-            table.Controls.Add(groupTitle, 0, table.RowCount);
-            table.SetColumnSpan(groupTitle, 2);
-            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            table.RowCount++;
+                var groupTitle = new Label { Text = Localization.IsEnglish ? group.TitleEn : group.TitleDe, Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
+                groupTitle.Paint += delegate(object sender, PaintEventArgs e)
+                {
+                    using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
+                };
+                table.Controls.Add(groupTitle, 0, table.RowCount);
+                table.SetColumnSpan(groupTitle, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.RowCount++;
+            }
             foreach (NativeField field in group.Fields) AddField(field);
             var spacer = new Panel { Height = Px(10), Dock = DockStyle.Fill, BackColor = palette.Background };
             table.Controls.Add(spacer, 0, table.RowCount);
@@ -338,7 +482,7 @@ namespace MP1.ConfigurationStudio
             table.RowCount++;
         }
 
-        private void AddRemainingEntries(NativeSection page)
+        private List<KeyValuePair<string, List<KeyValuePair<string, string>>>> ComputeRemaining(NativeSection page)
         {
             var pending = new List<KeyValuePair<string, List<KeyValuePair<string, string>>>>();
             foreach (string configSection in page.Groups.SelectMany(group => group.Fields).Select(field => field.Section).Where(name => !String.IsNullOrEmpty(name)).Distinct(StringComparer.OrdinalIgnoreCase))
@@ -371,17 +515,25 @@ namespace MP1.ConfigurationStudio
                     && !prefixes.Any(prefix => entry.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))).ToList();
                 if (leftovers.Count > 0) pending.Add(new KeyValuePair<string, List<KeyValuePair<string, string>>>(configSection, leftovers));
             }
-            if (pending.Count == 0) return;
+            return pending;
+        }
 
-            var groupTitle = new Label { Text = Localization.IsEnglish ? "More settings" : "Weitere Einstellungen", Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
-            groupTitle.Paint += delegate(object sender, PaintEventArgs e)
+        private void AddRemaining(List<KeyValuePair<string, List<KeyValuePair<string, string>>>> pending, bool showTitle)
+        {
+            if (pending == null || pending.Count == 0) return;
+
+            if (showTitle)
             {
-                using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
-            };
-            table.Controls.Add(groupTitle, 0, table.RowCount);
-            table.SetColumnSpan(groupTitle, 2);
-            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            table.RowCount++;
+                var groupTitle = new Label { Text = Localization.IsEnglish ? "More settings" : "Weitere Einstellungen", Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
+                groupTitle.Paint += delegate(object sender, PaintEventArgs e)
+                {
+                    using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
+                };
+                table.Controls.Add(groupTitle, 0, table.RowCount);
+                table.SetColumnSpan(groupTitle, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.RowCount++;
+            }
 
             foreach (var sectionEntries in pending)
             {
@@ -398,7 +550,7 @@ namespace MP1.ConfigurationStudio
                         || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
                     if (boolValue)
                     {
-                        var check = new CheckBox { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                        var check = new StudioCheck(scale) { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), Font = body, Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
                         check.CheckedChanged += delegate { configuration.SetBool(sectionEntries.Key, key, check.Checked); MarkDirty(); };
                         table.Controls.Add(check, 0, table.RowCount);
                         table.SetColumnSpan(check, 2);
@@ -417,8 +569,9 @@ namespace MP1.ConfigurationStudio
                         }
                         else
                         {
-                            var text = new TextBox { Text = value, Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                            text.TextChanged += delegate { configuration.Set(sectionEntries.Key, key, text.Text); MarkDirty(); };
+                            var text = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                            text.Text = value;
+                            text.Box.TextChanged += delegate { configuration.Set(sectionEntries.Key, key, text.Text); MarkDirty(); };
                             input = text;
                         }
                         table.Controls.Add(input, 1, table.RowCount);
@@ -436,30 +589,18 @@ namespace MP1.ConfigurationStudio
 
         private Control CreateChoiceControl(string section, string entry, List<ChoiceOption> options)
         {
-            var combo = new ComboBox
+            var combo = new StudioChoice(scale)
             {
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                FlatStyle = FlatStyle.Flat,
                 Font = body,
-                BackColor = palette.Input,
-                ForeColor = palette.Text,
+                Colors = () => palette,
                 Dock = DockStyle.Fill,
-                Height = Px(30),
                 Margin = new Padding(0)
             };
-            string current = configuration.Get(section, entry, string.Empty);
-            int index = options.FindIndex(option => String.Equals(option.Value, current, StringComparison.OrdinalIgnoreCase));
-            if (index < 0 && !String.IsNullOrEmpty(current))
-            {
-                options.Add(new ChoiceOption(current, current));
-                index = options.Count - 1;
-            }
-            foreach (ChoiceOption option in options) combo.Items.Add(option.Label);
-            combo.SelectedIndex = index >= 0 ? index : (options.Count > 0 ? 0 : -1);
+            combo.SetOptions(options, configuration.Get(section, entry, string.Empty));
             combo.SelectedIndexChanged += delegate
             {
-                if (combo.SelectedIndex < 0 || combo.SelectedIndex >= options.Count) return;
-                configuration.Set(section, entry, options[combo.SelectedIndex].Value);
+                if (combo.SelectedIndex < 0) return;
+                configuration.Set(section, entry, combo.Options[combo.SelectedIndex].Value);
                 MarkDirty();
             };
             return combo;
@@ -600,7 +741,7 @@ namespace MP1.ConfigurationStudio
                         || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
                     if (boolValue)
                     {
-                        var check = new CheckBox { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                        var check = new StudioCheck(scale) { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), Font = body, Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
                         check.CheckedChanged += delegate { configuration.SetBool(field.Section, key, check.Checked); MarkDirty(); };
                         table.Controls.Add(check, 0, table.RowCount);
                         table.SetColumnSpan(check, 2);
@@ -610,8 +751,9 @@ namespace MP1.ConfigurationStudio
                     else
                     {
                         var entryLabel = new Label { Text = key, Font = body, ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
-                        var text = new TextBox { Text = value, Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                        text.TextChanged += delegate { configuration.Set(field.Section, key, text.Text); MarkDirty(); };
+                        var text = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                        text.Text = value;
+                        text.Box.TextChanged += delegate { configuration.Set(field.Section, key, text.Text); MarkDirty(); };
                         table.Controls.Add(entryLabel, 0, table.RowCount);
                         table.Controls.Add(text, 1, table.RowCount);
                         table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -637,7 +779,7 @@ namespace MP1.ConfigurationStudio
                 {
                     if (String.IsNullOrEmpty(entry.Key)) continue;
                     string key = entry.Key;
-                    var check = new CheckBox { Text = key, Checked = configuration.GetBool(field.Section, key, false), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                    var check = new StudioCheck(scale) { Text = key, Checked = configuration.GetBool(field.Section, key, false), Font = body, Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
                     check.CheckedChanged += delegate { configuration.SetBool(field.Section, key, check.Checked); MarkDirty(); };
                     table.Controls.Add(check, 0, table.RowCount);
                     table.SetColumnSpan(check, 2);
@@ -679,7 +821,7 @@ namespace MP1.ConfigurationStudio
             string labelText = Localization.IsEnglish ? field.LabelEn : field.LabelDe;
             if (field.Kind == NativeFieldKind.Bool)
             {
-                var check = new CheckBox { Text = labelText, Checked = configuration.GetBool(field.Section, field.Entry, false), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                var check = new StudioCheck(scale) { Text = labelText, Checked = configuration.GetBool(field.Section, field.Entry, false), Font = body, Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
                 check.CheckedChanged += delegate { configuration.SetBool(field.Section, field.Entry, check.Checked); MarkDirty(); };
                 table.Controls.Add(check, 0, table.RowCount);
                 table.SetColumnSpan(check, 2);
@@ -698,48 +840,44 @@ namespace MP1.ConfigurationStudio
             }
             else if (field.Kind == NativeFieldKind.Combo)
             {
-                var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = body, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0) };
-                foreach (NativeOption option in field.Options) combo.Items.Add(Localization.IsEnglish ? option.LabelEn : option.LabelDe);
-                string value = configuration.Get(field.Section, field.Entry, field.Options.Count > 0 ? field.Options[0].Value : "");
-                int index = field.Options.FindIndex(option => String.Equals(option.Value, value, StringComparison.OrdinalIgnoreCase));
-                combo.SelectedIndex = index >= 0 ? index : 0;
-                combo.SelectedIndexChanged += delegate { if (combo.SelectedIndex >= 0) { configuration.Set(field.Section, field.Entry, field.Options[combo.SelectedIndex].Value); MarkDirty(); } };
-                input = combo;
+                var choices = new List<ChoiceOption>();
+                foreach (NativeOption option in field.Options) choices.Add(new ChoiceOption(option.Value, Localization.IsEnglish ? option.LabelEn : option.LabelDe));
+                input = CreateChoiceControl(field.Section, field.Entry, choices);
             }
             else if (field.Kind == NativeFieldKind.Filter)
             {
-                var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), Height = Px(30) };
+                var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), Height = Px(32) };
                 row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(34)));
-                var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = body, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(38)));
+                var combo = new StudioChoice(scale) { Font = body, Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
                 string current = configuration.Get(field.Section, field.Entry, "");
-                foreach (string name in NativeFilterCatalog.Names(field.FilterKind))
-                    if (!combo.Items.Contains(name)) combo.Items.Add(name);
-                if (!String.IsNullOrWhiteSpace(current) && !combo.Items.Contains(current)) combo.Items.Add(current);
-                if (!String.IsNullOrWhiteSpace(current)) combo.SelectedItem = current;
-                else if (combo.Items.Count > 0) combo.SelectedIndex = 0;
-                combo.SelectedIndexChanged += delegate { if (combo.SelectedItem != null) { configuration.Set(field.Section, field.Entry, combo.SelectedItem.ToString()); MarkDirty(); } };
-                var configure = new Button { Text = "…", Font = body, FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
+                var choices = new List<ChoiceOption>();
+                foreach (string name in NativeFilterCatalog.Names(field.FilterKind)) choices.Add(new ChoiceOption(name, name));
+                combo.SetOptions(choices, current);
+                combo.SelectedIndexChanged += delegate { configuration.Set(field.Section, field.Entry, combo.SelectedValue); MarkDirty(); };
+                var configure = new GlassButton { Text = "…", Font = body, Colors = () => palette, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
                 configure.FlatAppearance.BorderColor = palette.Border;
-                configure.Click += delegate { NativeFilterProperties.Show(FindForm(), field.FilterKind, combo.SelectedItem == null ? null : combo.SelectedItem.ToString()); };
+                configure.Click += delegate { NativeFilterProperties.Show(FindForm(), field.FilterKind, String.IsNullOrWhiteSpace(combo.SelectedValue) ? null : combo.SelectedValue); };
                 row.Controls.Add(combo, 0, 0);
                 row.Controls.Add(configure, 1, 0);
                 input = row;
             }
             else if (field.Kind == NativeFieldKind.Integer)
             {
-                var text = new TextBox { Text = configuration.GetInt(field.Section, field.Entry, field.Minimum).ToString(), Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                text.Validated += delegate { int value; if (!Int32.TryParse(text.Text, out value)) value = field.Minimum; value = Math.Max(field.Minimum, Math.Min(field.Maximum, value)); text.Text = value.ToString(); configuration.SetInt(field.Section, field.Entry, value); MarkDirty(); };
+                var text = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                text.Text = configuration.GetInt(field.Section, field.Entry, field.Minimum).ToString();
+                text.Box.Validated += delegate { int value; if (!Int32.TryParse(text.Text, out value)) value = field.Minimum; value = Math.Max(field.Minimum, Math.Min(field.Maximum, value)); text.Text = value.ToString(); configuration.SetInt(field.Section, field.Entry, value); MarkDirty(); };
                 input = text;
             }
             else if (field.Kind == NativeFieldKind.Folder)
             {
-                var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), Height = Px(30) };
+                var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), Height = Px(32) };
                 row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(34)));
-                var folder = new TextBox { Text = configuration.Get(field.Section, field.Entry, ""), Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                folder.TextChanged += delegate { configuration.Set(field.Section, field.Entry, folder.Text); MarkDirty(); };
-                var browse = new Button { Text = "…", Font = body, FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(38)));
+                var folder = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                folder.Text = configuration.Get(field.Section, field.Entry, "");
+                folder.Box.TextChanged += delegate { configuration.Set(field.Section, field.Entry, folder.Text); MarkDirty(); };
+                var browse = new GlassButton { Text = "…", Font = body, Colors = () => palette, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
                 browse.FlatAppearance.BorderColor = palette.Border;
                 browse.Click += delegate
                 {
@@ -756,11 +894,13 @@ namespace MP1.ConfigurationStudio
             }
             else
             {
-                var text = new TextBox { Text = configuration.Get(field.Section, field.Entry, ""), Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                text.TextChanged += delegate { configuration.Set(field.Section, field.Entry, text.Text); MarkDirty(); };
+                var text = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                text.Text = configuration.Get(field.Section, field.Entry, "");
+                text.Box.TextChanged += delegate { configuration.Set(field.Section, field.Entry, text.Text); MarkDirty(); };
                 input = text;
             }
             table.Controls.Add(input, 1, table.RowCount);
+            if (!String.IsNullOrEmpty(labelText)) input.AccessibleName = labelText;
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowCount++;
             AddHelp(field);
@@ -1010,10 +1150,21 @@ namespace MP1.ConfigurationStudio
             if (header == null) return;
             header.Glass = sidebar.Glass = footer.Glass = glassBody.Glass = appearance.Glass;
             glassButton.BackColor = appearance.Glass ? palette.Selection : palette.Panel;
+            ApplyChromeStyle();
             header.Invalidate(true);
             sidebar.Invalidate(true);
             footer.Invalidate(true);
             glassBody.Invalidate(true);
+        }
+
+        private void ApplyChromeStyle()
+        {
+            bool glass = appearance.Glass;
+            Color navigationBack = glass ? Color.Transparent : palette.Panel;
+            navigation.BackColor = navigationBack;
+            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.BackColor = navigationBack;
+            status.BackColor = Color.Transparent;
+            if (navigation.IsHandleCreated) navigation.Invalidate(true);
         }
 
         private void EnsureNavigationVisible()
@@ -1080,7 +1231,7 @@ namespace MP1.ConfigurationStudio
 
         private void ApplyCueBanner()
         {
-            try { SendMessage(searchBox.Handle, 0x1501, new IntPtr(1), Localization.IsEnglish ? "Search settings…" : "Einstellungen durchsuchen…"); }
+            try { SendMessage(searchBox.Box.Handle, 0x1501, new IntPtr(1), Localization.IsEnglish ? "Search settings…" : "Einstellungen durchsuchen…"); }
             catch (DllNotFoundException) { }
             catch (EntryPointNotFoundException) { }
         }
@@ -1124,11 +1275,31 @@ namespace MP1.ConfigurationStudio
         }
     }
 
-    internal sealed class SidebarPanel : FlowLayoutPanel
+    internal sealed class GlassFlowPanel : FlowLayoutPanel
     {
+        public Func<Palette> Colors;
+        public Func<bool> GlassMode;
+
+        public GlassFlowPanel()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
+        }
+
         protected override Point ScrollToControl(Control activeControl)
         {
             return AutoScrollPosition;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            if (GlassMode != null && GlassMode())
+            {
+                StudioGlass.Paint(e.Graphics, this, ClientRectangle, palette);
+                return;
+            }
+            if (BackColor.A > 0)
+                using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, ClientRectangle);
         }
     }
 
@@ -1139,7 +1310,7 @@ namespace MP1.ConfigurationStudio
 
         public GlassPanel()
         {
-            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -1152,19 +1323,9 @@ namespace MP1.ConfigurationStudio
                 using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, bounds);
                 return;
             }
-            Color top = Blend(palette.Panel, Color.White, 0.07f);
-            Color bottom = Blend(palette.Background, palette.Panel, 0.22f);
-            using (var brush = new LinearGradientBrush(bounds, top, bottom, LinearGradientMode.Vertical)) e.Graphics.FillRectangle(brush, bounds);
-            using (var pen = new Pen(Color.FromArgb(30, 255, 255, 255))) e.Graphics.DrawLine(pen, 0, 0, bounds.Width, 0);
-            using (var pen = new Pen(Color.FromArgb(80, palette.Border))) e.Graphics.DrawLine(pen, 0, bounds.Height - 1, bounds.Width, bounds.Height - 1);
-        }
-
-        private static Color Blend(Color first, Color second, float amount)
-        {
-            return Color.FromArgb(
-                (int)(first.R + (second.R - first.R) * amount),
-                (int)(first.G + (second.G - first.G) * amount),
-                (int)(first.B + (second.B - first.B) * amount));
+            StudioGlass.Paint(e.Graphics, this, bounds, palette);
+            using (var pen = new Pen(Color.FromArgb(26, 255, 255, 255))) e.Graphics.DrawLine(pen, 0, 0, bounds.Width, 0);
+            using (var pen = new Pen(Color.FromArgb(90, palette.Border))) e.Graphics.DrawLine(pen, 0, bounds.Height - 1, bounds.Width, bounds.Height - 1);
         }
     }
 

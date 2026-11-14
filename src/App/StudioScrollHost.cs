@@ -15,10 +15,13 @@ namespace MP1.ConfigurationStudio
         private readonly StudioScrollThumb vertical,horizontal;
         private readonly bool horizontalAllowed;
         private bool arranging;
-        public StudioScrollHost(ScrollableControl content,Func<Size> required,Func<Palette> colors,bool horizontalAllowed)
+        public StudioScrollHost(ScrollableControl content,Func<Size> required,Func<Palette> colors,bool horizontalAllowed) : this(content, required, colors, horizontalAllowed, (Color?)null) { }
+
+        public StudioScrollHost(ScrollableControl content,Func<Size> required,Func<Palette> colors,bool horizontalAllowed,Color? background)
         {
             this.content=content;this.required=required;this.horizontalAllowed=horizontalAllowed;Dock=DockStyle.Fill;Margin=Padding.Empty;
             vertical=new StudioScrollThumb {Colors=colors,Vertical=true,AccessibleName="Inhalt vertikal scrollen"};horizontal=new StudioScrollThumb {Colors=colors,Vertical=false,AccessibleName="Inhalt horizontal scrollen"};
+            if(background.HasValue){viewport.BackColor=background.Value;vertical.BackColor=background.Value;horizontal.BackColor=background.Value;}
             Controls.Add(viewport);Controls.Add(vertical);Controls.Add(horizontal);content.Parent=viewport;content.Dock=DockStyle.None;content.Location=Point.Empty;
             vertical.Changed+=delegate{content.AutoScrollPosition=new Point(-content.AutoScrollPosition.X,vertical.Value);};horizontal.Changed+=delegate{content.AutoScrollPosition=new Point(horizontal.Value,-content.AutoScrollPosition.Y);};
             content.Layout+=delegate{Arrange();};content.Scroll+=delegate{Sync();};SizeChanged+=delegate{Arrange();};

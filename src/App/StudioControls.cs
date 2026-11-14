@@ -1,0 +1,735 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Windows.Forms;
+using Microsoft.Win32;
+
+namespace MP1.ConfigurationStudio
+{
+    /// <summary>
+    /// Shared glass material. The classic gradient looked like a light gray frame,
+    /// so the chrome now draws the (blurred) desktop wallpaper behind it and tints
+    /// it to the current palette. Falls back to a dark glass gradient when no
+    /// wallpaper is available.
+    /// </summary>
+    internal static class StudioGlass
+    {
+        private static Bitmap canvas;
+        private static Rectangle screen;
+        private static bool prepared;
+
+        public static void Reset()
+        {
+            prepared = false;
+            if (canvas != null) { canvas.Dispose(); canvas = null; }
+        }
+
+        public static void Paint(Graphics g, Control control, Rectangle bounds, Palette palette)
+        {
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            if (Palette.HighContrastActive)
+            {
+                using (var brush = new SolidBrush(palette.Background)) g.FillRectangle(brush, bounds);
+                return;
+            }
+            Prepare(palette);
+            bool painted = false;
+            if (canvas != null)
+            {
+                Point origin;
+                try { origin = control.PointToScreen(Point.Empty); }
+                catch { origin = Point.Empty; }
+                Rectangle source = new Rectangle(origin.X - screen.X, origin.Y - screen.Y, bounds.Width, bounds.Height);
+                Rectangle visible = Rectangle.Intersect(source, new Rectangle(0, 0, canvas.Width, canvas.Height));
+                if (visible.Width > 0 && visible.Height > 0)
+                {
+                    Rectangle target = new Rectangle(bounds.X + visible.X - source.X, bounds.Y + visible.Y - source.Y, visible.Width, visible.Height);
+                    g.DrawImage(canvas, target, visible, GraphicsUnit.Pixel);
+                    painted = true;
+                }
+            }
+            if (!painted) PaintFallback(g, bounds, palette);
+            using (var tint = new SolidBrush(Color.FromArgb(206, palette.Background))) g.FillRectangle(tint, bounds);
+            if (bounds.Height > 4)
+                using (var sheen = new LinearGradientBrush(bounds, Color.FromArgb(24, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), LinearGradientMode.Vertical))
+                    g.FillRectangle(sheen, bounds);
+        }
+
+        private static void Prepare(Palette palette)
+        {
+            if (prepared) return;
+            prepared = true;
+            try
+            {
+                screen = SystemInformation.VirtualScreen;
+                if (screen.Width <= 0 || screen.Height <= 0) return;
+                string wallpaper = Registry.GetValue(@"HKEY_CURRENT_USER\Control Panel\Desktop", "Wallpaper", null) as string;
+                if (String.IsNullOrWhiteSpace(wallpaper) || !File.Exists(wallpaper)) return;
+                using (var original = new Bitmap(wallpaper))
+                {
+                    var raw = new Bitmap(screen.Width, screen.Height, PixelFormat.Format24bppRgb);
+                    using (var g = Graphics.FromImage(raw))
+                    {
+                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.SmoothingMode = SmoothingMode.HighQuality;
+                        double scale = Math.Max((double)screen.Width / original.Width, (double)screen.Height / original.Height);
+                        int width = (int)Math.Ceiling(original.Width * scale);
+                        int height = (int)Math.Ceiling(original.Height * scale);
+                        g.DrawImage(original, new Rectangle((screen.Width - width) / 2, (screen.Height - height) / 2, width, height));
+                    }
+                    canvas = Blur(raw);
+                }
+            }
+            catch
+            {
+                canvas = null;
+            }
+        }
+
+        private static Bitmap Blur(Bitmap source)
+        {
+            int width = Math.Max(1, source.Width / 14);
+            int height = Math.Max(1, source.Height / 14);
+            using (var small = new Bitmap(width, height, PixelFormat.Format24bppRgb))
+            {
+                using (var g = Graphics.FromImage(small))
+                {
+                    g.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.DrawImage(source, 0, 0, width, height);
+                }
+                var blurred = new Bitmap(source.Width, source.Height, PixelFormat.Format24bppRgb);
+                using (var g = Graphics.FromImage(blurred))
+                {
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.DrawImage(small, new Rectangle(0, 0, source.Width, source.Height));
+                }
+                source.Dispose();
+                return blurred;
+            }
+        }
+
+        private static void PaintFallback(Graphics g, Rectangle bounds, Palette palette)
+        {
+            Color top = Blend(palette.Panel, Color.White, 0.16f);
+            using (var brush = new LinearGradientBrush(bounds, top, palette.Background, LinearGradientMode.ForwardDiagonal))
+                g.FillRectangle(brush, bounds);
+            using (var path = new GraphicsPath())
+            {
+                path.AddEllipse(bounds.X - bounds.Width / 3, bounds.Y - bounds.Height, bounds.Width, bounds.Height * 2);
+                using (var glow = new PathGradientBrush(path))
+                {
+                    glow.CenterColor = Color.FromArgb(58, palette.Accent);
+                    glow.SurroundColors = new[] { Color.FromArgb(0, palette.Accent) };
+                    g.FillPath(glow, path);
+                }
+            }
+        }
+
+        private static Color Blend(Color first, Color second, float amount)
+        {
+            return Color.FromArgb(
+                (int)(first.R + (second.R - first.R) * amount),
+                (int)(first.G + (second.G - first.G) * amount),
+                (int)(first.B + (second.B - first.B) * amount));
+        }
+    }
+
+    /// <summary>Dark themed dropdown that replaces the native white framed combo box.</summary>
+    internal sealed class StudioChoice : Control
+    {
+        private readonly List<ChoiceOption> items = new List<ChoiceOption>();
+        private readonly float scale;
+        private int selectedIndex = -1;
+        private bool hover;
+        private bool open;
+        private ToolStripDropDown drop;
+        public Func<Palette> Colors;
+
+        public StudioChoice(float scale)
+        {
+            this.scale = scale;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
+            Height = S(32);
+            Cursor = Cursors.Hand;
+            TabStop = true;
+            AccessibleRole = AccessibleRole.ComboBox;
+        }
+
+        private int S(int value) { return (int)Math.Round(value * scale); }
+
+        public int Count { get { return items.Count; } }
+        public IList<ChoiceOption> Options { get { return items; } }
+        public bool DroppedDown { get { return open; } }
+
+        public int SelectedIndex
+        {
+            get { return selectedIndex; }
+            set { SetIndex(value, true); }
+        }
+
+        public string SelectedValue
+        {
+            get { return selectedIndex >= 0 && selectedIndex < items.Count ? items[selectedIndex].Value : String.Empty; }
+        }
+
+        public void SetOptions(IEnumerable<ChoiceOption> options, string currentValue)
+        {
+            items.Clear();
+            items.AddRange(options);
+            int index = items.FindIndex(option => String.Equals(option.Value, currentValue, StringComparison.OrdinalIgnoreCase));
+            if (index < 0 && !String.IsNullOrWhiteSpace(currentValue))
+            {
+                items.Add(new ChoiceOption(currentValue, currentValue.Trim()));
+                index = items.Count - 1;
+            }
+            selectedIndex = index >= 0 ? index : (items.Count > 0 ? 0 : -1);
+            Invalidate();
+        }
+
+        private void SetIndex(int value, bool raise)
+        {
+            if (items.Count == 0) return;
+            value = Math.Max(0, Math.Min(items.Count - 1, value));
+            if (value == selectedIndex) { Invalidate(); return; }
+            selectedIndex = value;
+            Invalidate();
+            if (raise && SelectedIndexChanged != null) SelectedIndexChanged(this, EventArgs.Empty);
+        }
+
+        public event EventHandler SelectedIndexChanged;
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(BackColor);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = ClientRectangle;
+            bounds.Width--;
+            bounds.Height--;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            Color fill = StudioChoice.Blend(palette.Input, palette.Hover, hover || open ? 0.22f : 0f);
+            using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), S(5)))
+            {
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+                Color border = open || Focused ? palette.Accent : (hover ? Blend(palette.Border, palette.Accent, 0.55f) : palette.Border);
+                using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
+            }
+            string text = selectedIndex >= 0 && selectedIndex < items.Count ? items[selectedIndex].Label : String.Empty;
+            TextRenderer.DrawText(e.Graphics, text, Font, new Rectangle(S(10), 0, Math.Max(0, Width - S(38)), Height), palette.Text,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            DrawChevron(e.Graphics, palette, open || hover ? palette.Accent : palette.Muted);
+            if (Focused && !open)
+                using (var pen = new Pen(Color.FromArgb(90, palette.Accent)))
+                    e.Graphics.DrawLine(pen, S(10), Height - S(4), Width - S(10), Height - S(4));
+        }
+
+        private void DrawChevron(Graphics g, Palette palette, Color color)
+        {
+            int x = Width - S(19);
+            int y = Height / 2 - S(2);
+            using (var pen = new Pen(color, S(2)))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                g.DrawLine(pen, x - S(4), y, x, y + S(4));
+                g.DrawLine(pen, x, y + S(4), x + S(4), y);
+            }
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left) Focus();
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && ClientRectangle.Contains(e.Location)) OpenDropDown();
+            base.OnMouseUp(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Down || e.KeyCode == Keys.Right)
+            {
+                if (open) return;
+                SetIndex(selectedIndex + 1, true);
+                e.Handled = true;
+            }
+            else if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Left)
+            {
+                if (open) return;
+                SetIndex(selectedIndex - 1, true);
+                e.Handled = true;
+            }
+            else if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Space || e.KeyCode == Keys.F4)
+            {
+                OpenDropDown();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+            else if (e.KeyCode == Keys.Escape && open)
+            {
+                CloseDropDown();
+                e.Handled = true;
+            }
+            base.OnKeyDown(e);
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Down:
+                case Keys.Up:
+                case Keys.Left:
+                case Keys.Right:
+                    return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        private void OpenDropDown()
+        {
+            if (items.Count == 0 || open) return;
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            int itemHeight = S(30);
+            int width = Math.Max(Width, Math.Min(S(620), MeasureWidth() + S(54)));
+            int visible = Math.Min(items.Count, 12);
+            var list = new StudioChoiceList(items, selectedIndex, palette, Font, itemHeight, scale);
+            list.Chosen += delegate(int index)
+            {
+                CloseDropDown();
+                SetIndex(index, true);
+            };
+            list.CloseRequested += delegate { CloseDropDown(); };
+            var host = new ToolStripControlHost(list) { Margin = Padding.Empty, Padding = Padding.Empty, AutoSize = false, Size = new Size(width, visible * itemHeight + S(2)) };
+            drop = new ToolStripDropDown { Padding = Padding.Empty, Margin = Padding.Empty, AutoSize = false, DropShadowEnabled = true, BackColor = palette.Panel, Size = new Size(width, visible * itemHeight + S(2)) };
+            drop.Items.Add(host);
+            drop.Closed += delegate(object sender, ToolStripDropDownClosedEventArgs args)
+            {
+                open = false;
+                Invalidate();
+            };
+            open = true;
+            try
+            {
+                drop.Show(this, new Point(0, Height + S(2)));
+                list.Focus();
+                list.EnsureIndexVisible(selectedIndex);
+            }
+            catch (Exception ex)
+            {
+                StudioLog.Error(ex, "Choice dropdown could not be shown");
+                CloseDropDown();
+            }
+            Invalidate();
+        }
+
+        private int MeasureWidth()
+        {
+            int width = S(120);
+            foreach (ChoiceOption option in items)
+                width = Math.Max(width, TextRenderer.MeasureText(option.Label ?? String.Empty, Font).Width);
+            return width;
+        }
+
+        private void CloseDropDown()
+        {
+            if (drop == null) return;
+            ToolStripDropDown closing = drop;
+            drop = null;
+            try { closing.Close(); } catch { }
+            try { closing.Dispose(); } catch { }
+            open = false;
+            Invalidate();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) CloseDropDown();
+            base.Dispose(disposing);
+        }
+
+        internal static Color Blend(Color first, Color second, float amount)
+        {
+            return Color.FromArgb(
+                (int)(first.R + (second.R - first.R) * amount),
+                (int)(first.G + (second.G - first.G) * amount),
+                (int)(first.B + (second.B - first.B) * amount));
+        }
+    }
+
+    internal sealed class StudioChoiceList : ListBox
+    {
+        private readonly Palette palette;
+        private readonly float scale;
+        private readonly int itemHeight;
+        private int hoverIndex = -1;
+
+        public event Action<int> Chosen;
+        public event Action CloseRequested;
+
+        public StudioChoiceList(List<ChoiceOption> options, int selected, Palette palette, Font font, int itemHeight, float scale)
+        {
+            this.palette = palette;
+            this.scale = scale;
+            this.itemHeight = itemHeight;
+            DrawMode = DrawMode.OwnerDrawFixed;
+            BorderStyle = BorderStyle.None;
+            IntegralHeight = false;
+            ItemHeight = itemHeight;
+            Font = font;
+            BackColor = palette.Panel;
+            ForeColor = palette.Text;
+            TabStop = true;
+            DoubleBuffered = true;
+            foreach (ChoiceOption option in options) Items.Add(option);
+            if (selected >= 0 && selected < Items.Count) SelectedIndex = selected;
+        }
+
+        private int S(int value) { return (int)Math.Round(value * scale); }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            NativeDarkMode.Apply(Handle);
+        }
+
+        protected override void OnDrawItem(DrawItemEventArgs e)
+        {
+            if (e.Index < 0 || e.Index >= Items.Count) return;
+            bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+            bool hovered = e.Index == hoverIndex;
+            Color fill = selected ? palette.Selection : (hovered ? palette.Hover : palette.Panel);
+            using (var brush = new SolidBrush(fill)) e.Graphics.FillRectangle(brush, e.Bounds);
+            if (selected)
+                using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, e.Bounds.Left, e.Bounds.Top + S(3), S(3), e.Bounds.Height - S(6));
+            ChoiceOption option = (ChoiceOption)Items[e.Index];
+            Color text = selected ? palette.SelectionText : palette.Text;
+            TextRenderer.DrawText(e.Graphics, option.Label ?? String.Empty, Font,
+                new Rectangle(e.Bounds.Left + S(12), e.Bounds.Top, Math.Max(0, e.Bounds.Width - S(44)), e.Bounds.Height), text,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            if (selected)
+                StudioIcons.Draw(e.Graphics, "check", new Rectangle(e.Bounds.Right - S(30), e.Bounds.Top + (itemHeight - S(14)) / 2, S(14), S(14)), palette.Accent);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            int index = IndexFromPoint(e.Location);
+            if (index != hoverIndex)
+            {
+                hoverIndex = index;
+                Invalidate();
+            }
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            if (hoverIndex != -1) { hoverIndex = -1; Invalidate(); }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            if (e.Button != MouseButtons.Left) return;
+            int index = IndexFromPoint(e.Location);
+            if (index >= 0 && index < Items.Count && Chosen != null) Chosen(index);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Space)
+            {
+                int index = SelectedIndex;
+                if (index < 0) index = hoverIndex;
+                if (index >= 0 && index < Items.Count && Chosen != null) Chosen(index);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Tab)
+            {
+                if (CloseRequested != null) CloseRequested();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            base.OnKeyDown(e);
+        }
+
+        public void EnsureIndexVisible(int index)
+        {
+            if (index < 0 || index >= Items.Count) return;
+            int visible = Math.Max(1, ClientSize.Height / itemHeight);
+            if (index < TopIndex) TopIndex = index;
+            else if (index >= TopIndex + visible) TopIndex = Math.Max(0, index - visible + 1);
+        }
+    }
+
+    /// <summary>Large owner drawn check box with hover, pressed and focus feedback.</summary>
+    internal sealed class StudioCheck : CheckBox
+    {
+        private readonly float scale;
+        private bool hover;
+        private bool pressed;
+        public Func<Palette> Colors;
+
+        public StudioCheck(float scale)
+        {
+            this.scale = scale;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
+            FlatStyle = FlatStyle.Flat;
+            AutoSize = false;
+            Height = S(30);
+            Cursor = Cursors.Hand;
+            UseMnemonic = false;
+            AccessibleRole = AccessibleRole.CheckButton;
+        }
+
+        private int S(float value) { return (int)Math.Round(value * scale); }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; pressed = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e) { if (e.Button == MouseButtons.Left) { pressed = true; Invalidate(); } base.OnMouseDown(e); }
+        protected override void OnMouseUp(MouseEventArgs e) { pressed = false; Invalidate(); base.OnMouseUp(e); }
+        protected override void OnGotFocus(EventArgs e) { Invalidate(); base.OnGotFocus(e); }
+        protected override void OnLostFocus(EventArgs e) { Invalidate(); base.OnLostFocus(e); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(BackColor);
+            if (hover || Focused)
+                using (var wash = new SolidBrush(Color.FromArgb(Focused ? 26 : 16, palette.Accent)))
+                    e.Graphics.FillRectangle(wash, ClientRectangle);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            int size = S(19);
+            int left = S(2);
+            int top = (Height - size) / 2;
+            Rectangle box = new Rectangle(left, top, size, size);
+            Color fill = Checked
+                ? (pressed ? StudioChoice.Blend(palette.Primary, Color.Black, 0.18f) : (hover ? StudioChoice.Blend(palette.Primary, Color.White, 0.10f) : palette.Primary))
+                : (pressed ? palette.Selection : (hover ? StudioChoice.Blend(palette.Input, palette.Hover, 0.45f) : palette.Input));
+            Color border = Checked
+                ? (hover ? Color.White : StudioChoice.Blend(palette.Primary, Color.White, 0.25f))
+                : (hover || Focused ? palette.Accent : palette.Border);
+            using (var path = StudioIcons.Rounded(new RectangleF(box.X, box.Y, box.Width - 1, box.Height - 1), S(4)))
+            {
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+                using (var pen = new Pen(border, Math.Max(1, S(1.4f)))) e.Graphics.DrawPath(pen, path);
+            }
+            if (Checked)
+            {
+                using (var pen = new Pen(Color.White, Math.Max(1.6f, S(2.1f))))
+                {
+                    pen.StartCap = LineCap.Round;
+                    pen.EndCap = LineCap.Round;
+                    pen.LineJoin = LineJoin.Round;
+                    Point[] check =
+                    {
+                        new Point(box.Left + S(5), box.Top + S(10)),
+                        new Point(box.Left + S(8), box.Top + S(13)),
+                        new Point(box.Left + S(14), box.Top + S(6))
+                    };
+                    e.Graphics.DrawLines(pen, check);
+                }
+            }
+            int textLeft = box.Right + S(10);
+            TextRenderer.DrawText(e.Graphics, Text, Font,
+                new Rectangle(textLeft, 0, Math.Max(0, Width - textLeft - S(12)), Height), palette.Text,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            if (Focused)
+            {
+                int textWidth = Math.Min(Math.Max(0, Width - textLeft - S(12)), TextRenderer.MeasureText(Text, Font).Width + S(4));
+                using (var pen = new Pen(Color.FromArgb(140, palette.Accent)))
+                    e.Graphics.DrawRectangle(pen, textLeft - S(4), S(2), Math.Max(1, textWidth + S(8)), Height - S(5));
+            }
+        }
+    }
+
+    /// <summary>Text box with a flat rounded frame instead of the white classic border.</summary>
+    internal sealed class StudioTextInput : Control
+    {
+        private readonly float scale;
+        private readonly TextBox inner;
+        private bool hover;
+        public Func<Palette> Colors;
+
+        public StudioTextInput(float scale, Font font, Palette palette)
+        {
+            this.scale = scale;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            Height = S(32);
+            inner = new TextBox { BorderStyle = BorderStyle.None, Font = font, BackColor = palette.Input, ForeColor = palette.Text };
+            Controls.Add(inner);
+            inner.GotFocus += delegate { Invalidate(); };
+            inner.LostFocus += delegate { Invalidate(); };
+            inner.MouseEnter += delegate { hover = true; Invalidate(); };
+            inner.MouseLeave += delegate { hover = false; Invalidate(); };
+            inner.TextChanged += delegate { OnTextChanged(EventArgs.Empty); };
+            inner.SetBounds(S(9), Math.Max(1, (Height - inner.PreferredHeight) / 2), Math.Max(80, Width - S(18)), inner.PreferredHeight);
+        }
+
+        private int S(int value) { return (int)Math.Round(value * scale); }
+
+        public TextBox Box { get { return inner; } }
+
+        public override string Text
+        {
+            get { return inner.Text; }
+            set { inner.Text = value; }
+        }
+
+        public void SelectAll() { inner.SelectAll(); }
+        public void Clear() { inner.Clear(); }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (inner == null) return;
+            int inset = S(9);
+            int height = inner.PreferredHeight;
+            inner.SetBounds(inset, Math.Max(1, (Height - height) / 2), Math.Max(1, Width - inset * 2), height);
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e) { inner.Focus(); base.OnMouseDown(e); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(BackColor);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = ClientRectangle;
+            bounds.Width--;
+            bounds.Height--;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), S(5)))
+            {
+                using (var brush = new SolidBrush(palette.Input)) e.Graphics.FillPath(brush, path);
+                Color border = inner.Focused ? palette.Accent : (hover ? StudioChoice.Blend(palette.Border, palette.Accent, 0.55f) : palette.Border);
+                using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
+            }
+        }
+    }
+
+    /// <summary>Panel that wraps the 1.9 style subsection tabs into rows itself.</summary>
+    internal sealed class StudioTabStrip : Panel
+    {
+        private readonly List<Control> items = new List<Control>();
+        private readonly int gap;
+
+        public StudioTabStrip(int gap)
+        {
+            this.gap = gap;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            Margin = Padding.Empty;
+            Padding = Padding.Empty;
+        }
+
+        public void Add(Control control)
+        {
+            items.Add(control);
+            Controls.Add(control);
+        }
+
+        public int Reflow()
+        {
+            int available = Math.Max(80, ClientSize.Width);
+            int x = 0, y = 0, rowHeight = 0;
+            foreach (Control item in items)
+            {
+                if (x > 0 && x + item.Width > available)
+                {
+                    x = 0;
+                    y += rowHeight + gap;
+                    rowHeight = 0;
+                }
+                item.SetBounds(x, y, item.Width, item.Height);
+                x += item.Width + gap;
+                rowHeight = Math.Max(rowHeight, item.Height);
+            }
+            int height = y + rowHeight;
+            if (Height != height) Height = height;
+            return height;
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            Reflow();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, ClientRectangle);
+        }
+    }
+
+    /// <summary>Rounded subsection tab, ported from the 1.9 interface.</summary>
+    internal sealed class StudioSubTab : Button
+    {
+        private readonly float scale;
+        private bool hover;
+        public bool Selected;
+        public Func<Palette> Colors;
+
+        public StudioSubTab(float scale)
+        {
+            this.scale = scale;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            FlatStyle = FlatStyle.Flat;
+            AutoSize = false;
+            Height = S(34);
+            Cursor = Cursors.Hand;
+            TabStop = true;
+            AccessibleRole = AccessibleRole.PageTab;
+        }
+
+        private int S(int value) { return (int)Math.Round(value * scale); }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnGotFocus(EventArgs e) { Invalidate(); base.OnGotFocus(e); }
+        protected override void OnLostFocus(EventArgs e) { Invalidate(); base.OnLostFocus(e); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(BackColor);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = ClientRectangle;
+            bounds.Width--;
+            bounds.Height--;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), S(6)))
+            {
+                Color fill = Selected ? palette.Selection : (hover ? palette.Hover : Color.FromArgb(12, 255, 255, 255));
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+                Color border = Selected ? palette.Accent : (hover ? palette.Border : Color.FromArgb(70, palette.Border));
+                using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
+            }
+            if (Selected)
+                using (var brush = new SolidBrush(palette.Accent))
+                    e.Graphics.FillRectangle(brush, S(10), Height - S(4), Math.Max(1, Width - S(20)), Math.Max(1, S(2)));
+            Color ink = Selected ? palette.Accent : (hover || Focused ? palette.Text : palette.Muted);
+            TextRenderer.DrawText(e.Graphics, Text, Font, new Rectangle(S(6), 0, Math.Max(0, Width - S(12)), Height), ink,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            if (Focused && !Selected)
+                ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -S(4), -S(4)), palette.Accent, BackColor);
+        }
+    }
+}

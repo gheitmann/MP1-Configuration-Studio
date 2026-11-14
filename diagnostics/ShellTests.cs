@@ -348,6 +348,27 @@ namespace MP1.ConfigurationStudio
             Check(StudioAction.Ink(highContrast,true,false,true,false)==SystemColors.HighlightText,"high contrast selected text uses the highlight text color");
             Check(StudioAction.Ink(highContrast,true,false,false,false)==SystemColors.WindowText&&highContrast.PrimaryText==SystemColors.HighlightText,"high contrast action and logo text use system colors");
             Palette.ForceHighContrast=false;
+            using(var choice=new StudioChoice(1f))
+            {
+                choice.SetOptions(new[]{new ChoiceOption("a","Alpha"),new ChoiceOption("b","Beta")},"b");
+                Check(choice.Count==2&&choice.SelectedValue=="b","choice control selects the configured value");
+                choice.SetOptions(new[]{new ChoiceOption("a","Alpha")},"legacy");
+                Check(choice.Count==2&&choice.SelectedValue=="legacy","choice control keeps an unknown current value");
+                choice.SetOptions(new[]{new ChoiceOption("a","Alpha"),new ChoiceOption("b","Beta")}," \r\n ");
+                Check(choice.Count==2&&choice.SelectedValue=="a","choice control ignores a whitespace-only current value");
+            }
+            using(var check=new StudioCheck(1f){Text="Option",Checked=true,Height=30})
+                Check(!check.AutoSize&&check.Height==30&&check.Checked,"check box uses the large owner drawn layout");
+            using(var subTab=new StudioSubTab(1f){Text="Wiedergabe",Selected=true})
+                Check(subTab.Selected&&!subTab.AutoSize&&subTab.Height>=30,"subtab uses the 1.9 pill layout");
+            bool glassPainted=false;
+            using(var bmp=new Bitmap(160,48))
+            using(var g=Graphics.FromImage(bmp))
+            {
+                StudioGlass.Paint(g,new Panel(),new Rectangle(0,0,160,48),Palette.For(true));
+                glassPainted=bmp.GetPixel(12,12).A==255;
+            }
+            Check(glassPainted,"glass material paints an opaque chrome surface");
         }
         private static void RunCloseGuardChecks()
         {
@@ -406,7 +427,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.36"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.37"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -559,7 +580,7 @@ namespace MP1.ConfigurationStudio
             using(var nativeForm=new NativeStudioForm(runtime,nativePreferences))
             {
                 Check(nativeForm.Text.Contains("Neue Oberfläche")&&nativeForm.Controls.Count>0,"native Studio form constructs with the core sections");
-                var showSection=typeof(NativeStudioForm).GetMethod("ShowSection",BindingFlags.Instance|BindingFlags.NonPublic);
+                var showSection=typeof(NativeStudioForm).GetMethod("ShowSection",BindingFlags.Instance|BindingFlags.NonPublic,null,new[]{typeof(NativeSection),typeof(StudioAction)},null);
                 int builtSections=0;
                 foreach(var section in NativeSettingsSchema.Sections())
                 {
@@ -568,13 +589,23 @@ namespace MP1.ConfigurationStudio
                 }
                 Check(builtSections==NativeSettingsSchema.Sections().Count&&builtSections>=18,"native Studio form builds every schema section");
                 var sizeField=typeof(NativeStudioForm).GetField("sizeChoice",BindingFlags.Instance|BindingFlags.NonPublic);
-                var sizeCombo=(ComboBox)sizeField.GetValue(nativeForm);
+                var sizeCombo=(StudioChoice)sizeField.GetValue(nativeForm);
+                Check(sizeCombo.Count==5&&sizeCombo.SelectedValue==sizeCombo.Options[Math.Max(0,sizeCombo.SelectedIndex)].Value,"native text size control exposes the studio scale choices");
                 foreach(int textScale in new[]{100,125,150,175})
                 {
                     int index=Array.IndexOf(new[]{100,115,125,150,175},textScale);
                     sizeCombo.SelectedIndex=index;
                     foreach(var section in NativeSettingsSchema.Sections()) showSection.Invoke(nativeForm,new object[]{section,null});
                     Check(nativeForm.Controls.Count>0&&nativeForm.Font.SizeInPoints>=10f*textScale/100f-0.2f,"native Studio pages build at "+textScale+"% text scale");
+                }
+                var movies=NativeSettingsSchema.Sections().First(section=>section.Id=="movies");
+                showSection.Invoke(nativeForm,new object[]{movies,null});
+                StudioSubTab[] subTabs=nativeForm.Controls.Find("studioSubTab",true).OfType<StudioSubTab>().ToArray();
+                Check(subTabs.Length>1,"native Studio splits long sections into 1.9 style subtabs");
+                if(subTabs.Length>1)
+                {
+                    subTabs[1].PerformClick();
+                    Check(nativeForm.Controls.Find("studioSubTab",true).OfType<StudioSubTab>().Count()==subTabs.Length,"subtab switch keeps the section tab strip");
                 }
             }
         }
