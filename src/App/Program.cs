@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.5")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.6")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -36,7 +36,7 @@ namespace MP1.ConfigurationStudio
                 if (Array.IndexOf(args, "--self-test") >= 0) return ShellTests.Run();
                 if (Array.IndexOf(args, "--design-preview") >= 0) return ShellTests.Preview();
 #endif
-                string preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null;
+                string preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null, nativeSection = null;
                 bool nativeUi = false;
                 var forwarded = new List<string>();
                 foreach (string arg in args)
@@ -44,6 +44,7 @@ namespace MP1.ConfigurationStudio
                     if (String.Equals(arg, "--native", StringComparison.OrdinalIgnoreCase)) nativeUi = true;
                     else if (arg.StartsWith("--runtime=", StringComparison.OrdinalIgnoreCase)) runtime = arg.Substring(10).Trim('"');
                     else if (arg.StartsWith("--preferences=", StringComparison.OrdinalIgnoreCase)) preferences = arg.Substring(14).Trim('"');
+                    else if (arg.StartsWith("--section=", StringComparison.OrdinalIgnoreCase)) nativeSection = arg.Substring(10).Trim('"');
                     else if (arg.StartsWith("--audit=", StringComparison.OrdinalIgnoreCase)) audit = arg.Substring(8).Trim('"');
                     else if (arg.StartsWith("--save-test=", StringComparison.OrdinalIgnoreCase)) saveCycle = arg.Substring(12).Trim('"');
                     else if (arg.StartsWith("--persistence=", StringComparison.OrdinalIgnoreCase)) persistence = arg.Substring(14).Trim('"');
@@ -73,7 +74,7 @@ namespace MP1.ConfigurationStudio
                     }
                     try
                     {
-                        using(var form=new NativeStudioForm(runtime,preferences))form.ShowDialog();
+                        using(var form=new NativeStudioForm(runtime,preferences,nativeSection))form.ShowDialog();
                         return 0;
                     }
                     finally{SingleInstance.Release();}

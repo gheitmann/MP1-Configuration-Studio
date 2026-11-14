@@ -33,7 +33,9 @@ namespace MP1.ConfigurationStudio
         private Font body, heading, small;
         private bool dirty;
 
-        public NativeStudioForm(string runtime, string preferences)
+        public NativeStudioForm(string runtime, string preferences) : this(runtime, preferences, null) { }
+
+        public NativeStudioForm(string runtime, string preferences, string initialSection)
         {
             this.runtime = runtime;
             Text = "MP1 Configuration Studio · Neue Oberfläche";
@@ -55,9 +57,22 @@ namespace MP1.ConfigurationStudio
             string configPath = StudioConfiguration.FindConfigPath(runtime);
             configuration = StudioConfiguration.Load(configPath);
             BuildChrome();
-            ShowSection(sections[0]);
+            ShowSection(FindSection(initialSection) ?? sections[0]);
             FormClosing += OnClosing;
             Application.AddMessageFilter(this);
+        }
+
+        private NativeSection FindSection(string id)
+        {
+            if (String.IsNullOrWhiteSpace(id)) return null;
+            foreach (NativeSection section in sections)
+            {
+                if (String.Equals(section.Id, id, StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(section.TitleDe, id, StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(section.TitleEn, id, StringComparison.OrdinalIgnoreCase))
+                    return section;
+            }
+            return null;
         }
 
         private void BuildChrome()
@@ -216,6 +231,12 @@ namespace MP1.ConfigurationStudio
             finally { table.ResumeLayout(true); }
             foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.Selected = Object.ReferenceEquals(item, selected) || (selected == null && item.Tag == section);
             navigation.Invalidate();
+            if (selected == null)
+            {
+                StudioAction target = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, section));
+                if (target != null && (target.Bounds.Top < 0 || target.Bounds.Bottom > navigation.ClientSize.Height))
+                    navigation.AutoScrollPosition = new Point(0, Math.Max(0, target.Bounds.Top));
+            }
             LayoutTable();
             scroll.AutoScrollPosition = Point.Empty;
         }
@@ -460,6 +481,15 @@ namespace MP1.ConfigurationStudio
             NativeDarkMode.ApplyWindow(Handle, true);
             NativeDarkMode.Apply(navigation.Handle);
             NativeDarkMode.Apply(scroll.Handle);
+            EnsureNavigationVisible();
+        }
+
+        private void EnsureNavigationVisible()
+        {
+            StudioAction selected = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => item.Selected);
+            if (selected == null) return;
+            if (selected.Bounds.Top < 0 || selected.Bounds.Bottom > navigation.ClientSize.Height)
+                navigation.AutoScrollPosition = new Point(0, Math.Max(0, selected.Bounds.Top));
         }
     }
 
