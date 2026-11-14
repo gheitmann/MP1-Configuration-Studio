@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.8")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.9")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -37,11 +37,12 @@ namespace MP1.ConfigurationStudio
                 if (Array.IndexOf(args, "--design-preview") >= 0) return ShellTests.Preview();
 #endif
                 string preferences = null, audit = null, verify = null, review = null, persistence = null, saveCycle = null, nativeSection = null;
-                bool nativeUi = false;
+                bool nativeUi = false, explicitNative = false, studioUi = false;
                 var forwarded = new List<string>();
                 foreach (string arg in args)
                 {
-                    if (String.Equals(arg, "--native", StringComparison.OrdinalIgnoreCase)) nativeUi = true;
+                    if (String.Equals(arg, "--native", StringComparison.OrdinalIgnoreCase)) { nativeUi = true; explicitNative = true; }
+                    else if (String.Equals(arg, "--studio", StringComparison.OrdinalIgnoreCase)) studioUi = true;
                     else if (arg.StartsWith("--runtime=", StringComparison.OrdinalIgnoreCase)) runtime = arg.Substring(10).Trim('"');
                     else if (arg.StartsWith("--preferences=", StringComparison.OrdinalIgnoreCase)) preferences = arg.Substring(14).Trim('"');
                     else if (arg.StartsWith("--section=", StringComparison.OrdinalIgnoreCase)) nativeSection = arg.Substring(10).Trim('"');
@@ -52,6 +53,8 @@ namespace MP1.ConfigurationStudio
                     else if (arg.StartsWith("--verify=", StringComparison.OrdinalIgnoreCase)) verify = arg.Substring(9).Trim('"');
                     else forwarded.Add(arg);
                 }
+                bool testRequested = audit != null || verify != null || review != null || persistence != null || saveCycle != null;
+                if (!explicitNative) nativeUi = !studioUi && !testRequested;
                 runtime = FindRuntime(runtime);
                 native = Path.Combine(runtime, "Configuration.exe");
                 var version = FileVersionInfo.GetVersionInfo(native);
