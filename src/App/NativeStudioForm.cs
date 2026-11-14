@@ -295,6 +295,7 @@ namespace MP1.ConfigurationStudio
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 table.RowCount++;
                 foreach (NativeGroup group in section.Groups) AddGroup(group);
+                AddRemainingEntries(section);
             }
             finally { table.ResumeLayout(true); }
             StudioAction targetItem = selected ?? navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, section));
@@ -323,6 +324,92 @@ namespace MP1.ConfigurationStudio
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowCount++;
             foreach (NativeField field in group.Fields) AddField(field);
+            var spacer = new Panel { Height = Px(10), Dock = DockStyle.Fill, BackColor = palette.Background };
+            table.Controls.Add(spacer, 0, table.RowCount);
+            table.SetColumnSpan(spacer, 2);
+            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            table.RowCount++;
+        }
+
+        private void AddRemainingEntries(NativeSection page)
+        {
+            var pending = new List<KeyValuePair<string, List<KeyValuePair<string, string>>>>();
+            foreach (string configSection in page.Groups.SelectMany(group => group.Fields).Select(field => field.Section).Where(name => !String.IsNullOrEmpty(name)).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var all = configuration.Entries(configSection).ToList();
+                if (all.Count == 0) continue;
+                bool coversAll = false;
+                var exact = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var prefixes = new List<string>();
+                foreach (NativeField field in page.Groups.SelectMany(group => group.Fields).Where(field => String.Equals(field.Section, configSection, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (field.Kind == NativeFieldKind.GroupedSection || field.Kind == NativeFieldKind.RawSections) { coversAll = true; break; }
+                    if (field.Kind == NativeFieldKind.Shares)
+                    {
+                        prefixes.AddRange(new[] { "sharename", "sharepath", "sharescan", "pincode", "sharetype", "shareserver", "sharelogin", "sharepassword", "shareport", "shareremotepath", "shareview", "sharewakeonlan", "hostdetectmethod", "sharedonotfolderjpgifpin", "videothumbscreate", "eachfolderismovie" });
+                        continue;
+                    }
+                    if (field.Kind == NativeFieldKind.DynamicEntries || field.Kind == NativeFieldKind.DynamicBools)
+                    {
+                        if (field.EntryPrefixes == null || field.EntryPrefixes.Length == 0) { coversAll = true; break; }
+                        prefixes.AddRange(field.EntryPrefixes);
+                        continue;
+                    }
+                    if (field.Kind == NativeFieldKind.Info || field.Kind == NativeFieldKind.XmlFiles || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views || field.Kind == NativeFieldKind.Dsp
+                        || field.Kind == NativeFieldKind.TvServer || field.Kind == NativeFieldKind.PluginConfig || field.Kind == NativeFieldKind.Classic) continue;
+                    if (!String.IsNullOrEmpty(field.Entry)) exact.Add(field.Entry);
+                }
+                if (coversAll) continue;
+                var leftovers = all.Where(entry => !exact.Contains(entry.Key)
+                    && !prefixes.Any(prefix => entry.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))).ToList();
+                if (leftovers.Count > 0) pending.Add(new KeyValuePair<string, List<KeyValuePair<string, string>>>(configSection, leftovers));
+            }
+            if (pending.Count == 0) return;
+
+            var groupTitle = new Label { Text = Localization.IsEnglish ? "More settings" : "Weitere Einstellungen", Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
+            groupTitle.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
+            };
+            table.Controls.Add(groupTitle, 0, table.RowCount);
+            table.SetColumnSpan(groupTitle, 2);
+            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            table.RowCount++;
+
+            foreach (var sectionEntries in pending)
+            {
+                var heading = new Label { Text = sectionEntries.Key, Font = Typography.Create(9.5f * scale, FontStyle.Bold), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(4), 0, Px(2)) };
+                table.Controls.Add(heading, 0, table.RowCount);
+                table.SetColumnSpan(heading, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.RowCount++;
+                foreach (var entry in sectionEntries.Value)
+                {
+                    string key = entry.Key;
+                    string value = entry.Value ?? string.Empty;
+                    bool boolValue = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                        || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+                    if (boolValue)
+                    {
+                        var check = new CheckBox { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                        check.CheckedChanged += delegate { configuration.SetBool(sectionEntries.Key, key, check.Checked); MarkDirty(); };
+                        table.Controls.Add(check, 0, table.RowCount);
+                        table.SetColumnSpan(check, 2);
+                        table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        table.RowCount++;
+                    }
+                    else
+                    {
+                        var label = new Label { Text = key, Font = body, ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
+                        var text = new TextBox { Text = value, Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                        text.TextChanged += delegate { configuration.Set(sectionEntries.Key, key, text.Text); MarkDirty(); };
+                        table.Controls.Add(label, 0, table.RowCount);
+                        table.Controls.Add(text, 1, table.RowCount);
+                        table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        table.RowCount++;
+                    }
+                }
+            }
             var spacer = new Panel { Height = Px(10), Dock = DockStyle.Fill, BackColor = palette.Background };
             table.Controls.Add(spacer, 0, table.RowCount);
             table.SetColumnSpan(spacer, 2);
