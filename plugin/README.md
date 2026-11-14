@@ -40,6 +40,18 @@ The script copies the DLL to `plugins\Windows`, copies `MP1StudioSettings.xml` i
 
 Then enable the plugin in **MediaPortal Configuration → Plugins** and choose **In Home** or **In Plugins**. The plugin opens as **MP1 Configuration Studio**.
 
+The packaged ZIP contains the DLL, skin, and this script in one folder, so `.\Install-MPPlugin.ps1 -Enable` works there as well.
+
+## Uninstall
+
+Run an elevated PowerShell:
+
+```powershell
+.\tools\Install-MPPlugin.ps1 -Uninstall
+```
+
+The script removes the plugin DLL, removes `MP1StudioSettings.xml` from every skin, and sets the `MP1 Configuration Studio` entry in `MediaPortal.xml` to `no` after creating a backup. Other plugin entries and settings are left untouched.
+
 ## Skin
 
 `plugin\Skin\MP1StudioSettings.xml` is written for 1920×1080 skins (Backdrop, Titan, DefaultWideHD, MayaHD, Apollo, PureVisionHD) and uses the common `list_background_focus_ledon.png` / `list_background_nofocus_ledon.png` textures. For other resolutions, scale the positions in the XML.

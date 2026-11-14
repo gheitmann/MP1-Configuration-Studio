@@ -406,7 +406,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.29"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.30"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -557,6 +557,15 @@ namespace MP1.ConfigurationStudio
                     builtSections++;
                 }
                 Check(builtSections==NativeSettingsSchema.Sections().Count&&builtSections>=18,"native Studio form builds every schema section");
+                var sizeField=typeof(NativeStudioForm).GetField("sizeChoice",BindingFlags.Instance|BindingFlags.NonPublic);
+                var sizeCombo=(ComboBox)sizeField.GetValue(nativeForm);
+                foreach(int textScale in new[]{100,125,150,175})
+                {
+                    int index=Array.IndexOf(new[]{100,115,125,150,175},textScale);
+                    sizeCombo.SelectedIndex=index;
+                    foreach(var section in NativeSettingsSchema.Sections()) showSection.Invoke(nativeForm,new object[]{section,null});
+                    Check(nativeForm.Controls.Count>0&&nativeForm.Font.SizeInPoints>=10f*textScale/100f-0.2f,"native Studio pages build at "+textScale+"% text scale");
+                }
             }
         }
         private static void CreateZip(string path,string entryName,string content)

@@ -2,17 +2,65 @@ param(
     [string]$MediaPortalDir = 'C:\Program Files\Team MediaPortal\MediaPortal',
     [string]$SkinRoot = 'C:\ProgramData\Team MediaPortal\MediaPortal\skin',
     [string]$ConfigPath = 'C:\ProgramData\Team MediaPortal\MediaPortal\MediaPortal.xml',
-    [switch]$Enable
+    [switch]$Enable,
+    [switch]$Uninstall
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$dll = Join-Path $root 'dist\plugin\MP1.ConfigurationStudio.Plugin.dll'
-$skin = Join-Path $root 'plugin\Skin\MP1StudioSettings.xml'
+$localDll = Join-Path $PSScriptRoot 'MP1.ConfigurationStudio.Plugin.dll'
+$dll = if (Test-Path -LiteralPath $localDll) { $localDll } else { Join-Path $root 'dist\plugin\MP1.ConfigurationStudio.Plugin.dll' }
+$localSkin = Join-Path $PSScriptRoot 'MP1StudioSettings.xml'
+$skin = if (Test-Path -LiteralPath $localSkin) { $localSkin } else { Join-Path $root 'plugin\Skin\MP1StudioSettings.xml' }
+$pluginDir = Join-Path $MediaPortalDir 'plugins\Windows'
+$pluginName = 'MP1 Configuration Studio'
+
+if ($Uninstall) {
+    $target = Join-Path $pluginDir 'MP1.ConfigurationStudio.Plugin.dll'
+    if (Test-Path -LiteralPath $target) {
+        Remove-Item -LiteralPath $target -Force
+        Write-Output ("Removed plugin DLL: " + $target)
+    } else {
+        Write-Output ("Plugin DLL not installed: " + $target)
+    }
+    $removedSkins = 0
+    if (Test-Path -LiteralPath $SkinRoot) {
+        foreach ($dir in Get-ChildItem -LiteralPath $SkinRoot -Directory) {
+            $file = Join-Path $dir.FullName 'MP1StudioSettings.xml'
+            if (Test-Path -LiteralPath $file) {
+                Remove-Item -LiteralPath $file -Force
+                $removedSkins++
+            }
+        }
+    }
+    Write-Output ("Removed skin file from " + $removedSkins + " skins")
+    if (Test-Path -LiteralPath $ConfigPath) {
+        $backup = $ConfigPath + '.plugin-backup-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+        Copy-Item -LiteralPath $ConfigPath -Destination $backup -Force
+        $document = New-Object System.Xml.XmlDocument
+        $document.PreserveWhitespace = $true
+        $document.Load($ConfigPath)
+        $changed = $false
+        foreach ($entry in $document.SelectNodes("/profile/section[@name='plugins']/entry[@name='" + $pluginName + "']")) {
+            $entry.InnerText = 'no'
+            $changed = $true
+        }
+        if ($changed) {
+            $temporary = $ConfigPath + '.plugin.tmp'
+            $document.Save($temporary)
+            Move-Item -LiteralPath $temporary -Destination $ConfigPath -Force
+            Write-Output ("Disabled plugin in " + $ConfigPath + " (backup: " + (Split-Path $backup -Leaf) + ")")
+        } else {
+            Remove-Item -LiteralPath $backup -Force
+            Write-Output ("Plugin entry not present in " + $ConfigPath)
+        }
+    }
+    return
+}
+
 if (-not (Test-Path -LiteralPath $dll)) { throw "Plugin DLL not found: $dll. Build plugin\MP1.ConfigurationStudio.Plugin.csproj first." }
 if (-not (Test-Path -LiteralPath $skin)) { throw "Skin file not found: $skin" }
 
-$pluginDir = Join-Path $MediaPortalDir 'plugins\Windows'
 New-Item -ItemType Directory -Path $pluginDir -Force | Out-Null
 Copy-Item -LiteralPath $dll -Destination (Join-Path $pluginDir (Split-Path $dll -Leaf)) -Force
 Write-Output ("Installed plugin DLL: " + (Join-Path $pluginDir (Split-Path $dll -Leaf)))

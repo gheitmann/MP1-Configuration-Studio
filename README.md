@@ -4,7 +4,7 @@ A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.29](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.29) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.30](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.30) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -33,7 +33,7 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 
 ## MediaPortal plugin (preview)
 
-A companion window plugin is in `plugin/`. It renders the same Studio schema inside MediaPortal, with toggle/combo/integer/text editing, numeric and virtual keyboards, and ZIP backups through MediaPortal's settings cache. Build and installation instructions are in [plugin/README.md](plugin/README.md).
+A companion window plugin is in `plugin/`. It renders the same Studio schema inside MediaPortal, with toggle/combo/integer/text editing, numeric and virtual keyboards, and ZIP backups through MediaPortal's settings cache. Build, install, and uninstall instructions are in [plugin/README.md](plugin/README.md). The uninstall script removes the DLL and skin file and disables the plugin entry after a configuration backup.
 
 Limits: media-folder and dynamic plugin lists are read-only inside MP and point to the desktop Studio; the plugin needs a restart for some cached settings.
 
