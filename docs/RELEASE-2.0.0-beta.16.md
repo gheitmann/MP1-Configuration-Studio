@@ -28,8 +28,10 @@ Each save:
 
 - validates the XML before writing,
 - creates a ZIP backup under `%LOCALAPPDATA%\MP1 Configuration Studio\backups`,
-- preserves a UTF-8 BOM when the source had one,
+- preserves the source encoding (UTF-8 with or without BOM, UTF-16 LE/BE),
 - replaces the file atomically.
+
+Unsaved XML edits prompt before switching pages, closing Studio, or opening the classic configurator.
 
 ### Raw XML for every MediaPortal.xml section
 

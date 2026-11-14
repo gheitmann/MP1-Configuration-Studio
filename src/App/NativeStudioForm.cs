@@ -622,6 +622,8 @@ namespace MP1.ConfigurationStudio
 
         private void StartClassic()
         {
+            NativeXmlFileEditor xmlEditor = table.Controls.OfType<NativeXmlFileEditor>().FirstOrDefault();
+            if (xmlEditor != null && xmlEditor.HasUnsavedChanges && !xmlEditor.ConfirmDiscardChanges()) return;
             if (dirty)
             {
                 if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes and open the classic interface?" : "Ungespeicherte Änderungen verwerfen und die klassische Oberfläche öffnen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
