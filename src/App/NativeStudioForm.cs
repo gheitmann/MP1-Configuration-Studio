@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -18,7 +19,8 @@ namespace MP1.ConfigurationStudio
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
         private readonly FlowLayoutPanel navigation = new SidebarPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
-        private Panel header, footer, sidebar;
+        private GlassPanel header, footer, sidebar, glassBody;
+        private Button glassButton;
         private StudioLogo logo;
         private FlowLayoutPanel footerActions;
         private Button saveButton, closeButton, backupButton;
@@ -82,17 +84,19 @@ namespace MP1.ConfigurationStudio
 
         private void BuildChrome()
         {
-            header = new Panel { Dock = DockStyle.Top, Height = Px(82), BackColor = palette.Background };
+            header = new GlassPanel { Dock = DockStyle.Top, Height = Px(82), BackColor = palette.Background, Colors = () => palette, Glass = appearance.Glass };
             logo = new StudioLogo { Colors = () => palette, Bounds = new Rectangle(Px(22), Px(20), Px(40), Px(40)), Font = Typography.Create(13f * scale, FontStyle.Bold) };
             header.Controls.Add(logo);
             title.Text = "MP1 / CONFIGURATION";
             title.Font = Typography.Create(16f * scale, FontStyle.Regular);
             title.ForeColor = palette.Text;
+            title.BackColor = Color.Transparent;
             title.Location = new Point(Px(76), Px(14));
             header.Controls.Add(title);
             subtitle.Text = Localization.IsEnglish ? "New interface · MediaPortal 1.39" : "Neue Oberfläche · MediaPortal 1.39";
             subtitle.Font = small;
             subtitle.ForeColor = palette.Muted;
+            subtitle.BackColor = Color.Transparent;
             subtitle.Location = new Point(Px(78), Px(44));
             header.Controls.Add(subtitle);
             sizeChoice.Items.AddRange(new object[] { "100 %", "115 %", "125 %", "150 %", "175 %" });
@@ -119,10 +123,14 @@ namespace MP1.ConfigurationStudio
                 }
             };
             header.Controls.Add(searchBox);
+            glassButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Glass" : "Glas", Font = body, Width = Px(70), Height = Px(28), FlatStyle = FlatStyle.Flat, BackColor = appearance.Glass ? palette.Selection : palette.Panel, ForeColor = palette.Text, AccessibleName = Localization.IsEnglish ? "Toggle glass effect" : "Glas-Effekt umschalten" };
+            glassButton.FlatAppearance.BorderColor = palette.Border;
+            glassButton.Click += delegate { appearance.Glass = !appearance.Glass; appearance.Save(); ApplyGlass(); };
+            header.Controls.Add(glassButton);
             header.Resize += delegate { sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24); };
 
-            var bodyPanel = new Panel { Dock = DockStyle.Fill, BackColor = palette.Background };
-            sidebar = new Panel { Dock = DockStyle.Left, Width = Px(230), BackColor = palette.Panel, Padding = new Padding(Px(10), Px(14), Px(8), Px(10)) };
+            glassBody = new GlassPanel { Dock = DockStyle.Fill, BackColor = palette.Background, Colors = () => palette, Glass = appearance.Glass };
+            sidebar = new GlassPanel { Dock = DockStyle.Left, Width = Px(230), BackColor = palette.Panel, Padding = new Padding(Px(10), Px(14), Px(8), Px(10)), Colors = () => palette, Glass = appearance.Glass };
             navigation.BackColor = palette.Panel;
             navigation.Padding = new Padding(0);
             sidebar.Controls.Add(navigation);
@@ -139,8 +147,8 @@ namespace MP1.ConfigurationStudio
             var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
             legacy.Click += delegate { StartStudioShell(); };
             navigation.Controls.Add(legacy);
-            bodyPanel.Controls.Add(scroll);
-            bodyPanel.Controls.Add(sidebar);
+            glassBody.Controls.Add(scroll);
+            glassBody.Controls.Add(sidebar);
 
             scroll.BackColor = palette.Background;
             scroll.Padding = new Padding(Px(28), Px(18), Px(28), Px(18));
@@ -150,24 +158,24 @@ namespace MP1.ConfigurationStudio
             table.Padding = new Padding(0);
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
-            Controls.Add(bodyPanel);
+            Controls.Add(glassBody);
 
-            footer = new Panel { Dock = DockStyle.Bottom, Height = Px(62), BackColor = palette.Background, Padding = new Padding(Px(24), Px(12), Px(20), Px(10)) };
+            footer = new GlassPanel { Dock = DockStyle.Bottom, Height = Px(62), BackColor = palette.Background, Padding = new Padding(Px(24), Px(12), Px(20), Px(10)), Colors = () => palette, Glass = appearance.Glass };
             footer.Paint += delegate(object sender, PaintEventArgs e) { using (var pen = new Pen(palette.Border)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0); };
             status.Text = Localization.IsEnglish ? "Ready" : "Bereit";
             status.Font = small;
             status.ForeColor = palette.Muted;
             footer.Controls.Add(status);
             footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(360) };
-            closeButton = new Button { Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            closeButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             closeButton.FlatAppearance.BorderColor = palette.Border;
             closeButton.Click += delegate { Close(); };
             footerActions.Controls.Add(closeButton);
-            saveButton = new Button { Text = Localization.IsEnglish ? "Save" : "Speichern", Width = Px(120), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Font = body, Margin = new Padding(0) };
+            saveButton = new GlassButton { Primary = true, Colors = () => palette, Text = Localization.IsEnglish ? "Save" : "Speichern", Width = Px(120), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Font = body, Margin = new Padding(0) };
             saveButton.FlatAppearance.BorderSize = 0;
             saveButton.Click += delegate { SaveConfiguration(); };
             footerActions.Controls.Add(saveButton);
-            backupButton = new Button { Text = Localization.IsEnglish ? "Backup" : "Sicherung", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            backupButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Backup" : "Sicherung", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             backupButton.FlatAppearance.BorderColor = palette.Border;
             backupButton.Click += delegate { CreateBackup(); };
             footerActions.Controls.Add(backupButton);
@@ -190,10 +198,15 @@ namespace MP1.ConfigurationStudio
             sizeChoice.Width = Px(110);
             sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24);
             sizeChoice.Top = Px(24);
+            glassButton.Font = body;
+            glassButton.Width = Px(70);
+            glassButton.Height = Px(28);
+            glassButton.Left = sizeChoice.Left - glassButton.Width - Px(8);
+            glassButton.Top = Px(26);
             searchBox.Font = body;
             int titleRight = title.Left + TextRenderer.MeasureText(title.Text, title.Font).Width;
             int searchLeft = titleRight + Px(24);
-            int searchRight = sizeChoice.Left - Px(12);
+            int searchRight = glassButton.Left - Px(12);
             int searchWidth = Math.Min(Px(280), Math.Max(Px(90), searchRight - searchLeft));
             searchBox.Bounds = new Rectangle(searchLeft, Px(24), searchWidth, Px(28));
             sidebar.Width = Px(230);
@@ -280,7 +293,11 @@ namespace MP1.ConfigurationStudio
 
         private void AddGroup(NativeGroup group)
         {
-            var groupTitle = new Label { Text = Localization.IsEnglish ? group.TitleEn : group.TitleDe, Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Margin = new Padding(0, Px(8), 0, Px(8)) };
+            var groupTitle = new Label { Text = Localization.IsEnglish ? group.TitleEn : group.TitleDe, Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
+            groupTitle.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
+            };
             table.Controls.Add(groupTitle, 0, table.RowCount);
             table.SetColumnSpan(groupTitle, 2);
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -578,6 +595,17 @@ namespace MP1.ConfigurationStudio
             ApplyCueBanner();
         }
 
+        private void ApplyGlass()
+        {
+            if (header == null) return;
+            header.Glass = sidebar.Glass = footer.Glass = glassBody.Glass = appearance.Glass;
+            glassButton.BackColor = appearance.Glass ? palette.Selection : palette.Panel;
+            header.Invalidate(true);
+            sidebar.Invalidate(true);
+            footer.Invalidate(true);
+            glassBody.Invalidate(true);
+        }
+
         private void EnsureNavigationVisible()
         {
             StudioAction selected = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => item.Selected);
@@ -685,6 +713,88 @@ namespace MP1.ConfigurationStudio
         protected override Point ScrollToControl(Control activeControl)
         {
             return AutoScrollPosition;
+        }
+    }
+
+    internal sealed class GlassPanel : Panel
+    {
+        public Func<Palette> Colors;
+        public bool Glass = true;
+
+        public GlassPanel()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Rectangle bounds = ClientRectangle;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            if (!Glass)
+            {
+                using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, bounds);
+                return;
+            }
+            Color top = Blend(palette.Panel, Color.White, 0.07f);
+            Color bottom = Blend(palette.Background, palette.Panel, 0.22f);
+            using (var brush = new LinearGradientBrush(bounds, top, bottom, LinearGradientMode.Vertical)) e.Graphics.FillRectangle(brush, bounds);
+            using (var pen = new Pen(Color.FromArgb(30, 255, 255, 255))) e.Graphics.DrawLine(pen, 0, 0, bounds.Width, 0);
+            using (var pen = new Pen(Color.FromArgb(80, palette.Border))) e.Graphics.DrawLine(pen, 0, bounds.Height - 1, bounds.Width, bounds.Height - 1);
+        }
+
+        private static Color Blend(Color first, Color second, float amount)
+        {
+            return Color.FromArgb(
+                (int)(first.R + (second.R - first.R) * amount),
+                (int)(first.G + (second.G - first.G) * amount),
+                (int)(first.B + (second.B - first.B) * amount));
+        }
+    }
+
+    internal sealed class GlassButton : Button
+    {
+        public bool Primary;
+        public Func<Palette> Colors;
+        private bool hover;
+
+        public GlassButton()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            UseVisualStyleBackColor = false;
+            MouseEnter += delegate { hover = true; Invalidate(); };
+            MouseLeave += delegate { hover = false; Invalidate(); };
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            Rectangle bounds = ClientRectangle;
+            bounds.Width--;
+            bounds.Height--;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Color fill = BackColor;
+            if (!Enabled) fill = GlassPanelBlend(palette.Panel, palette.Background, 0.4f);
+            else if (hover) fill = GlassPanelBlend(fill, Color.White, Primary ? 0.10f : 0.07f);
+            using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), 6))
+            using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+            if (!Primary)
+            {
+                using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), 6))
+                using (var pen = new Pen(palette.Border)) e.Graphics.DrawPath(pen, path);
+            }
+            TextRenderer.DrawText(e.Graphics, Text, Font, bounds, Enabled ? ForeColor : palette.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+        }
+
+        private static Color GlassPanelBlend(Color first, Color second, float amount)
+        {
+            return Color.FromArgb(
+                (int)(first.R + (second.R - first.R) * amount),
+                (int)(first.G + (second.G - first.G) * amount),
+                (int)(first.B + (second.B - first.B) * amount));
         }
     }
 }
