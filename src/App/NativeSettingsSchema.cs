@@ -23,7 +23,8 @@ namespace MP1.ConfigurationStudio
         TvServer,
         PluginConfig,
         GroupedSection,
-        SystemChecks
+        SystemChecks,
+        VirtualDrive
     }
 
     internal enum NativeFilterKind
@@ -704,11 +705,7 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("dvdplayer", "allowarletterbox", "Letterbox erlauben", "Allow letterbox", NativeFieldKind.Bool))
                         .Add(new NativeField("dvdplayer", "allowarcinemascope235", "CinemaScope 2.35 erlauben", "Allow CinemaScope 2.35", NativeFieldKind.Bool)))
                     .Group(new NativeGroup("Virtuelles Laufwerk", "Virtual drive")
-                        .Add(new NativeField("daemon", "enabled", "Virtuelles Laufwerk aktivieren", "Enable virtual drive", NativeFieldKind.Bool))
-                        .Add(new NativeField("daemon", "path", "Programmpfad", "Program path", NativeFieldKind.Text))
-                        .Add(new NativeField("daemon", "extensions", "Unterstützte Endungen", "Supported extensions", NativeFieldKind.Text, "Kommagetrennte Liste, z. B. .iso,.bin.", "Comma-separated list, e.g. .iso,.bin."))
-                        .Add(new NativeField("daemon", "driveNo", "Laufwerksnummer", "Drive number", NativeFieldKind.Integer).Range(0, 25))
-                        .Add(new NativeField("daemon", "askbeforeplaying", "Vor Wiedergabe fragen", "Ask before playing", NativeFieldKind.Bool))),
+                        .Add(new NativeField("daemon", "path", "Virtuelles Laufwerk", "Virtual drive", NativeFieldKind.VirtualDrive, "Daemon Tools erkennen, Programm wählen, Endungen festlegen und den Pfad prüfen.", "Detect Daemon Tools, choose the program, set extensions, and check the path."))),
                 new NativeSection("plugins", "Plugins", "Plugins", "Plugins aktivieren, deaktivieren und direkt konfigurieren.", "Enable, disable, and configure plugins directly.", "plugin")
                     .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
                         .Add(new NativeField("plugins", "native", "Plugin-Konfiguration", "Plugin configuration", NativeFieldKind.PluginConfig, "Erkennt Plugins mit eigenem Konfigurationsfenster und öffnet es direkt. Die Fenster selbst bleiben im Plugin-Stil.", "Detects plugins with their own configuration window and opens it directly. The windows keep the plugin's own style.")))

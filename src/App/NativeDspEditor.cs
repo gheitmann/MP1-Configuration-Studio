@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -397,7 +398,20 @@ namespace MP1.ConfigurationStudio
             int dampPreset = dynCombo == null ? 0 : Math.Max(0, dynCombo.SelectedIndex);
             bool compressor = compCheck != null && compCheck.Checked;
             int threshold = compTrack == null ? -60 : compTrack.Value;
-            using (var dialog = new DspTestDialog(scale, runtime, gain, damp, dampPreset, compressor, threshold)) dialog.ShowDialog(FindForm());
+            var vst = new List<string>();
+            if (document != null)
+            {
+                foreach (XmlNode node in document.DocumentElement.ChildNodes)
+                {
+                    var element = node as XmlElement;
+                    if (element == null || !String.Equals(element.Name, "VST", StringComparison.OrdinalIgnoreCase)) continue;
+                    string dll = element.GetAttribute("PluginDll");
+                    if (String.IsNullOrWhiteSpace(dll)) continue;
+                    string full = Path.IsPathRooted(dll) ? dll : Path.Combine(runtime, "musicplayer", "plugins", "dsp", dll);
+                    if (File.Exists(full)) vst.Add(full);
+                }
+            }
+            using (var dialog = new DspTestDialog(scale, runtime, gain, damp, dampPreset, compressor, threshold, vst)) dialog.ShowDialog(FindForm());
         }
 
         private Control BuildEffectCard(XmlElement effect, string kind)
@@ -639,6 +653,8 @@ namespace MP1.ConfigurationStudio
             private static extern bool BASS_FXSetParameters(int handle, ref BASS_BFX_DAMP parameters);
             [DllImport("bass.dll")]
             private static extern bool BASS_FXSetParameters(int handle, ref BASS_BFX_COMPRESSOR parameters);
+            [DllImport("bass_vst.dll", CharSet = CharSet.Unicode)]
+            private static extern int BASS_VST_ChannelSetDSP(int channel, string dllFile, int flags, int priority);
 
             [StructLayout(LayoutKind.Sequential)]
             private struct BASS_BFX_DAMP
@@ -667,6 +683,7 @@ namespace MP1.ConfigurationStudio
             private readonly int dampPreset;
             private readonly bool compressor;
             private readonly int compressorThreshold;
+            private readonly List<string> vstPlugins;
             private readonly TextBox file = new TextBox();
             private readonly Label status = new Label();
             private readonly Button play;
@@ -674,8 +691,9 @@ namespace MP1.ConfigurationStudio
             private bool initialized;
             private int stream;
             private bool fxLoaded;
+            private bool vstLoaded;
 
-            public DspTestDialog(float scale, string runtime, double gain, bool damp, int dampPreset, bool compressor, int compressorThreshold)
+            public DspTestDialog(float scale, string runtime, double gain, bool damp, int dampPreset, bool compressor, int compressorThreshold, List<string> vstPlugins)
             {
                 this.scale = scale;
                 this.runtime = runtime;
@@ -684,6 +702,7 @@ namespace MP1.ConfigurationStudio
                 this.dampPreset = dampPreset;
                 this.compressor = compressor;
                 this.compressorThreshold = compressorThreshold;
+                this.vstPlugins = vstPlugins ?? new List<string>();
                 Text = Localization.IsEnglish ? "DSP test playback" : "DSP-Testwiedergabe";
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
@@ -729,7 +748,7 @@ namespace MP1.ConfigurationStudio
                 status.AutoSize = true;
                 status.ForeColor = Palette.For(true).Muted;
                 status.Font = Typography.Create(9f * scale, FontStyle.Regular);
-                status.Text = (Localization.IsEnglish ? "Gain: " : "Gain: ") + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (damp ? "DynAmp " : "") + (compressor ? "Compressor " : "") + (Localization.IsEnglish ? "applied in this test" : "in dieser Vorschau aktiv");
+                status.Text = (Localization.IsEnglish ? "Gain: " : "Gain: ") + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (damp ? "DynAmp " : "") + (compressor ? "Compressor " : "") + (this.vstPlugins.Count > 0 ? this.vstPlugins.Count + " VST " : "") + (Localization.IsEnglish ? "applied in this test" : "in dieser Vorschau aktiv");
                 actions.Controls.Add(status);
                 Controls.Add(actions);
                 Controls.Add(top);
@@ -758,6 +777,43 @@ namespace MP1.ConfigurationStudio
                     StudioLog.Warn("DSP test: bass_fx load failed: " + ex.Message);
                     return false;
                 }
+            }
+
+            private static bool LoadBassVst(string runtime)
+            {
+                try
+                {
+                    string assemblyPath = Path.Combine(runtime, "Bass.Net.dll");
+                    string dllPath = Path.Combine(runtime, "bass_vst.dll");
+                    if (!File.Exists(assemblyPath) || !File.Exists(dllPath)) return false;
+                    Assembly assembly = Assembly.LoadFrom(assemblyPath);
+                    Type vst = assembly.GetType("Un4seen.Bass.AddOn.Vst.BassVst");
+                    if (vst == null) return false;
+                    MethodInfo load = vst.GetMethod("LoadMe", Type.EmptyTypes);
+                    if (load == null) return false;
+                    object result = load.Invoke(null, null);
+                    return result is bool && (bool)result;
+                }
+                catch (Exception ex)
+                {
+                    StudioLog.Warn("DSP test: bass_vst load failed: " + ex.Message);
+                    return false;
+                }
+            }
+
+            private static bool LooksLikePlugin(string file)
+            {
+                try
+                {
+                    if (!File.Exists(file)) return false;
+                    var info = new FileInfo(file);
+                    if (info.Length < 8 * 1024) return false;
+                    using (var stream = File.OpenRead(file))
+                    {
+                        return stream.ReadByte() == 'M' && stream.ReadByte() == 'Z';
+                    }
+                }
+                catch { return false; }
             }
 
             private static BASS_BFX_DAMP DampParameters(int preset)
@@ -843,6 +899,45 @@ namespace MP1.ConfigurationStudio
                         int handle = BASS_ChannelSetFX(stream, 65551, 2);
                         if (handle != 0 && BASS_FXSetParameters(handle, ref parameters)) applied += ", Compressor";
                         else applied += ", Compressor error " + BASS_ErrorGetCode();
+                    }
+                    if (vstPlugins.Count > 0)
+                    {
+                        if (!vstLoaded)
+                        {
+                            vstLoaded = LoadBassVst(runtime);
+                            StudioLog.Info("DSP test: bass_vst loaded=" + vstLoaded + " plugins=" + vstPlugins.Count);
+                        }
+                        if (!vstLoaded)
+                        {
+                            applied += ", VST unavailable";
+                        }
+                        else
+                        {
+                            int priority = 3;
+                            foreach (string plugin in vstPlugins)
+                            {
+                                string name = Path.GetFileNameWithoutExtension(plugin);
+                                if (!LooksLikePlugin(plugin))
+                                {
+                                    applied += ", VST skipped " + name;
+                                    StudioLog.Warn("DSP test: VST skipped, not a plugin DLL: " + plugin);
+                                    continue;
+                                }
+                                try
+                                {
+                                    StudioLog.Info("DSP test: applying VST " + plugin);
+                                    int handle = BASS_VST_ChannelSetDSP(stream, plugin, unchecked((int)0x80000000), priority++);
+                                    StudioLog.Info("DSP test: VST " + name + " handle=" + handle + " error=" + BASS_ErrorGetCode());
+                                    if (handle != 0) applied += ", VST " + name;
+                                    else applied += ", VST error " + BASS_ErrorGetCode();
+                                }
+                                catch (Exception ex)
+                                {
+                                    applied += ", VST error " + name;
+                                    StudioLog.Warn("DSP test: VST failed: " + ex.Message);
+                                }
+                            }
+                        }
                     }
                     BASS_ChannelPlay(stream, false);
                     play.Enabled = false;

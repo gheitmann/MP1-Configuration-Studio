@@ -343,7 +343,7 @@ namespace MP1.ConfigurationStudio
                 var prefixes = new List<string>();
                 foreach (NativeField field in page.Groups.SelectMany(group => group.Fields).Where(field => String.Equals(field.Section, configSection, StringComparison.OrdinalIgnoreCase)))
                 {
-                    if (field.Kind == NativeFieldKind.GroupedSection || field.Kind == NativeFieldKind.RawSections) { coversAll = true; break; }
+                    if (field.Kind == NativeFieldKind.GroupedSection || field.Kind == NativeFieldKind.RawSections || field.Kind == NativeFieldKind.VirtualDrive) { coversAll = true; break; }
                     if (field.Kind == NativeFieldKind.Shares)
                     {
                         prefixes.AddRange(new[] { "sharename", "sharepath", "sharescan", "pincode", "sharetype", "shareserver", "sharelogin", "sharepassword", "shareport", "shareremotepath", "shareview", "sharewakeonlan", "hostdetectmethod", "sharedonotfolderjpgifpin", "videothumbscreate", "eachfolderismovie" });
@@ -489,6 +489,17 @@ namespace MP1.ConfigurationStudio
                 table.Controls.Add(panel, 0, table.RowCount);
                 table.SetColumnSpan(panel, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(210)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.VirtualDrive)
+            {
+                var panel = new NativeVirtualDrivePanel(configuration, runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                panel.Changed += delegate { MarkDirty(); };
+                table.Controls.Add(panel, 0, table.RowCount);
+                table.SetColumnSpan(panel, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(300)));
                 table.RowCount++;
                 AddHelp(field);
                 return;
