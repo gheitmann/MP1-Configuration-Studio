@@ -323,15 +323,24 @@ namespace MP1.ConfigurationStudio
             using (var dialog = new ActionDialog(scale, NextActionId(context)))
             {
                 if (dialog.ShowDialog(FindForm()) != DialogResult.OK) return;
+                string key = dialog.ActionKey;
+                var conflicts = DuplicateActions(context.Element, key, null);
+                if (conflicts.Count > 0)
+                {
+                    if (!ConfirmResolveKey(key, conflicts)) return;
+                    foreach (XmlElement conflict in conflicts) ClearActionKey(conflict);
+                }
                 XmlElement action = document.CreateElement("action");
                 AppendText(action, "id", dialog.ActionId);
-                AppendText(action, "key", dialog.ActionKey);
+                AppendText(action, "key", key);
                 AppendText(action, "sound", dialog.ActionSound);
                 AppendText(action, "description", dialog.ActionDescription);
                 context.Element.AppendChild(action);
                 dirty = true;
                 BuildTable();
-                status.Text = (Localization.IsEnglish ? "Action added · unsaved" : "Aktion hinzugefügt · ungespeichert");
+                status.Text = conflicts.Count > 0
+                    ? (Localization.IsEnglish ? "Action added · key conflict resolved" : "Aktion hinzugefügt · Konflikt aufgelöst")
+                    : (Localization.IsEnglish ? "Action added · unsaved" : "Aktion hinzugefügt · ungespeichert");
             }
         }
 
@@ -376,30 +385,64 @@ namespace MP1.ConfigurationStudio
             {
                 if (dialog.ShowDialog(FindForm()) != DialogResult.OK) return;
                 string key = dialog.CapturedKey;
+                string previous = ChildText(action, "key");
+                Context context = contexts.FirstOrDefault(item => item.Element == action.ParentNode);
+                var conflicts = context == null ? new List<XmlElement>() : DuplicateActions(context.Element, key, action);
+                if (conflicts.Count > 0)
+                {
+                    if (!ConfirmResolveKey(key, conflicts))
+                    {
+                        BuildTable();
+                        status.Text = Localization.IsEnglish ? "Key conflict left unchanged." : "Tastenkonflikt unverändert gelassen.";
+                        return;
+                    }
+                    foreach (XmlElement conflict in conflicts) ClearActionKey(conflict);
+                }
                 SetActionValue(action, "key", key);
                 button.Text = String.IsNullOrEmpty(key) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : key;
                 MarkDirty();
-                string duplicate = FindDuplicate(action, key);
-                if (duplicate != null)
-                    status.Text = (Localization.IsEnglish ? "Note: key " + key + " is already used by “" + duplicate + "”." : "Hinweis: Taste " + key + " ist bereits mit „" + duplicate + "“ belegt.");
-                else
-                    BuildTable();
+                BuildTable();
+                if (conflicts.Count > 0)
+                    status.Text = (Localization.IsEnglish ? "Key " : "Taste ") + key + (Localization.IsEnglish ? " assigned · conflict resolved" : " zugewiesen · Konflikt aufgelöst");
+                else if (!String.Equals(previous, key, StringComparison.OrdinalIgnoreCase))
+                    status.Text = (Localization.IsEnglish ? "Key " : "Taste ") + key + (Localization.IsEnglish ? " assigned · unsaved" : " zugewiesen · ungespeichert");
             }
         }
 
-        private string FindDuplicate(XmlElement edited, string key)
+        private bool ConfirmResolveKey(string key, List<XmlElement> conflicts)
         {
-            if (String.IsNullOrEmpty(key)) return null;
-            Context context = contexts.FirstOrDefault(item => item.Element == edited.ParentNode);
-            if (context == null) return null;
-            foreach (XmlNode node in context.Element.ChildNodes)
+            var names = new List<string>();
+            int shown = Math.Min(conflicts.Count, 5);
+            for (int i = 0; i < shown; i++)
+            {
+                string description = ChildText(conflicts[i], "description");
+                string id = ChildText(conflicts[i], "id");
+                names.Add("• " + (String.IsNullOrWhiteSpace(description) ? (Localization.IsEnglish ? "(no description)" : "(ohne Beschreibung)") : description) + (String.IsNullOrWhiteSpace(id) ? "" : " (#" + id + ")"));
+            }
+            if (conflicts.Count > shown) names.Add("…");
+            string message = (Localization.IsEnglish ? "The key " : "Die Taste ") + key + (Localization.IsEnglish ? " is already used by:\r\n\r\n" : " ist bereits belegt durch:\r\n\r\n")
+                + String.Join("\r\n", names.ToArray())
+                + (Localization.IsEnglish ? "\r\n\r\nRemove the key from those actions and assign it here?" : "\r\n\r\nTaste bei diesen Aktionen entfernen und hier zuweisen?");
+            return MessageBox.Show(FindForm(), message, "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+        }
+
+        internal static List<XmlElement> DuplicateActions(XmlElement context, string key, XmlElement except)
+        {
+            var result = new List<XmlElement>();
+            if (context == null || String.IsNullOrWhiteSpace(key)) return result;
+            foreach (XmlNode node in context.ChildNodes)
             {
                 var action = node as XmlElement;
-                if (action == null || action == edited) continue;
-                if (String.Equals(ChildText(action, "key"), key, StringComparison.OrdinalIgnoreCase))
-                    return ChildText(action, "description");
+                if (action == null || action == except) continue;
+                if (String.Equals(ChildText(action, "key"), key, StringComparison.OrdinalIgnoreCase)) result.Add(action);
             }
-            return null;
+            return result;
+        }
+
+        internal static void ClearActionKey(XmlElement action)
+        {
+            if (action == null) return;
+            SetActionValue(action, "key", string.Empty);
         }
 
         private static string ChildText(XmlElement parent, string name)
@@ -641,17 +684,27 @@ namespace MP1.ConfigurationStudio
                 KeyPreview = true;
                 BackColor = Palette.For(true).Panel;
                 ForeColor = Palette.For(true).Text;
-                ClientSize = new Size(Px(430), Px(170));
+                ClientSize = new Size(Px(430), Px(196));
                 var title = new Label { Text = Localization.IsEnglish ? "Press the new key for this action." : "Neue Taste für diese Aktion drücken.", Font = Typography.Create(11f * scale, FontStyle.Bold), ForeColor = Palette.For(true).Text, AutoSize = true, Left = Px(18), Top = Px(18) };
                 var hint = new Label { Text = (Localization.IsEnglish ? "Current: " : "Aktuell: ") + (String.IsNullOrEmpty(current) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : current), Font = Typography.Create(9.5f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Muted, AutoSize = true, Left = Px(18), Top = Px(52) };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(310), Top = Px(120), Width = Px(100), Height = Px(30) };
+                var warning = new Label { Text = string.Empty, Font = Typography.Create(9f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Accent, AutoSize = false, Width = Px(394), Height = Px(48), Left = Px(18), Top = Px(78), Visible = false };
+                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(310), Top = Px(148), Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 Controls.Add(title);
                 Controls.Add(hint);
+                Controls.Add(warning);
                 Controls.Add(cancel);
                 CancelButton = cancel;
                 KeyDown += delegate(object sender, KeyEventArgs e)
                 {
+                    if (e.Control || e.Alt)
+                    {
+                        warning.Text = Localization.IsEnglish
+                            ? "keymap.xml stores single keys only. Ctrl/Alt combinations are not part of MediaPortal's native keymap; press the key without Ctrl or Alt."
+                            : "keymap.xml speichert nur einzelne Tasten. Strg-/Alt-Kombinationen sind nicht Teil der nativen MediaPortal-Tastenbelegung; bitte die Taste ohne Strg oder Alt drücken.";
+                        warning.Visible = true;
+                        return;
+                    }
                     string value = MapKey(e.KeyCode);
                     if (value == null) return;
                     CapturedKey = value;

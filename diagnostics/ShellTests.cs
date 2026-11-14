@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace MP1.ConfigurationStudio
 {
@@ -405,7 +406,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.28"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.29"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -517,6 +518,15 @@ namespace MP1.ConfigurationStudio
    Check(epgDisplay.Contains("Studio One HD")&&epgDisplay.Contains("Tagesschau")&&epgDisplay.Contains("Tatort")&&epgDisplay.Contains("20:15")&&epgDisplay.Contains("22:00"),"TV EPG display renders current and next program");
    string epgEmpty=NativeTvServerPanel.FormatEpgLine("epg=tv|Studio One HD||||||");
    Check(epgEmpty.Contains("Studio One HD")&&(epgEmpty.Contains("keine EPG-Daten")||epgEmpty.Contains("no EPG data")),"TV EPG display marks missing guide data");
+   var keymapDoc=new XmlDocument();
+   keymapDoc.LoadXml("<keymap><global><action id=\"1\"><key>F9</key><description>One</description></action><action id=\"2\"><key>F10</key><description>Two</description></action></global><window><action id=\"3\"><key>F9</key><description>Three</description></action></window></keymap>");
+   var globalKeys=(XmlElement)keymapDoc.SelectSingleNode("/keymap/global");
+   var secondAction=(XmlElement)keymapDoc.SelectSingleNode("/keymap/global/action[@id='2']");
+   var conflicts=NativeKeymapEditor.DuplicateActions(globalKeys,"F9",secondAction);
+   Check(conflicts.Count==1&&conflicts[0].GetAttribute("id")=="1","keymap conflict detection finds duplicates within a context");
+   NativeKeymapEditor.ClearActionKey(conflicts[0]);
+   Check(NativeKeymapEditor.DuplicateActions(globalKeys,"F9",secondAction).Count==0,"keymap conflict resolution clears the conflicting key");
+   Check(NativeKeymapEditor.DuplicateActions((XmlElement)keymapDoc.SelectSingleNode("/keymap/window"),"F9",null).Count==1,"keymap conflict detection stays within the selected window");
             Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
             Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
             Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");
