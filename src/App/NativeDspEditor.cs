@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
@@ -249,7 +250,6 @@ namespace MP1.ConfigurationStudio
             if (dynEffect != null) Int32.TryParse(ReadParameter(dynEffect, "Preset"), out preset);
             dynCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill };
             dynCombo.Items.AddRange(new object[] { "Soft", "Medium", "Hard" });
-            dynCombo.SelectedIndex = Math.Max(0, Math.Min(2, preset));
             dynCheck = new CheckBox { Text = L("Dynamische Verstärkung", "Dynamic amplification"), Checked = dynEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
             card.Controls.Add(KnownRow(dynCheck, dynCombo, new Label { Text = "Preset", ForeColor = palette.Muted, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight }), 0, 2);
             dynCheck.CheckedChanged += delegate
@@ -267,6 +267,7 @@ namespace MP1.ConfigurationStudio
                 MarkDirty();
             };
             dynCombo.Enabled = dynEffect != null;
+            dynCombo.SelectedIndex = Math.Max(0, Math.Min(2, preset));
 
             int threshold = -60;
             XmlElement compEffect = FindEffect("Compressor");
@@ -392,7 +393,11 @@ namespace MP1.ConfigurationStudio
         private void TestPlayback()
         {
             double gain = gainCheck != null && gainCheck.Checked && gainTrack != null ? gainTrack.Value / 10.0 : 0;
-            using (var dialog = new DspTestDialog(scale, runtime, gain)) dialog.ShowDialog(FindForm());
+            bool damp = dynCheck != null && dynCheck.Checked;
+            int dampPreset = dynCombo == null ? 0 : Math.Max(0, dynCombo.SelectedIndex);
+            bool compressor = compCheck != null && compCheck.Checked;
+            int threshold = compTrack == null ? -60 : compTrack.Value;
+            using (var dialog = new DspTestDialog(scale, runtime, gain, damp, dampPreset, compressor, threshold)) dialog.ShowDialog(FindForm());
         }
 
         private Control BuildEffectCard(XmlElement effect, string kind)
@@ -626,22 +631,59 @@ namespace MP1.ConfigurationStudio
             private static extern bool BASS_ChannelSetAttribute(int handle, uint attribute, float value);
             [DllImport("bass.dll")]
             private static extern int BASS_ErrorGetCode();
+            [DllImport("bass.dll", CharSet = CharSet.Unicode)]
+            private static extern int BASS_PluginLoad(string file, uint flags);
+            [DllImport("bass.dll")]
+            private static extern int BASS_ChannelSetFX(int handle, int type, int priority);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_FXSetParameters(int handle, ref BASS_BFX_DAMP parameters);
+            [DllImport("bass.dll")]
+            private static extern bool BASS_FXSetParameters(int handle, ref BASS_BFX_COMPRESSOR parameters);
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct BASS_BFX_DAMP
+            {
+                public float fTarget;
+                public float fQuiet;
+                public float fRate;
+                public float fGain;
+                public float fDelay;
+                public int lChannel;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct BASS_BFX_COMPRESSOR
+            {
+                public float fThreshold;
+                public float fAttacktime;
+                public float fReleasetime;
+                public int lChannel;
+            }
 
             private readonly float scale;
             private readonly string runtime;
             private readonly double gain;
+            private readonly bool damp;
+            private readonly int dampPreset;
+            private readonly bool compressor;
+            private readonly int compressorThreshold;
             private readonly TextBox file = new TextBox();
             private readonly Label status = new Label();
             private readonly Button play;
             private readonly Button stop;
             private bool initialized;
             private int stream;
+            private bool fxLoaded;
 
-            public DspTestDialog(float scale, string runtime, double gain)
+            public DspTestDialog(float scale, string runtime, double gain, bool damp, int dampPreset, bool compressor, int compressorThreshold)
             {
                 this.scale = scale;
                 this.runtime = runtime;
                 this.gain = gain;
+                this.damp = damp;
+                this.dampPreset = dampPreset;
+                this.compressor = compressor;
+                this.compressorThreshold = compressorThreshold;
                 Text = Localization.IsEnglish ? "DSP test playback" : "DSP-Testwiedergabe";
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
@@ -687,7 +729,7 @@ namespace MP1.ConfigurationStudio
                 status.AutoSize = true;
                 status.ForeColor = Palette.For(true).Muted;
                 status.Font = Typography.Create(9f * scale, FontStyle.Regular);
-                status.Text = (Localization.IsEnglish ? "Gain: " : "Gain: ") + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (Localization.IsEnglish ? "DynAmp/Compressor are applied by MediaPortal, not in this preview." : "DynAmp/Kompressor werden von MediaPortal angewendet, nicht in dieser Vorschau.");
+                status.Text = (Localization.IsEnglish ? "Gain: " : "Gain: ") + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (damp ? "DynAmp " : "") + (compressor ? "Compressor " : "") + (Localization.IsEnglish ? "applied in this test" : "in dieser Vorschau aktiv");
                 actions.Controls.Add(status);
                 Controls.Add(actions);
                 Controls.Add(top);
@@ -696,6 +738,57 @@ namespace MP1.ConfigurationStudio
             }
 
             private int Px(float value) { return (int)Math.Round(value * scale); }
+
+            private static bool LoadBassFx(string runtime)
+            {
+                try
+                {
+                    string assemblyPath = Path.Combine(runtime, "Bass.Net.dll");
+                    if (!File.Exists(assemblyPath)) return false;
+                    Assembly assembly = Assembly.LoadFrom(assemblyPath);
+                    Type fx = assembly.GetType("Un4seen.Bass.AddOn.Fx.BassFx");
+                    if (fx == null) return false;
+                    MethodInfo load = fx.GetMethod("LoadMe", Type.EmptyTypes);
+                    if (load == null) return false;
+                    object result = load.Invoke(null, null);
+                    return result is bool && (bool)result;
+                }
+                catch (Exception ex)
+                {
+                    StudioLog.Warn("DSP test: bass_fx load failed: " + ex.Message);
+                    return false;
+                }
+            }
+
+            private static BASS_BFX_DAMP DampParameters(int preset)
+            {
+                var parameters = new BASS_BFX_DAMP { lChannel = -1 };
+                switch (preset)
+                {
+                    case 0:
+                        parameters.fTarget = 0.92f;
+                        parameters.fQuiet = 0.02f;
+                        parameters.fRate = 0.01f;
+                        parameters.fGain = 1f;
+                        parameters.fDelay = 0.5f;
+                        break;
+                    case 2:
+                        parameters.fTarget = 0.98f;
+                        parameters.fQuiet = 0.04f;
+                        parameters.fRate = 0.02f;
+                        parameters.fGain = 2f;
+                        parameters.fDelay = 0.2f;
+                        break;
+                    default:
+                        parameters.fTarget = 0.94f;
+                        parameters.fQuiet = 0.03f;
+                        parameters.fRate = 0.01f;
+                        parameters.fGain = 1f;
+                        parameters.fDelay = 0.35f;
+                        break;
+                }
+                return parameters;
+            }
 
             private void StartPlayback()
             {
@@ -717,6 +810,11 @@ namespace MP1.ConfigurationStudio
                         }
                         initialized = true;
                     }
+                    if (!fxLoaded)
+                    {
+                        fxLoaded = LoadBassFx(runtime);
+                        StudioLog.Info("DSP test: bass_fx loaded=" + fxLoaded);
+                    }
                     stream = BASS_StreamCreateFile(false, file.Text, 0, 0, 0x100 | 0x40000 | 0x4 | 0x80000000);
                     if (stream == 0)
                     {
@@ -724,10 +822,32 @@ namespace MP1.ConfigurationStudio
                         return;
                     }
                     BASS_ChannelSetAttribute(stream, 2, (float)Math.Pow(10, gain / 20.0));
+                    string applied = "Gain";
+                    if (damp)
+                    {
+                        var parameters = DampParameters(dampPreset);
+                        int handle = BASS_ChannelSetFX(stream, 65544, 1);
+                        if (handle != 0 && BASS_FXSetParameters(handle, ref parameters)) applied += ", DynAmp";
+                        else applied += ", DynAmp error " + BASS_ErrorGetCode();
+                    }
+                    if (compressor)
+                    {
+                        double level = Math.Pow(10, (compressorThreshold / 10.0) / 20.0);
+                        var parameters = new BASS_BFX_COMPRESSOR
+                        {
+                            fThreshold = (float)Math.Max(0.001, Math.Min(1.0, level)),
+                            fAttacktime = 5f,
+                            fReleasetime = 250f,
+                            lChannel = -1
+                        };
+                        int handle = BASS_ChannelSetFX(stream, 65551, 2);
+                        if (handle != 0 && BASS_FXSetParameters(handle, ref parameters)) applied += ", Compressor";
+                        else applied += ", Compressor error " + BASS_ErrorGetCode();
+                    }
                     BASS_ChannelPlay(stream, false);
                     play.Enabled = false;
                     stop.Enabled = true;
-                    status.Text = Localization.IsEnglish ? "Playing with gain …" : "Wiedergabe mit Gain …";
+                    status.Text = (Localization.IsEnglish ? "Playing with " : "Wiedergabe mit ") + applied + " …";
                 }
                 catch (Exception ex)
                 {
