@@ -65,12 +65,16 @@ namespace MP1.ConfigurationStudio
         }
         protected override void OnMouseEnter(EventArgs e){hover=true;Invalidate();base.OnMouseEnter(e);}
         protected override void OnMouseLeave(EventArgs e){hover=false;Invalidate();base.OnMouseLeave(e);}
+        protected override void OnMouseMove(MouseEventArgs e){if(!hover){hover=true;Invalidate();}base.OnMouseMove(e);}
+        public void RefreshHover(){bool value=IsHandleCreated&&ClientRectangle.Contains(PointToClient(Cursor.Position));if(value!=hover){hover=value;Invalidate();}}
+        public void ClearHover(){if(hover){hover=false;Invalidate();}}
         protected override void OnPaint(PaintEventArgs e)
         {
             var p=Colors==null?Palette.For(true):Colors();e.Graphics.Clear(BackColor);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;
-            if(Selected||hover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(Selected?p.Selection:p.Hover))e.Graphics.FillPath(b,shape);}
+            bool isHover=hover&&ClientRectangle.Contains(PointToClient(Cursor.Position));
+            if(Selected||isHover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(Selected?p.Selection:p.Hover))e.Graphics.FillPath(b,shape);}
             if(Selected&&Navigation)using(var b=new SolidBrush(p.Accent))e.Graphics.FillRectangle(b,0,7,3,Height-14);
-            Color ink=Ink(p,Enabled,hover,Selected,Secondary);
+            Color ink=Ink(p,Enabled,isHover,Selected,Secondary);
             int iconSize=Math.Min(23,Font.Height+2),left=Navigation?15:10;
             if(!String.IsNullOrEmpty(IconName)){StudioIcons.Draw(e.Graphics,IconName,new Rectangle(left,(Height-iconSize)/2,iconSize,iconSize),ink);left+=iconSize+12;}
             var flags=TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix;

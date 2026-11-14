@@ -11,7 +11,16 @@ namespace MP1.ConfigurationStudio
         Info,
         Shares,
         DynamicBools,
-        Folder
+        Folder,
+        Filter
+    }
+
+    internal enum NativeFilterKind
+    {
+        Video,
+        Audio,
+        AudioRenderer,
+        Legacy
     }
 
     internal sealed class NativeOption
@@ -41,6 +50,7 @@ namespace MP1.ConfigurationStudio
         public int Minimum;
         public int Maximum;
         public List<NativeOption> Options = new List<NativeOption>();
+        public NativeFilterKind FilterKind;
 
         public NativeField(string section, string entry, string labelDe, string labelEn, NativeFieldKind kind, string helpDe = null, string helpEn = null)
         {
@@ -64,6 +74,12 @@ namespace MP1.ConfigurationStudio
             Minimum = minimum;
             Maximum = maximum;
             Suffix = suffix;
+            return this;
+        }
+
+        public NativeField Filter(NativeFilterKind kind)
+        {
+            FilterKind = kind;
             return this;
         }
     }
@@ -542,22 +558,48 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("movieplayer", "autodecodersettings", "Automatische Decoder-Einstellungen", "Automatic decoder settings", NativeFieldKind.Bool))
                         .Add(new NativeField("movieplayer", "forcesourcesplitter", "Source-Splitter erzwingen", "Force source splitter", NativeFieldKind.Bool))
                         .Add(new NativeField("movieplayer", "usemoviecodects", "Movie-Codecs verwenden", "Use movie codecs", NativeFieldKind.Bool))
-                        .Add(new NativeField("movieplayer", "mpeg2videocodec", "MPEG-2 Video", "MPEG-2 video", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "h264videocodec", "H.264 Video", "H.264 video", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "hevcvideocodec", "HEVC Video", "HEVC video", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "vc1videocodec", "VC-1 Video", "VC-1 video", NativeFieldKind.Text)))
+                        .Add(new NativeField("movieplayer", "mpeg2videocodec", "MPEG-2 Video", "MPEG-2 video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("movieplayer", "h264videocodec", "H.264 Video", "H.264 video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("movieplayer", "hevcvideocodec", "HEVC Video", "HEVC video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("movieplayer", "vc1videocodec", "VC-1 Video", "VC-1 video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("movieplayer", "vc1ivideocodec", "VC-1i Video", "VC-1i video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("movieplayer", "xvidvideocodec", "DivX / Xvid Video", "DivX / Xvid video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video)))
                     .Group(new NativeGroup("Audio", "Audio")
-                        .Add(new NativeField("movieplayer", "mpeg2audiocodec", "MPEG-2 Audio", "MPEG-2 audio", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "aacaudiocodec", "AAC Audio", "AAC audio", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "audiorenderer", "Audio-Renderer", "Audio renderer", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "splitterfilter", "Splitter", "Splitter", NativeFieldKind.Text))
-                        .Add(new NativeField("movieplayer", "splitterfilefilter", "Datei-Splitter", "File splitter", NativeFieldKind.Text)))
+                        .Add(new NativeField("movieplayer", "mpeg2audiocodec", "MPEG / AC3 Audio", "MPEG / AC3 audio", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("movieplayer", "aacaudiocodec", "AAC Audio", "AAC audio", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("movieplayer", "audiorenderer", "Audio-Renderer", "Audio renderer", NativeFieldKind.Filter).Filter(NativeFilterKind.AudioRenderer))
+                        .Add(new NativeField("movieplayer", "splitterfilter", "Source-Filter", "Source filter", NativeFieldKind.Filter).Filter(NativeFilterKind.Legacy))
+                        .Add(new NativeField("movieplayer", "splitterfilefilter", "Splitter-Filter", "Splitter filter", NativeFieldKind.Filter).Filter(NativeFilterKind.Legacy)))
                     .Group(new NativeGroup("TV", "TV")
-                        .Add(new NativeField("mytv", "videocodec", "TV Video", "TV video", NativeFieldKind.Text))
-                        .Add(new NativeField("mytv", "h264videocodec", "TV H.264", "TV H.264", NativeFieldKind.Text))
-                        .Add(new NativeField("mytv", "hevcvideocodec", "TV HEVC", "TV HEVC", NativeFieldKind.Text))
-                        .Add(new NativeField("mytv", "audiocodec", "TV Audio", "TV audio", NativeFieldKind.Text))
-                        .Add(new NativeField("mytv", "audiorenderer", "TV Audio-Renderer", "TV audio renderer", NativeFieldKind.Text))),
+                        .Add(new NativeField("mytv", "videocodec", "TV Video", "TV video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("mytv", "h264videocodec", "TV H.264", "TV H.264", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("mytv", "hevcvideocodec", "TV HEVC", "TV HEVC", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("mytv", "audiocodec", "TV Audio", "TV audio", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("mytv", "aacaudiocodec", "TV AAC", "TV AAC", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("mytv", "ddplusaudiocodec", "TV DD+", "TV DD+", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("mytv", "audiorenderer", "TV Audio-Renderer", "TV audio renderer", NativeFieldKind.Filter).Filter(NativeFilterKind.AudioRenderer)))
+                    .Group(new NativeGroup("Blu-ray", "Blu-ray")
+                        .Add(new NativeField("bdplayer", "mpeg2videocodec", "MPEG-2 Video", "MPEG-2 video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("bdplayer", "h264videocodec", "H.264 Video", "H.264 video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("bdplayer", "hevcvideocodec", "HEVC Video", "HEVC video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("bdplayer", "vc1videocodec", "VC-1 Video", "VC-1 video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("bdplayer", "mpeg2audiocodec", "MPEG / AC3 Audio", "MPEG / AC3 audio", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("bdplayer", "audiorenderer", "Audio-Renderer", "Audio renderer", NativeFieldKind.Filter).Filter(NativeFilterKind.AudioRenderer)))
+                    .Group(new NativeGroup("DVD", "DVD")
+                        .Add(new NativeField("dvdplayer", "videocodec", "DVD Video", "DVD video", NativeFieldKind.Filter).Filter(NativeFilterKind.Video))
+                        .Add(new NativeField("dvdplayer", "audiocodec", "DVD Audio", "DVD audio", NativeFieldKind.Filter).Filter(NativeFilterKind.Audio))
+                        .Add(new NativeField("dvdplayer", "ac3", "AC3", "AC3", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "navigator", "DVD Navigator", "DVD navigator", NativeFieldKind.Filter).Filter(NativeFilterKind.Legacy))
+                        .Add(new NativeField("dvdplayer", "audiorenderer", "Audio-Renderer", "Audio renderer", NativeFieldKind.Filter).Filter(NativeFilterKind.AudioRenderer))
+                        .Add(new NativeField("dvdplayer", "turnoffdxva", "DXVA deaktivieren", "Disable DXVA", NativeFieldKind.Bool)))
+                    .Group(new NativeGroup("Video Renderer", "Video renderer")
+                        .Add(new NativeField("general", "useEVRenderer", "EVR verwenden", "Use EVR", NativeFieldKind.Bool))
+                        .Add(new NativeField("general", "useMadVideoRenderer", "madVR verwenden", "Use madVR", NativeFieldKind.Bool))
+                        .Add(new NativeField("general", "useEVRMadVRForTV", "madVR für TV", "madVR for TV", NativeFieldKind.Bool))
+                        .Add(new NativeField("general", "disableLowLatencyMode", "Low-Latency-Modus deaktivieren", "Disable low-latency mode", NativeFieldKind.Bool))
+                        .Add(new NativeField("general", "useMadVideoRenderer3D", "madVR 3D", "madVR 3D", NativeFieldKind.Bool))
+                        .Add(new NativeField("general", "useInternalDRC", "Interne DRC verwenden", "Use internal DRC", NativeFieldKind.Bool))
+                        .Add(new NativeField("general", "useRestoreMadvr1080p", "madVR 1080p wiederherstellen", "Restore madVR 1080p", NativeFieldKind.Bool))),
                 new NativeSection("discs", "BD / DVD", "BD / DVD", "Blu-ray- und DVD-Wiedergabe.", "Blu-ray and DVD playback.", "play")
                     .Group(new NativeGroup("Blu-ray", "Blu-ray")
                         .Add(new NativeField("bdplayer", "useInternalBDPlayer", "Internen BD-Player verwenden", "Use internal BD player", NativeFieldKind.Bool))
@@ -586,13 +628,15 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("daemon", "askbeforeplaying", "Vor Wiedergabe fragen", "Ask before playing", NativeFieldKind.Bool))),
                 new NativeSection("plugins", "Plugins", "Plugins", "Plugins aktivieren oder deaktivieren; die Konfiguration bleibt klassisch.", "Enable or disable plugins; configuration stays classic.", "plugin")
                     .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
-                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Plugins verwalten ihre eigenen Fenster und Einstellungen. Nutze Klassisch / Plugins, um die originale Plugin-Konfiguration zu öffnen. Änderungen an der Aktivierung werden nach einem Neustart wirksam.", "Plugins manage their own windows and settings. Use Classic / plugins to open the original plugin configuration. Activation changes take effect after a restart.")))
-                    .Group(new NativeGroup("Fenster-Plugins", "Window plugins")
-                        .Add(new NativeField("plugins", "windows", "Aktivierte Fenster-Plugins", "Enabled window plugins", NativeFieldKind.DynamicBools, "Blendet Plugins im MediaPortal-Menü ein oder aus. Einträge werden aus der Konfiguration gelesen.", "Shows or hides plugins in the MediaPortal menu. Entries are read from the configuration.")))
+                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Die Gruppen entsprechen den drei Schaltern der klassischen Plugin-Verwaltung: Aktiviert, Im Home-Menü und In My Plugins. Plugin-Konfigurationsfenster öffnen sich weiterhin über Klassisch / Plugins.", "The groups mirror the three classic plugin switches: Enabled, Listed in Home, and Listed in My Plugins. Plugin configuration windows still open via Classic / plugins.")))
+                    .Group(new NativeGroup("Aktiviert", "Enabled")
+                        .Add(new NativeField("plugins", "windows", "Aktivierte Plugins", "Enabled plugins", NativeFieldKind.DynamicBools, "Entspricht „Enabled“ im klassischen Plugin-Menü. Änderungen werden nach einem Neustart wirksam.", "Matches “Enabled” in the classic plugin menu. Changes take effect after a restart.")))
+                    .Group(new NativeGroup("Im Home-Menü", "Listed in Home")
+                        .Add(new NativeField("home", "home", "Im Home-Menü gelistet", "Listed in Home", NativeFieldKind.DynamicBools, "Entspricht „Listed in Home“ im klassischen Plugin-Menü.", "Matches “Listed in Home” in the classic plugin menu.")))
+                    .Group(new NativeGroup("In My Plugins", "Listed in My Plugins")
+                        .Add(new NativeField("myplugins", "plugins", "In My Plugins gelistet", "Listed in My Plugins", NativeFieldKind.DynamicBools, "Entspricht „Listed in My Plugins“ im klassischen Plugin-Menü.", "Matches “Listed in My Plugins” in the classic plugin menu.")))
                     .Group(new NativeGroup("Plugin-DLLs", "Plugin DLLs")
-                        .Add(new NativeField("pluginsdlls", "dlls", "Aktivierte Plugin-DLLs", "Enabled plugin DLLs", NativeFieldKind.DynamicBools, "Lädt oder entlädt Plugin-DLLs. Nur ändern, wenn die Auswirkung bekannt ist.", "Loads or unloads plugin DLLs. Change only when the effect is known.")))
-                    .Group(new NativeGroup("Prozess-Plugins", "Process plugins")
-                        .Add(new NativeField("myplugins", "process", "Aktivierte Prozess-Plugins", "Enabled process plugins", NativeFieldKind.DynamicBools, "Prozess-Plugins laufen im Hintergrund. Einträge werden aus der Konfiguration gelesen.", "Process plugins run in the background. Entries are read from the configuration."))),
+                        .Add(new NativeField("pluginsdlls", "dlls", "Aktivierte Plugin-DLLs", "Enabled plugin DLLs", NativeFieldKind.DynamicBools, "Lädt oder entlädt Plugin-DLLs. Nur ändern, wenn die Auswirkung bekannt ist.", "Loads or unloads plugin DLLs. Change only when the effect is known."))),
             };
         }
     }

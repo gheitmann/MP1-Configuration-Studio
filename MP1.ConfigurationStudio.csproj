@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Compile Remove="diagnostics/**/*.cs" />
+    <Compile Remove="plugin/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.13")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.14")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -94,8 +94,8 @@ namespace MP1.ConfigurationStudio
                         {
                             try
                             {
-                                string arguments = "--studio --runtime=\"" + runtime + "\"";
-                                if (!String.IsNullOrEmpty(restartPreferences)) arguments += " --preferences=\"" + restartPreferences + "\"";
+                                string arguments = "--studio --runtime=" + Quote(runtime);
+                                if (!String.IsNullOrEmpty(restartPreferences)) arguments += " --preferences=" + Quote(restartPreferences);
                                 Process.Start(new ProcessStartInfo { FileName = Application.ExecutablePath, Arguments = arguments, UseShellExecute = true, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory });
                             }
                             catch (Exception ex) { StudioLog.Error(ex, "Could not start the 1.9 Studio interface"); }
@@ -248,6 +248,8 @@ namespace MP1.ConfigurationStudio
         {
             if (!String.IsNullOrEmpty(requested))
             {
+                requested = Environment.ExpandEnvironmentVariables(requested.Trim().Trim('"'));
+                if (requested.IndexOf('"') >= 0) requested = requested.Replace("\"", string.Empty);
                 string full = Path.GetFullPath(requested);
                 if (!File.Exists(Path.Combine(full, "Configuration.exe"))) throw new FileNotFoundException("Configuration.exe fehlt in " + full);
                 return full;

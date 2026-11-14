@@ -63,6 +63,7 @@ namespace MP1.ConfigurationStudio
             ForeColor = palette.Text;
             string configPath = StudioConfiguration.FindConfigPath(runtime);
             configuration = StudioConfiguration.Load(configPath);
+            NativeFilterCatalog.Configure(runtime);
             BuildChrome();
             ShowSection(FindSection(initialSection) ?? sections[0]);
             FormClosing += OnClosing;
@@ -147,6 +148,7 @@ namespace MP1.ConfigurationStudio
             var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
             legacy.Click += delegate { StartStudioShell(); };
             navigation.Controls.Add(legacy);
+            navigation.MouseLeave += delegate { ClearNavigationHover(); };
             glassBody.Controls.Add(scroll);
             glassBody.Controls.Add(sidebar);
 
@@ -279,14 +281,15 @@ namespace MP1.ConfigurationStudio
                 foreach (NativeGroup group in section.Groups) AddGroup(group);
             }
             finally { table.ResumeLayout(true); }
-            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.Selected = Object.ReferenceEquals(item, selected) || (selected == null && item.Tag == section);
-            navigation.Invalidate();
-            if (selected == null)
+            StudioAction targetItem = selected ?? navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, section));
+            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
             {
-                StudioAction target = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, section));
-                if (target != null && (target.Bounds.Top < 0 || target.Bounds.Bottom > navigation.ClientSize.Height))
-                    navigation.AutoScrollPosition = new Point(0, Math.Max(0, target.Bounds.Top));
+                item.Selected = Object.ReferenceEquals(item, targetItem);
+                item.ClearHover();
             }
+            navigation.Invalidate();
+            if (targetItem != null && (targetItem.Bounds.Top < 0 || targetItem.Bounds.Bottom > navigation.ClientSize.Height))
+                navigation.AutoScrollPosition = new Point(0, Math.Max(0, targetItem.Bounds.Top));
             LayoutTable();
             scroll.AutoScrollPosition = Point.Empty;
         }
@@ -381,6 +384,18 @@ namespace MP1.ConfigurationStudio
                 int index = field.Options.FindIndex(option => String.Equals(option.Value, value, StringComparison.OrdinalIgnoreCase));
                 combo.SelectedIndex = index >= 0 ? index : 0;
                 combo.SelectedIndexChanged += delegate { if (combo.SelectedIndex >= 0) { configuration.Set(field.Section, field.Entry, field.Options[combo.SelectedIndex].Value); MarkDirty(); } };
+                input = combo;
+            }
+            else if (field.Kind == NativeFieldKind.Filter)
+            {
+                var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = body, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0) };
+                string current = configuration.Get(field.Section, field.Entry, "");
+                foreach (string name in NativeFilterCatalog.Names(field.FilterKind))
+                    if (!combo.Items.Contains(name)) combo.Items.Add(name);
+                if (!String.IsNullOrWhiteSpace(current) && !combo.Items.Contains(current)) combo.Items.Add(current);
+                if (!String.IsNullOrWhiteSpace(current)) combo.SelectedItem = current;
+                else if (combo.Items.Count > 0) combo.SelectedIndex = 0;
+                combo.SelectedIndexChanged += delegate { if (combo.SelectedItem != null) { configuration.Set(field.Section, field.Entry, combo.SelectedItem.ToString()); MarkDirty(); } };
                 input = combo;
             }
             else if (field.Kind == NativeFieldKind.Integer)
@@ -539,6 +554,7 @@ namespace MP1.ConfigurationStudio
             if (Inside(target, navigation))
             {
                 ScrollBy(navigation, delta, Px(42));
+                ClearNavigationHover();
                 return true;
             }
             if (Inside(target, scroll))
@@ -614,6 +630,11 @@ namespace MP1.ConfigurationStudio
                 navigation.AutoScrollPosition = new Point(0, Math.Max(0, selected.Bounds.Top));
         }
 
+        private void ClearNavigationHover()
+        {
+            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.ClearHover();
+        }
+
         private void ApplySearch()
         {
             string query = searchBox.Text.Trim();
@@ -630,6 +651,7 @@ namespace MP1.ConfigurationStudio
                 }
                 item.Visible = visible;
             }
+            ClearNavigationHover();
             navigation.AutoScrollPosition = Point.Empty;
             if (active)
             {
