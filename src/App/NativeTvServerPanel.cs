@@ -32,6 +32,8 @@ namespace MP1.ConfigurationStudio
             public readonly List<string> RadioGroups = new List<string>();
             public readonly List<string> Recordings = new List<string>();
             public readonly List<string> Schedules = new List<string>();
+            public readonly List<string> TvEpg = new List<string>();
+            public readonly List<string> RadioEpg = new List<string>();
         }
 
         public NativeTvServerPanel(string runtime, float scale)
@@ -266,6 +268,16 @@ namespace MP1.ConfigurationStudio
                             case "radioGroup": result.RadioGroups.Add(value); break;
                             case "recording": result.Recordings.Add(value); break;
                             case "schedule": result.Schedules.Add(value); break;
+                            case "epg":
+                                {
+                                    string epgLine = FormatEpgLine(value);
+                                    if (epgLine != null)
+                                    {
+                                        if (String.Equals(value.Split('|')[0], "radio", StringComparison.OrdinalIgnoreCase)) result.RadioEpg.Add(epgLine);
+                                        else result.TvEpg.Add(epgLine);
+                                    }
+                                }
+                                break;
                             default: if (!values.ContainsKey(key)) values[key] = value; break;
                         }
                     }
@@ -317,6 +329,25 @@ namespace MP1.ConfigurationStudio
             catch (Exception ex) { MessageBox.Show(FindForm(), ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
         }
 
+        internal static string FormatEpgLine(string value)
+        {
+            string[] parts = (value ?? string.Empty).Split(new[] { '|' }, 8);
+            if (parts.Length != 8) return null;
+            string current = DescribeEpg(parts[2], parts[3], parts[4]);
+            string next = DescribeEpg(parts[5], parts[6], parts[7]);
+            if (current == null && next == null)
+                return parts[1] + " — " + (Localization.IsEnglish ? "no EPG data" : "keine EPG-Daten");
+            return parts[1] + " — " + (Localization.IsEnglish ? "now: " : "jetzt: ") + (current ?? "—")
+                + (Localization.IsEnglish ? "  ·  next: " : "  ·  danach: ") + (next ?? "—");
+        }
+
+        private static string DescribeEpg(string start, string end, string title)
+        {
+            if (String.IsNullOrWhiteSpace(title)) return null;
+            if (String.IsNullOrWhiteSpace(start) && String.IsNullOrWhiteSpace(end)) return title;
+            return title + " (" + start + "–" + end + ")";
+        }
+
         private sealed class TvDetailsDialog : Form
         {
             private readonly float scale;
@@ -337,7 +368,9 @@ namespace MP1.ConfigurationStudio
                 ClientSize = new Size(Px(660), Px(520));
                 MinimumSize = new Size(Px(460), Px(320));
                 Add(data.TvChannels, Localization.IsEnglish ? "TV channels" : "TV-Kanäle");
+                Add(data.TvEpg, Localization.IsEnglish ? "TV EPG 12 h" : "TV-EPG 12 h");
                 Add(data.RadioChannels, Localization.IsEnglish ? "Radio channels" : "Radio-Kanäle");
+                Add(data.RadioEpg, Localization.IsEnglish ? "Radio EPG 12 h" : "Radio-EPG 12 h");
                 Add(data.Groups, Localization.IsEnglish ? "TV groups" : "TV-Gruppen");
                 Add(data.RadioGroups, Localization.IsEnglish ? "Radio groups" : "Radio-Gruppen");
                 Add(data.Recordings, Localization.IsEnglish ? "Recordings" : "Aufnahmen");

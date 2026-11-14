@@ -4,7 +4,7 @@ A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.27](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.27) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.28](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.28) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -23,7 +23,7 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 - Native **Keyboard** editor: contexts, search, key capture, sound, add/delete actions and windows, duplicate warning, `keymap.xml` backup.
 - Native **Music views** and **Video views** editors: localized view names, add/delete views and filters, filter field/operator/value, sort, view mode, reorder, and safe SOAP graph saves.
 - Native **Music DSP** editor: music folder, effect-specific Gain/DynAmp/Compressor controls with presets, VST/Winamp discovery, generic effect parameters, and BASS test playback with gain, DynAmp, compressor, and VST plugins (invalid DLLs are skipped).
-- **TV** page shows TV Server, service, and database status, read-only counts and detail lists for channels, groups, recordings, schedules, and cards from the TV Server business layer, and opens SetupTv or the TV Server folder.
+- **TV** page shows TV Server, service, and database status, read-only counts and detail lists for channels, groups, recordings, schedules, and cards from the TV Server business layer, plus a 12-hour current/next EPG overview for TV and radio channels, and opens SetupTv or the TV Server folder.
 - **Plugins** page lists plugins with their own configuration window and opens the selected plugin directly through an isolated helper; classic configuration remains the fallback.
 - **System und Laufwerke** page: Autoplay options, CD/DVD speed tables, and system checks with MPTray autostart and Media Center service status.
 - **Virtual drive**: detects Daemon Tools installations, browses for the program, edits extensions and drive number, checks the configured path, and stores everything in the `daemon` section.
