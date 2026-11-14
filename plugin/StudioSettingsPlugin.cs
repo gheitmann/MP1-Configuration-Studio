@@ -211,7 +211,10 @@ namespace MP1.ConfigurationStudio.Plugin
 
         private string DisplayValue(NativeField field)
         {
-            if (field.Kind == NativeFieldKind.Shares || field.Kind == NativeFieldKind.DynamicBools) return LocalizationText("im Studio bearbeiten", "edit in Studio");
+            if (field.Kind == NativeFieldKind.Shares || field.Kind == NativeFieldKind.DynamicBools
+                || field.Kind == NativeFieldKind.DynamicEntries || field.Kind == NativeFieldKind.XmlFiles
+                || field.Kind == NativeFieldKind.RawSections || field.Kind == NativeFieldKind.Classic)
+                return LocalizationText("im Studio bearbeiten", "edit in Studio");
             if (field.Kind == NativeFieldKind.Info) return LocalizationText("Hinweis", "note");
             string value = GetValue(field);
             if (field.Kind == NativeFieldKind.Combo)
@@ -241,6 +244,7 @@ namespace MP1.ConfigurationStudio.Plugin
             rows.Clear();
             foreach (NativeSection candidate in NativeSettingsSchema.Sections())
             {
+                if (candidate.Id == "files" || candidate.Id == "rawxml") continue;
                 rows.Add(new Row { Section = candidate, Text = LocalizationEnglish ? candidate.TitleEn : candidate.TitleDe });
             }
             page = 0;
