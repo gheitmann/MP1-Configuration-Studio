@@ -4,7 +4,7 @@ A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.31](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.31) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.32](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.32) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -68,6 +68,8 @@ The published 1.9.0 build predates the SignPath application and is unsigned. The
 3. Download `MP1-Configuration-Studio-1.9.0-Setup.exe` or the portable ZIP from [Releases](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0). Verify the SHA256 sidecar.
 4. Run the setup (administrator approval is required) or extract the portable ZIP completely.
 5. Start `MP1ConfigurationStudio.exe`.
+
+The 2.0 setup optionally installs the MediaPortal plugin: it detects the MediaPortal folder from the uninstall registry, copies the plugin DLL into `plugins\Windows`, and copies the skin file into every existing skin. The separate plugin ZIP with `Install-MPPlugin.ps1` remains available for manual install and `-Uninstall`.
 
 The original `Configuration.exe` and native DLLs are not replaced. Run `Configuration.exe` to use the original interface. Uninstall through the setup uninstaller or remove only the additional `MP1ConfigurationStudio*` files. Appearance preferences are stored separately under `%LOCALAPPDATA%\MP1 Configuration Studio\appearance.xml`.
 
