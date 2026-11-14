@@ -507,6 +507,11 @@ namespace MP1.ConfigurationStudio
             Check(!String.IsNullOrEmpty(backup)&&File.Exists(backup)&&backup.EndsWith(".zip",StringComparison.OrdinalIgnoreCase),"native configuration save creates a backup");
             var fields=NativeSettingsSchema.Sections().SelectMany(section=>section.Groups).SelectMany(group=>group.Fields).ToArray();
             Check(NativeSettingsSchema.Sections().Count>=6&&fields.Length>=50&&fields.All(field=>!String.IsNullOrEmpty(field.Section)&&!String.IsNullOrEmpty(field.Entry)),"native settings schema defines the first core pages");
+            var schemaSections=NativeSettingsSchema.Sections();
+            Check(schemaSections.Select(section=>section.Id).Distinct().Count()==schemaSections.Count,"native schema section ids are unique");
+            Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
+            Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
+            Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");
             Check(NativeShareEditor.IsShareKey("sharename3")&&NativeShareEditor.IsShareKey("sharepath0")&&NativeShareEditor.IsShareKey("sharescan12")&&NativeShareEditor.IsShareKey("pincode1")&&NativeShareEditor.IsShareKey("hostdetectmethod0"),"native share editor recognises all media folder entries");
             Check(!NativeShareEditor.IsShareKey("sharename")&&!NativeShareEditor.IsShareKey("volume0")&&!NativeShareEditor.IsShareKey("sharepathabc"),"native share editor leaves unrelated entries untouched");
             string runtime=Path.Combine(directory,"native-runtime");
