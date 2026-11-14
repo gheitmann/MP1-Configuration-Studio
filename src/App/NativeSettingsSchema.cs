@@ -12,7 +12,8 @@ namespace MP1.ConfigurationStudio
         Shares,
         DynamicBools,
         Folder,
-        Filter
+        Filter,
+        DynamicEntries
     }
 
     internal enum NativeFilterKind
@@ -51,6 +52,7 @@ namespace MP1.ConfigurationStudio
         public int Maximum;
         public List<NativeOption> Options = new List<NativeOption>();
         public NativeFilterKind FilterKind;
+        public string[] EntryPrefixes;
 
         public NativeField(string section, string entry, string labelDe, string labelEn, NativeFieldKind kind, string helpDe = null, string helpEn = null)
         {
@@ -80,6 +82,12 @@ namespace MP1.ConfigurationStudio
         public NativeField Filter(NativeFilterKind kind)
         {
             FilterKind = kind;
+            return this;
+        }
+
+        public NativeField Entries(params string[] prefixes)
+        {
+            EntryPrefixes = prefixes ?? new string[0];
             return this;
         }
     }
@@ -241,7 +249,8 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("gui", "fileexistscache", "Datei-Cache verwenden", "Use file-exists cache", NativeFieldKind.Bool))
                         .Add(new NativeField("gui", "addVideoFilesToDb", "Videodateien zur Datenbank hinzufügen", "Add video files to database", NativeFieldKind.Bool))
                         .Add(new NativeField("gui", "myprefix", "My-Präfix anzeigen", "Show My prefix", NativeFieldKind.Bool))
-                        .Add(new NativeField("skin", "name", "Skin", "Skin", NativeFieldKind.Text, "Name des installierten Skins, z. B. Backdrop. Änderungen werden nach einem Neustart wirksam.", "Name of the installed skin, e.g. Backdrop. Changes take effect after a restart.")))
+                        .Add(new NativeField("skin", "name", "Skin", "Skin", NativeFieldKind.Text, "Name des installierten Skins, z. B. Backdrop. Änderungen werden nach einem Neustart wirksam.", "Name of the installed skin, e.g. Backdrop. Changes take effect after a restart."))
+                        .Add(new NativeField("gui", "language", "Sprache", "Language", NativeFieldKind.Text, "MediaPortal-Sprache, z. B. German oder English.", "MediaPortal language, e.g. German or English.")))
                     .Group(new NativeGroup("Listen & Scrollen", "Lists & scrolling")
                         .Add(new NativeField("gui", "ScrollSpeedRight", "Horizontale Scroll-Geschwindigkeit", "Horizontal scroll speed", NativeFieldKind.Integer).Range(1, 20))
                         .Add(new NativeField("gui", "ScrollSpeedDown", "Vertikale Scroll-Geschwindigkeit", "Vertical scroll speed", NativeFieldKind.Integer).Range(1, 20))
@@ -286,6 +295,20 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("movieplayer", "arguments", "Externe Player-Parameter", "External player arguments", NativeFieldKind.Text))
                         .Add(new NativeField("comskip", "automaticskip", "Werbung automatisch überspringen", "Skip commercials automatically", NativeFieldKind.Bool))
                         .Add(new NativeField("audiodelay", "noaudioresetzero", "Audio-Delay nicht zurücksetzen", "Do not reset audio delay", NativeFieldKind.Bool)))
+                    .Group(new NativeGroup("Bild & Zoom", "Picture & zoom")
+                        .Add(new NativeField("movies", "defaultar", "Standard-Seitenverhältnis", "Default aspect ratio", NativeFieldKind.Combo)
+                            .Option("Normal", "Normal", "Normal").Option("Original", "Original", "Original").Option("Zoom", "Zoom", "Zoom")
+                            .Option("Zoom 14:9", "Zoom 14:9", "Zoom 14:9").Option("Stretch", "Strecken", "Stretch")
+                            .Option("Non-linear Stretch", "Nichtlinear strecken", "Non-linear stretch").Option("Letterbox 4:3", "Letterbox 4:3", "Letterbox 4:3")
+                            .Option("CinemaScope 2:35", "CinemaScope 2:35", "CinemaScope 2:35"))
+                        .Add(new NativeField("movies", "allowarnormal", "Normal erlauben", "Allow normal", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowaroriginal", "Original erlauben", "Allow original", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowarzoom", "Zoom erlauben", "Allow zoom", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowarzoom149", "Zoom 14:9 erlauben", "Allow zoom 14:9", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowarstretch", "Strecken erlauben", "Allow stretch", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowarnonlinear", "Nichtlinear erlauben", "Allow non-linear", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowarletterbox", "Letterbox erlauben", "Allow letterbox", NativeFieldKind.Bool))
+                        .Add(new NativeField("movies", "allowarcinemascope235", "CinemaScope 2.35 erlauben", "Allow CinemaScope 2.35", NativeFieldKind.Bool)))
                     .Group(new NativeGroup("Ansicht", "View")
                         .Add(new NativeField("myvideo", "layout", "Ansicht", "Layout", NativeFieldKind.Combo)
                             .Option("0", "Liste", "List").Option("1", "Kleine Symbole", "Small icons").Option("2", "Große Symbole", "Large icons")
@@ -610,6 +633,20 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("bdplayer", "subtitlelanguage", "Untertitelsprache", "Subtitle language", NativeFieldKind.Text))
                         .Add(new NativeField("bdplayer", "subtitlesenabled", "Untertitel aktiviert", "Subtitles enabled", NativeFieldKind.Bool))
                         .Add(new NativeField("bdplayer", "regioncode", "Regionscode", "Region code", NativeFieldKind.Text)))
+                    .Group(new NativeGroup("Blu-ray Bild & Zoom", "Blu-ray picture & zoom")
+                        .Add(new NativeField("bdplayer", "defaultar", "Standard-Seitenverhältnis", "Default aspect ratio", NativeFieldKind.Combo)
+                            .Option("Normal", "Normal", "Normal").Option("Original", "Original", "Original").Option("Zoom", "Zoom", "Zoom")
+                            .Option("Zoom 14:9", "Zoom 14:9", "Zoom 14:9").Option("Stretch", "Strecken", "Stretch")
+                            .Option("Non-linear Stretch", "Nichtlinear strecken", "Non-linear stretch").Option("Letterbox 4:3", "Letterbox 4:3", "Letterbox 4:3")
+                            .Option("CinemaScope 2:35", "CinemaScope 2:35", "CinemaScope 2:35"))
+                        .Add(new NativeField("bdplayer", "allowarnormal", "Normal erlauben", "Allow normal", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowaroriginal", "Original erlauben", "Allow original", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowarzoom", "Zoom erlauben", "Allow zoom", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowarzoom149", "Zoom 14:9 erlauben", "Allow zoom 14:9", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowarstretch", "Strecken erlauben", "Allow stretch", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowarnonlinear", "Nichtlinear erlauben", "Allow non-linear", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowarletterbox", "Letterbox erlauben", "Allow letterbox", NativeFieldKind.Bool))
+                        .Add(new NativeField("bdplayer", "allowarcinemascope235", "CinemaScope 2.35 erlauben", "Allow CinemaScope 2.35", NativeFieldKind.Bool)))
                     .Group(new NativeGroup("DVD", "DVD")
                         .Add(new NativeField("dvdplayer", "internal", "Internen DVD-Player verwenden", "Use internal DVD player", NativeFieldKind.Bool))
                         .Add(new NativeField("dvdplayer", "usefordvd", "Externen Player für DVDs", "External player for DVDs", NativeFieldKind.Bool))
@@ -620,6 +657,20 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("dvdplayer", "showsubtitles", "Untertitel anzeigen", "Show subtitles", NativeFieldKind.Bool))
                         .Add(new NativeField("dvdplayer", "showclosedcaptions", "Closed Captions anzeigen", "Show closed captions", NativeFieldKind.Bool))
                         .Add(new NativeField("dvdplayer", "pixelratiocorrection", "Pixel-Ratio-Korrektur", "Pixel ratio correction", NativeFieldKind.Bool)))
+                    .Group(new NativeGroup("DVD Bild & Zoom", "DVD picture & zoom")
+                        .Add(new NativeField("dvdplayer", "defaultar", "Standard-Seitenverhältnis", "Default aspect ratio", NativeFieldKind.Combo)
+                            .Option("Normal", "Normal", "Normal").Option("Original", "Original", "Original").Option("Zoom", "Zoom", "Zoom")
+                            .Option("Zoom 14:9", "Zoom 14:9", "Zoom 14:9").Option("Stretch", "Strecken", "Stretch")
+                            .Option("Non-linear Stretch", "Nichtlinear strecken", "Non-linear stretch").Option("Letterbox 4:3", "Letterbox 4:3", "Letterbox 4:3")
+                            .Option("CinemaScope 2:35", "CinemaScope 2:35", "CinemaScope 2:35"))
+                        .Add(new NativeField("dvdplayer", "allowarnormal", "Normal erlauben", "Allow normal", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowaroriginal", "Original erlauben", "Allow original", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowarzoom", "Zoom erlauben", "Allow zoom", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowarzoom149", "Zoom 14:9 erlauben", "Allow zoom 14:9", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowarstretch", "Strecken erlauben", "Allow stretch", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowarnonlinear", "Nichtlinear erlauben", "Allow non-linear", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowarletterbox", "Letterbox erlauben", "Allow letterbox", NativeFieldKind.Bool))
+                        .Add(new NativeField("dvdplayer", "allowarcinemascope235", "CinemaScope 2.35 erlauben", "Allow CinemaScope 2.35", NativeFieldKind.Bool)))
                     .Group(new NativeGroup("Virtuelles Laufwerk", "Virtual drive")
                         .Add(new NativeField("daemon", "enabled", "Virtuelles Laufwerk aktivieren", "Enable virtual drive", NativeFieldKind.Bool))
                         .Add(new NativeField("daemon", "path", "Programmpfad", "Program path", NativeFieldKind.Text))
@@ -637,6 +688,39 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("myplugins", "plugins", "In My Plugins gelistet", "Listed in My Plugins", NativeFieldKind.DynamicBools, "Entspricht „Listed in My Plugins“ im klassischen Plugin-Menü.", "Matches “Listed in My Plugins” in the classic plugin menu.")))
                     .Group(new NativeGroup("Plugin-DLLs", "Plugin DLLs")
                         .Add(new NativeField("pluginsdlls", "dlls", "Aktivierte Plugin-DLLs", "Enabled plugin DLLs", NativeFieldKind.DynamicBools, "Lädt oder entlädt Plugin-DLLs. Nur ändern, wenn die Auswirkung bekannt ist.", "Loads or unloads plugin DLLs. Change only when the effect is known."))),
+                new NativeSection("more", "Spezialbereiche", "Special areas", "Vorschaubilder, Fernbedienungsgeräte, Medieninfo und weitere Spezialbereiche.", "Thumbnails, remote devices, media info, and other special areas.", "settings")
+                    .Group(new NativeGroup("Vorschaubilder", "Thumbnails")
+                        .Add(new NativeField("thumbnails", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("Dateimenü", "File menu")
+                        .Add(new NativeField("filemenu", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("Benachrichtigungen", "Notifications")
+                        .Add(new NativeField("guiNotifier", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("USBUIRT", "USBUIRT")
+                        .Add(new NativeField("USBUIRT", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("SerialUIR", "SerialUIR")
+                        .Add(new NativeField("SerialUIR", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("WinLIRC", "WinLIRC")
+                        .Add(new NativeField("WINLIRC", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("RedEye", "RedEye")
+                        .Add(new NativeField("RedEye", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("Bildschirmauswahl", "Screen selector")
+                        .Add(new NativeField("screenselector", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("Medieninformationen", "Media info")
+                        .Add(new NativeField("MediaInfo", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("Erweiterungen", "Extensions")
+                        .Add(new NativeField("myextensions2", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
+                    .Group(new NativeGroup("Video Post-Processing", "Video post-processing")
+                        .Add(new NativeField("movieplayer", "entries", "Filter", "Filters", NativeFieldKind.DynamicEntries).Entries("filter")))
+                    .Group(new NativeGroup("DVD Post-Processing", "DVD post-processing")
+                        .Add(new NativeField("dvdplayer", "entries", "Filter", "Filters", NativeFieldKind.DynamicEntries).Entries("filter")))
+                    .Group(new NativeGroup("Blu-ray Post-Processing", "Blu-ray post-processing")
+                        .Add(new NativeField("bdplayer", "entries", "Filter", "Filters", NativeFieldKind.DynamicEntries).Entries("filter")))
+                    .Group(new NativeGroup("TV Post-Processing", "TV post-processing")
+                        .Add(new NativeField("mytv", "entries", "Filter", "Filters", NativeFieldKind.DynamicEntries).Entries("filter")))
+                    .Group(new NativeGroup("Musik-Ansichtsvorlagen", "Music view templates")
+                        .Add(new NativeField("mymusic", "entries", "Vorlagen", "Templates", NativeFieldKind.DynamicEntries).Entries("Name", "Date", "Size", "Track", "Duration", "Title", "Artist", "Album", "Filename", "Rating", "Year", "DiscID", "Composer", "Times Played", "File Type")))
+                    .Group(new NativeGroup("Video-Ansicht", "Video view")
+                        .Add(new NativeField("movies", "entries", "Ansicht", "View", NativeFieldKind.DynamicEntries).Entries("start", "last"))),
             };
         }
     }

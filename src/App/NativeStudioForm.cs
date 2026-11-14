@@ -315,6 +315,50 @@ namespace MP1.ConfigurationStudio
 
         private void AddField(NativeField field)
         {
+            if (field.Kind == NativeFieldKind.DynamicEntries)
+            {
+                var entries = configuration.Entries(field.Section).ToArray();
+                if (field.EntryPrefixes != null && field.EntryPrefixes.Length > 0)
+                    entries = entries.Where(entry => field.EntryPrefixes.Any(prefix => entry.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))).ToArray();
+                int count = 0;
+                foreach (var entry in entries)
+                {
+                    string key = entry.Key;
+                    string value = entry.Value ?? "";
+                    bool boolValue = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                        || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+                    if (boolValue)
+                    {
+                        var check = new CheckBox { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = body, ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                        check.CheckedChanged += delegate { configuration.SetBool(field.Section, key, check.Checked); MarkDirty(); };
+                        table.Controls.Add(check, 0, table.RowCount);
+                        table.SetColumnSpan(check, 2);
+                        table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        table.RowCount++;
+                    }
+                    else
+                    {
+                        var entryLabel = new Label { Text = key, Font = body, ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
+                        var text = new TextBox { Text = value, Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                        text.TextChanged += delegate { configuration.Set(field.Section, key, text.Text); MarkDirty(); };
+                        table.Controls.Add(entryLabel, 0, table.RowCount);
+                        table.Controls.Add(text, 1, table.RowCount);
+                        table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        table.RowCount++;
+                    }
+                    count++;
+                }
+                if (count == 0)
+                {
+                    var empty = new Label { Text = Localization.IsEnglish ? "No entries found in this section." : "Keine Einträge in diesem Bereich gefunden.", Font = small, ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(2), 0, Px(10)) };
+                    table.Controls.Add(empty, 0, table.RowCount);
+                    table.SetColumnSpan(empty, 2);
+                    table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    table.RowCount++;
+                }
+                AddHelp(field);
+                return;
+            }
             if (field.Kind == NativeFieldKind.DynamicBools)
             {
                 int count = 0;
