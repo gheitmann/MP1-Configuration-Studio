@@ -66,6 +66,7 @@ namespace MP1.ConfigurationStudio
             NativeFilterCatalog.Configure(runtime);
             BuildChrome();
             ShowSection(FindSection(initialSection) ?? sections[0]);
+            Shown += delegate { scroll.AutoScrollPosition = Point.Empty; };
             FormClosing += OnClosing;
             Application.AddMessageFilter(this);
         }
@@ -257,7 +258,7 @@ namespace MP1.ConfigurationStudio
         {
             if (current != null && !Object.ReferenceEquals(current, section))
             {
-                NativeXmlFileEditor xmlEditor = table.Controls.OfType<NativeXmlFileEditor>().FirstOrDefault();
+                IStudioFileEditor xmlEditor = table.Controls.OfType<IStudioFileEditor>().FirstOrDefault();
                 if (xmlEditor != null && xmlEditor.HasUnsavedChanges && !xmlEditor.ConfirmDiscardChanges())
                 {
                     StudioAction currentItem = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, current));
@@ -307,6 +308,7 @@ namespace MP1.ConfigurationStudio
                 navigation.AutoScrollPosition = new Point(0, Math.Max(0, targetItem.Bounds.Top));
             LayoutTable();
             scroll.AutoScrollPosition = Point.Empty;
+            if (IsHandleCreated) BeginInvoke(new Action(delegate { scroll.AutoScrollPosition = Point.Empty; }));
         }
 
         private void AddGroup(NativeGroup group)
@@ -348,6 +350,47 @@ namespace MP1.ConfigurationStudio
                 button.Click += delegate { StartClassic(); };
                 table.Controls.Add(button, 0, table.RowCount);
                 table.SetColumnSpan(button, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.Keymap)
+            {
+                var editor = new NativeKeymapEditor(Path.GetDirectoryName(configuration.Path), scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(editor, 0, table.RowCount);
+                table.SetColumnSpan(editor, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(620)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.Views)
+            {
+                string language = configuration.Get("gui", "language", "English");
+                var editor = new NativeViewsEditor(Path.GetDirectoryName(configuration.Path), field.Entry, language, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(editor, 0, table.RowCount);
+                table.SetColumnSpan(editor, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(640)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.Dsp)
+            {
+                var editor = new NativeDspEditor(Path.GetDirectoryName(configuration.Path), scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(editor, 0, table.RowCount);
+                table.SetColumnSpan(editor, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(580)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.TvServer)
+            {
+                var panel = new NativeTvServerPanel(runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(panel, 0, table.RowCount);
+                table.SetColumnSpan(panel, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 table.RowCount++;
                 AddHelp(field);
@@ -637,7 +680,7 @@ namespace MP1.ConfigurationStudio
         private void OnClosing(object sender, FormClosingEventArgs e)
         {
             if (suppressClosePrompt) return;
-            NativeXmlFileEditor xmlEditor = table.Controls.OfType<NativeXmlFileEditor>().FirstOrDefault();
+            IStudioFileEditor xmlEditor = table.Controls.OfType<IStudioFileEditor>().FirstOrDefault();
             if (xmlEditor != null && xmlEditor.HasUnsavedChanges)
             {
                 if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved XML file changes?" : "Ungespeicherte XML-Dateiänderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)

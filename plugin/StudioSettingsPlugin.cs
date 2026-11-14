@@ -213,7 +213,9 @@ namespace MP1.ConfigurationStudio.Plugin
         {
             if (field.Kind == NativeFieldKind.Shares || field.Kind == NativeFieldKind.DynamicBools
                 || field.Kind == NativeFieldKind.DynamicEntries || field.Kind == NativeFieldKind.XmlFiles
-                || field.Kind == NativeFieldKind.RawSections || field.Kind == NativeFieldKind.Classic)
+                || field.Kind == NativeFieldKind.RawSections || field.Kind == NativeFieldKind.Classic
+                || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views
+                || field.Kind == NativeFieldKind.Dsp || field.Kind == NativeFieldKind.TvServer)
                 return LocalizationText("im Studio bearbeiten", "edit in Studio");
             if (field.Kind == NativeFieldKind.Info) return LocalizationText("Hinweis", "note");
             string value = GetValue(field);
@@ -244,7 +246,8 @@ namespace MP1.ConfigurationStudio.Plugin
             rows.Clear();
             foreach (NativeSection candidate in NativeSettingsSchema.Sections())
             {
-                if (candidate.Id == "files" || candidate.Id == "rawxml") continue;
+                if (candidate.Id == "files" || candidate.Id == "rawxml" || candidate.Id == "keymap"
+                    || candidate.Id == "musicviews" || candidate.Id == "videoviews" || candidate.Id == "musicdsp") continue;
                 rows.Add(new Row { Section = candidate, Text = LocalizationEnglish ? candidate.TitleEn : candidate.TitleDe });
             }
             page = 0;

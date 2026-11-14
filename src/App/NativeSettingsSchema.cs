@@ -16,7 +16,11 @@ namespace MP1.ConfigurationStudio
         DynamicEntries,
         XmlFiles,
         RawSections,
-        Classic
+        Classic,
+        Keymap,
+        Views,
+        Dsp,
+        TvServer
     }
 
     internal enum NativeFilterKind
@@ -342,6 +346,9 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("moviedatabase", "scanskipexisting", "Vorhandene überspringen", "Skip existing", NativeFieldKind.Bool))
                         .Add(new NativeField("moviedatabase", "useonlynfoscraper", "Nur NFO-Scraper", "NFO scraper only", NativeFieldKind.Bool))
                         .Add(new NativeField("moviedatabase", "fetchactors", "Schauspieler laden", "Fetch actors", NativeFieldKind.Bool))),
+                new NativeSection("videoviews", "Video-Ansichten", "Video views", "Ansichten, Filter und Sortierung für Videos komfortabel bearbeiten.", "Edit video views, filters, and sorting comfortably.", "video")
+                    .Group(new NativeGroup("Ansichten", "Views")
+                        .Add(new NativeField("videoviews", "VideoViews.xml", "Video-Ansichten", "Video views", NativeFieldKind.Views, "Ansichten und Filter aus VideoViews.xml. Reihenfolge mit ▲/▼ ändern; jede Änderung wird mit Backup gespeichert.", "Views and filters from VideoViews.xml. Change order with ▲/▼; every save creates a backup."))),
                 new NativeSection("music", "Musik", "Music", "Audiowiedergabe, Playlists und Musikordner.", "Audio playback, playlists, and music folders.", "play")
                     .Group(new NativeGroup("Wiedergabe", "Playback")
                         .Add(new NativeField("audioplayer", "crossfade", "Crossfade", "Crossfade", NativeFieldKind.Integer, "Überblendzeit in Millisekunden.", "Crossfade time in milliseconds.").Range(0, 20000, "ms"))
@@ -425,6 +432,12 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("musicimport", "mp3background", "Im Hintergrund", "In background", NativeFieldKind.Bool))
                         .Add(new NativeField("musicimport", "mp3replaceexisting", "Vorhandene ersetzen", "Replace existing", NativeFieldKind.Bool))
                         .Add(new NativeField("musicimport", "importunknown", "Unbekannte importieren", "Import unknown", NativeFieldKind.Bool))),
+                new NativeSection("musicviews", "Musik-Ansichten", "Music views", "Ansichten, Filter und Sortierung für Musik komfortabel bearbeiten.", "Edit music views, filters, and sorting comfortably.", "music")
+                    .Group(new NativeGroup("Ansichten", "Views")
+                        .Add(new NativeField("musicviews", "MusicViews.xml", "Musik-Ansichten", "Music views", NativeFieldKind.Views, "Ansichten und Filter aus MusicViews.xml. Reihenfolge mit ▲/▼ ändern; jede Änderung wird mit Backup gespeichert.", "Views and filters from MusicViews.xml. Change order with ▲/▼; every save creates a backup."))),
+                new NativeSection("musicdsp", "Musik-DSP", "Music DSP", "Musikordner sowie BASS-, VST- und Winamp-DSP-Effekte bearbeiten.", "Edit the music folder and BASS, VST, and Winamp DSP effects.", "music")
+                    .Group(new NativeGroup("Musik-DSP", "Music DSP")
+                        .Add(new NativeField("musicdsp", "musicdsp.xml", "Musik-DSP", "Music DSP", NativeFieldKind.Dsp, "musicdsp.xml mit Musikordner, BASS-Effekten und VST-/Winamp-Plugins. Speichern erstellt ein Backup.", "musicdsp.xml with music folder, BASS effects, and VST/Winamp plugins. Save creates a backup."))),
                 new NativeSection("folders", "Medienordner", "Media folders", "Video-, Musik- und Bilderordner verwalten.", "Manage video, music, and picture folders.", "folder")
                     .Group(new NativeGroup("Videoordner", "Video folders")
                         .Add(new NativeField("movies", "sharename", "Videoordner", "Video folders", NativeFieldKind.Shares, "Lokale oder Netzwerkordner für Videos. Scannen aktualisiert die Datenbank.", "Local or network folders for videos. Scan updates the database.")))
@@ -433,6 +446,8 @@ namespace MP1.ConfigurationStudio
                     .Group(new NativeGroup("Bilderordner", "Picture folders")
                         .Add(new NativeField("pictures", "sharename", "Bilderordner", "Picture folders", NativeFieldKind.Shares, "Lokale oder Netzwerkordner für Bilder.", "Local or network folders for pictures."))),
                 new NativeSection("tv", "TV", "TV", "TV-Server, Aufnahmen und Live-TV-Verhalten.", "TV server, recordings, and live TV behavior.", "play")
+                    .Group(new NativeGroup("TV-Server-Status", "TV server status")
+                        .Add(new NativeField("tvserver", "status", "TV-Server", "TV server", NativeFieldKind.TvServer, "Status, Datenbank und Schnellzugriff auf SetupTv. Kanäle, EPG und Aufnahmen bleiben in der TV-Server-Datenbank.", "Status, database, and quick access to SetupTv. Channels, EPG, and recordings remain in the TV Server database.")))
                     .Group(new NativeGroup("TV-Server", "TV server")
                         .Add(new NativeField("tvservice", "hostname", "Server-Hostname", "Server hostname", NativeFieldKind.Text))
                         .Add(new NativeField("tvservice", "isWakeOnLanEnabled", "Wake-on-LAN", "Wake on LAN", NativeFieldKind.Bool))
@@ -579,6 +594,9 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("remote", "CentareaVerbose", "Ausführliches Log", "Verbose log", NativeFieldKind.Bool))
                         .Add(new NativeField("remote", "CentareaMouseOkMap", "Maus-OK-Zuordnung", "Mouse OK mapping", NativeFieldKind.Bool))
                         .Add(new NativeField("remote", "CentareaJoystickMap", "Joystick-Zuordnung", "Joystick mapping", NativeFieldKind.Bool))),
+                new NativeSection("keymap", "Tastatur", "Keyboard", "Tastenbelegung für Global und alle MediaPortal-Fenster bearbeiten.", "Edit key mappings for Global and all MediaPortal windows.", "keyboard")
+                    .Group(new NativeGroup("Tastenbelegung", "Key mapping")
+                        .Add(new NativeField("keymap", "keymap.xml", "Tastenbelegung", "Key mapping", NativeFieldKind.Keymap, "Aktion auswählen und eine neue Taste aufnehmen. Speichern erstellt ein Backup von keymap.xml.", "Select an action and capture a new key. Save creates a backup of keymap.xml."))),
                 new NativeSection("codecs", "Codecs", "Codecs", "Decoder und Renderer für Video, TV und Audio.", "Decoders and renderers for video, TV, and audio.", "settings")
                     .Group(new NativeGroup("Video", "Video")
                         .Add(new NativeField("movieplayer", "autodecodersettings", "Automatische Decoder-Einstellungen", "Automatic decoder settings", NativeFieldKind.Bool))

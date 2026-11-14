@@ -4,7 +4,7 @@ A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.16](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.16) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.17](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.17) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -20,6 +20,10 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 - `--section=<id>` opens a page directly, for example `--section=plugins`.
 - XML file editor for `keymap.xml`, `MusicViews.xml`, `VideoViews.xml`, `musicdsp.xml`, other configuration XML files, and any file chosen with **Other file**; each save validates XML, creates a ZIP backup, and replaces atomically.
 - Raw XML page for every section of `MediaPortal.xml`, including plugin sections and unknown values.
+- Native **Keyboard** editor: contexts, search, key capture, sound, duplicate warning, `keymap.xml` backup.
+- Native **Music views** and **Video views** editors: localized view names, filter field/operator/value, sort, view mode, reorder, and safe SOAP graph saves.
+- Native **Music DSP** editor: music folder plus BASS, VST, and Winamp effects with parameters.
+- **TV** page shows TV Server, service, and database status and opens SetupTv or the TV Server folder. TV Server channels, EPG, cards, and schedules remain in the TV Server subsystem.
 - Codec and renderer lists come from MediaPortal's filter helper; the button next to each filter opens its real DirectShow property pages.
 - Plugin configuration windows still open on the classic interface; the Plugins page opens the classic configurator directly.
 

@@ -10,7 +10,7 @@ using System.Xml;
 
 namespace MP1.ConfigurationStudio
 {
-    internal sealed class NativeXmlFileEditor : UserControl
+    internal sealed class NativeXmlFileEditor : UserControl, IStudioFileEditor
     {
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
@@ -189,25 +189,8 @@ namespace MP1.ConfigurationStudio
                 suppress = true;
                 if (currentPath != null && File.Exists(currentPath))
                 {
-                    byte[] bytes = File.ReadAllBytes(currentPath);
-                    int offset = 0;
-                    if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
-                    {
-                        fileEncoding = new UTF8Encoding(true);
-                        offset = 3;
-                    }
-                    else if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
-                    {
-                        fileEncoding = Encoding.Unicode;
-                        offset = 2;
-                    }
-                    else if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
-                    {
-                        fileEncoding = Encoding.BigEndianUnicode;
-                        offset = 2;
-                    }
-                    else fileEncoding = new UTF8Encoding(false);
-                    editor.Text = fileEncoding.GetString(bytes, offset, bytes.Length - offset);
+                    fileEncoding = new UTF8Encoding(false);
+                    editor.Text = NativeXmlFileStore.ReadText(currentPath, out fileEncoding);
                     editor.Select(0, 0);
                     status.Text = currentPath;
                     status.Tag = currentPath;
@@ -232,25 +215,7 @@ namespace MP1.ConfigurationStudio
             if (currentPath == null) return;
             try
             {
-                var document = new XmlDocument { XmlResolver = null };
-                document.LoadXml(editor.Text);
-                string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MP1 Configuration Studio", "backups");
-                Directory.CreateDirectory(root);
-                string backup = Path.Combine(root, "file-" + Path.GetFileName(currentPath) + "-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".zip");
-                using (ZipArchive archive = ZipFile.Open(backup, ZipArchiveMode.Create))
-                {
-                    if (File.Exists(currentPath))
-                    {
-                        ZipArchiveEntry entry = archive.CreateEntry(Path.GetFileName(currentPath), CompressionLevel.Optimal);
-                        using (Stream output = entry.Open())
-                        using (Stream input = File.OpenRead(currentPath))
-                            input.CopyTo(output);
-                    }
-                }
-                string temporary = currentPath + ".studio.tmp";
-                File.WriteAllText(temporary, editor.Text, fileEncoding);
-                if (File.Exists(currentPath)) File.Replace(temporary, currentPath, null);
-                else File.Move(temporary, currentPath);
+                string backup = NativeXmlFileStore.SaveText(currentPath, editor.Text, fileEncoding);
                 dirty = false;
                 status.Text = (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + Path.GetFileName(backup);
             }
