@@ -28,8 +28,8 @@ namespace MP1.ConfigurationStudio
             ForeColor = palette.Text;
             var body = Typography.Create(10f * scale, FontStyle.Regular);
             var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(38), ColumnCount = 3, BackColor = palette.Background };
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 18));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "XML section" : "XML-Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
             choice.Dock = DockStyle.Fill;
@@ -51,14 +51,13 @@ namespace MP1.ConfigurationStudio
             top.Controls.Add(filter, 2, 0);
 
             table.Padding = new Padding(0);
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 8));
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(36), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(3), 0, 0) };
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen", delegate { AddEntry(); }, body));
-            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "Changes are written when Studio saves MediaPortal.xml." : "Änderungen werden beim Speichern im Studio in MediaPortal.xml geschrieben.", AutoSize = true, ForeColor = palette.Muted, Font = Typography.Create(9f * scale, FontStyle.Regular), Margin = new Padding(Px(8), Px(7), 0, 0) });
             Controls.Add(scroll);
             Controls.Add(actions);
             Controls.Add(top);

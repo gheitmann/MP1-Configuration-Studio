@@ -26,6 +26,7 @@ namespace MP1.ConfigurationStudio
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
         private readonly ListBox viewList = new ListBox();
+        private readonly TextBox viewSearch = new TextBox { BorderStyle = BorderStyle.FixedSingle };
         private readonly Panel detail = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly FlowLayoutPanel detailFlow = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Palette.For(true).Background, Padding = new Padding(0) };
         private readonly Label status = new Label();
@@ -76,8 +77,19 @@ namespace MP1.ConfigurationStudio
             split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
             split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
 
-            var left = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 1, BackColor = palette.Background, Margin = new Padding(0, 0, Px(10), 0) };
+            var left = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = palette.Background, Margin = new Padding(0, 0, Px(10), 0) };
+            left.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(32)));
             left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            viewSearch.Dock = DockStyle.Fill;
+            viewSearch.Font = body;
+            viewSearch.BackColor = palette.Input;
+            viewSearch.ForeColor = palette.Muted;
+            viewSearch.Margin = new Padding(0, 0, 0, Px(4));
+            viewSearch.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …";
+            viewSearch.GotFocus += delegate { if (viewSearch.ForeColor == palette.Muted) { viewSearch.Text = string.Empty; viewSearch.ForeColor = palette.Text; } };
+            viewSearch.LostFocus += delegate { if (viewSearch.Text.Length == 0) { viewSearch.ForeColor = palette.Muted; viewSearch.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …"; } };
+            viewSearch.TextChanged += delegate { if (viewSearch.ForeColor == palette.Text) SelectMatchingView(viewSearch.Text); };
+            left.Controls.Add(viewSearch, 0, 0);
             viewList.Dock = DockStyle.Fill;
             viewList.BackColor = palette.Input;
             viewList.ForeColor = palette.Text;
@@ -88,7 +100,7 @@ namespace MP1.ConfigurationStudio
             viewList.IntegralHeight = false;
             viewList.DrawItem += DrawViewItem;
             viewList.SelectedIndexChanged += delegate { BuildDetail(); };
-            left.Controls.Add(viewList, 0, 0);
+            left.Controls.Add(viewList, 0, 1);
             split.Controls.Add(left, 0, 0);
             split.Controls.Add(detail, 1, 0);
             detail.Controls.Add(detailFlow);
@@ -533,6 +545,19 @@ namespace MP1.ConfigurationStudio
         {
             int index = viewList.SelectedIndex;
             return index >= 0 && index < views.Count ? views[index] : null;
+        }
+
+        private void SelectMatchingView(string query)
+        {
+            if (String.IsNullOrWhiteSpace(query)) return;
+            for (int i = 0; i < views.Count; i++)
+            {
+                if (views[i].Label.IndexOf(query.Trim(), StringComparison.CurrentCultureIgnoreCase) >= 0)
+                {
+                    viewList.SelectedIndex = i;
+                    return;
+                }
+            }
         }
 
         private void AddView()
