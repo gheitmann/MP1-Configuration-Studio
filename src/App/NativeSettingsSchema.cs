@@ -21,7 +21,8 @@ namespace MP1.ConfigurationStudio
         Views,
         Dsp,
         TvServer,
-        PluginConfig
+        PluginConfig,
+        GroupedSection
     }
 
     internal enum NativeFilterKind
@@ -712,7 +713,11 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("myplugins", "plugins", "In My Plugins gelistet", "Listed in My Plugins", NativeFieldKind.DynamicBools, "Entspricht „Listed in My Plugins“ im klassischen Plugin-Menü.", "Matches “Listed in My Plugins” in the classic plugin menu.")))
                     .Group(new NativeGroup("Plugin-DLLs", "Plugin DLLs")
                         .Add(new NativeField("pluginsdlls", "dlls", "Aktivierte Plugin-DLLs", "Enabled plugin DLLs", NativeFieldKind.DynamicBools, "Lädt oder entlädt Plugin-DLLs. Nur ändern, wenn die Auswirkung bekannt ist.", "Loads or unloads plugin DLLs. Change only when the effect is known."))),
-                new NativeSection("plugindata", "Plugin-Daten", "Plugin data", "Kleine Plugin- und interne Bereiche als Formular bearbeiten. Große Plugin-Bereiche wie Trakt und OnlineVideos bleiben unter XML-Rohdaten.", "Edit small plugin and internal sections as forms. Large plugin sections such as Trakt and OnlineVideos remain under Raw XML.", "settings")
+                new NativeSection("plugindata", "Plugin-Daten", "Plugin data", "Plugin- und interne Bereiche als Formular bearbeiten.", "Edit plugin and internal sections as forms.", "settings")
+                    .Group(new NativeGroup("OnlineVideos", "OnlineVideos")
+                        .Add(new NativeField("onlinevideos", "entries", "OnlineVideos", "OnlineVideos", NativeFieldKind.GroupedSection, "Ansichten, Verlauf und Startzeit als Formular.", "Views, history, and first-run time as a form.")))
+                    .Group(new NativeGroup("Trakt", "Trakt")
+                        .Add(new NativeField("Trakt", "entries", "Trakt", "Trakt", NativeFieldKind.GroupedSection, "Konto, Synchronisierung, Layouts, Sortierung, Empfehlungen und weitere Trakt-Einträge als Formular.", "Account, sync, layouts, sorting, recommendations, and other Trakt entries as a form.")))
                     .Group(new NativeGroup("Plugin-Sortierung", "Plugin sorting")
                         .Add(new NativeField("pluginSorting", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries)))
                     .Group(new NativeGroup("Plugin-Fenster", "Plugin windows")

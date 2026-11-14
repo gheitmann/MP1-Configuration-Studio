@@ -406,6 +406,20 @@ namespace MP1.ConfigurationStudio
                 AddHelp(field);
                 return;
             }
+            if (field.Kind == NativeFieldKind.GroupedSection)
+            {
+                Func<string, string> group = String.Equals(field.Section, "Trakt", StringComparison.OrdinalIgnoreCase)
+                    ? (Func<string, string>)NativeGroupedSectionEditor.TraktGroup
+                    : NativeGroupedSectionEditor.OnlineVideosGroup;
+                var editor = new NativeGroupedSectionEditor(configuration, field.Section, group, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                editor.Changed += delegate { MarkDirty(); };
+                table.Controls.Add(editor, 0, table.RowCount);
+                table.SetColumnSpan(editor, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(String.Equals(field.Section, "Trakt", StringComparison.OrdinalIgnoreCase) ? 640 : 300)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
             if (field.Kind == NativeFieldKind.XmlFiles)
             {
                 var editor = new NativeXmlFileEditor(Path.GetDirectoryName(configuration.Path), runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
