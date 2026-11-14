@@ -66,6 +66,7 @@ namespace MP1.ConfigurationStudio
             string configPath = StudioConfiguration.FindConfigPath(runtime);
             configuration = StudioConfiguration.Load(configPath);
             NativeFilterCatalog.Configure(runtime);
+            ChoiceCatalog.Configure(Path.GetDirectoryName(configuration.Path), runtime);
             BuildChrome();
             ShowSection(FindSection(initialSection) ?? sections[0]);
             Shown += delegate { scroll.AutoScrollPosition = Point.Empty; };
@@ -407,10 +408,20 @@ namespace MP1.ConfigurationStudio
                     else
                     {
                         var label = new Label { Text = key, Font = body, ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
-                        var text = new TextBox { Text = value, Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                        text.TextChanged += delegate { configuration.Set(sectionEntries.Key, key, text.Text); MarkDirty(); };
                         table.Controls.Add(label, 0, table.RowCount);
-                        table.Controls.Add(text, 1, table.RowCount);
+                        Control input;
+                        List<ChoiceOption> choices = ChoiceCatalog.Resolve(sectionEntries.Key, key);
+                        if (choices.Count > 0)
+                        {
+                            input = CreateChoiceControl(sectionEntries.Key, key, choices);
+                        }
+                        else
+                        {
+                            var text = new TextBox { Text = value, Font = body, BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                            text.TextChanged += delegate { configuration.Set(sectionEntries.Key, key, text.Text); MarkDirty(); };
+                            input = text;
+                        }
+                        table.Controls.Add(input, 1, table.RowCount);
                         table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                         table.RowCount++;
                     }
@@ -421,6 +432,37 @@ namespace MP1.ConfigurationStudio
             table.SetColumnSpan(spacer, 2);
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowCount++;
+        }
+
+        private Control CreateChoiceControl(string section, string entry, List<ChoiceOption> options)
+        {
+            var combo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                FlatStyle = FlatStyle.Flat,
+                Font = body,
+                BackColor = palette.Input,
+                ForeColor = palette.Text,
+                Dock = DockStyle.Fill,
+                Height = Px(30),
+                Margin = new Padding(0)
+            };
+            string current = configuration.Get(section, entry, string.Empty);
+            int index = options.FindIndex(option => String.Equals(option.Value, current, StringComparison.OrdinalIgnoreCase));
+            if (index < 0 && !String.IsNullOrEmpty(current))
+            {
+                options.Add(new ChoiceOption(current, current));
+                index = options.Count - 1;
+            }
+            foreach (ChoiceOption option in options) combo.Items.Add(option.Label);
+            combo.SelectedIndex = index >= 0 ? index : (options.Count > 0 ? 0 : -1);
+            combo.SelectedIndexChanged += delegate
+            {
+                if (combo.SelectedIndex < 0 || combo.SelectedIndex >= options.Count) return;
+                configuration.Set(section, entry, options[combo.SelectedIndex].Value);
+                MarkDirty();
+            };
+            return combo;
         }
 
         private void AddField(NativeField field)
@@ -649,7 +691,12 @@ namespace MP1.ConfigurationStudio
             var label = new Label { Text = labelText, Font = body, ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
             table.Controls.Add(label, 0, table.RowCount);
             Control input;
-            if (field.Kind == NativeFieldKind.Combo)
+            List<ChoiceOption> catalogChoices = ChoiceCatalog.Resolve(field.Section, field.Entry);
+            if ((field.Kind == NativeFieldKind.Text || field.Kind == NativeFieldKind.Integer) && catalogChoices.Count > 0)
+            {
+                input = CreateChoiceControl(field.Section, field.Entry, catalogChoices);
+            }
+            else if (field.Kind == NativeFieldKind.Combo)
             {
                 var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = body, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0) };
                 foreach (NativeOption option in field.Options) combo.Items.Add(Localization.IsEnglish ? option.LabelEn : option.LabelDe);

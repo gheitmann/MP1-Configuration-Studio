@@ -406,7 +406,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.35"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.36"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -531,6 +531,12 @@ namespace MP1.ConfigurationStudio
    Check(UpdateChecker.Compare("2.0.0","2.0.0-beta.999")>0,"update check ranks stable above beta");
    Check(UpdateChecker.Compare("2.0.0-beta.7","v2.0.0-beta.7")==0,"update check treats v-prefix as equal");
    Check(UpdateChecker.Compare("2.0.1-beta.1","2.0.0-beta.99")>0,"update check compares numeric components before beta number");
+   Check(ChoiceCatalog.Resolve("dvdplayer","armode").Count==4&&ChoiceCatalog.Resolve("dvdplayer","displaymode").Count==4,"choice catalog exposes classic DVD aspect and display modes");
+   Check(ChoiceCatalog.Resolve("bdplayer","regioncode").Any(option=>option.Value=="B")&&ChoiceCatalog.Resolve("bdplayer","audiotype").Any(option=>option.Value=="TrueHD"),"choice catalog exposes Blu-ray regions and audio types");
+   Check(ChoiceCatalog.Resolve("mytv","deinterlace").Count==4&&ChoiceCatalog.Resolve("mytv","showEpisodeInfo").Count==4,"choice catalog exposes TV deinterlace and episode info options");
+   Check(ChoiceCatalog.Resolve("musicfiles","selectOption").Any(option=>option.Value=="play")&&ChoiceCatalog.Resolve("musicfiles","dateadded").Count==3,"choice catalog exposes music selection and date choices");
+   Check(ChoiceCatalog.Resolve("audioplayer","playerId").Count==4&&ChoiceCatalog.Resolve("audioplayer","upMixFiveDotOne").Count==2,"choice catalog exposes audio player and upmix choices");
+   Check(ChoiceCatalog.Resolve("subtitles","engine").Count==5&&ChoiceCatalog.Resolve("moviedatabase","actorslistsize").Count==2,"choice catalog exposes subtitle engine and actor list choices");
             Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
             Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
             Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");

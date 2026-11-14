@@ -55,7 +55,11 @@ namespace MP1.ConfigurationStudio.Plugin
         public StudioSettingsPlugin()
         {
             GetID = WindowId;
-            try { settings = new PluginSettingsStore(); }
+            try
+            {
+                settings = new PluginSettingsStore();
+                ChoiceCatalog.Configure(Path.GetDirectoryName(MPSettings.ConfigPathName), Application.StartupPath);
+            }
             catch (Exception ex) { loadError = ex.Message; }
             ShowSections();
         }
@@ -272,26 +276,26 @@ namespace MP1.ConfigurationStudio.Plugin
                 settings.SetBool(field.Section, field.Entry, !settings.GetBool(field.Section, field.Entry, false));
                 dirty = true;
             }
-            else if (field.Kind == NativeFieldKind.Combo)
+            else
             {
-                ShowChoice(field);
-            }
-            else if (field.Kind == NativeFieldKind.Integer)
-            {
-                string value;
-                if (EditValue(GetValue(field), true, out value))
+                List<Choice> choices = ChoicesFor(field);
+                if (choices.Count > 0)
                 {
-                    int number;
-                    if (!Int32.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out number)) number = field.Minimum;
-                    number = Math.Max(field.Minimum, Math.Min(field.Maximum, number));
-                    settings.Set(field.Section, field.Entry, number.ToString(CultureInfo.InvariantCulture));
-                    dirty = true;
+                    ShowChoice(field);
                 }
-            }
-            else if (field.Kind == NativeFieldKind.Text || field.Kind == NativeFieldKind.Folder)
-            {
-                if (ShowChoice(field)) { }
-                else
+                else if (field.Kind == NativeFieldKind.Integer)
+                {
+                    string value;
+                    if (EditValue(GetValue(field), true, out value))
+                    {
+                        int number;
+                        if (!Int32.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out number)) number = field.Minimum;
+                        number = Math.Max(field.Minimum, Math.Min(field.Maximum, number));
+                        settings.Set(field.Section, field.Entry, number.ToString(CultureInfo.InvariantCulture));
+                        dirty = true;
+                    }
+                }
+                else if (field.Kind == NativeFieldKind.Text || field.Kind == NativeFieldKind.Folder)
                 {
                     string value;
                     if (EditValue(GetValue(field), false, out value))
@@ -300,11 +304,11 @@ namespace MP1.ConfigurationStudio.Plugin
                         dirty = true;
                     }
                 }
-            }
-            else
-            {
-                ShowInfo(LocalizationText("Im Studio bearbeiten", "Edit in Studio"),
-                    LocalizationText("Dieser Bereich wird im MP1 Configuration Studio bearbeitet.", "This area is edited in MP1 Configuration Studio."));
+                else
+                {
+                    ShowInfo(LocalizationText("Im Studio bearbeiten", "Edit in Studio"),
+                        LocalizationText("Dieser Bereich wird im MP1 Configuration Studio bearbeitet.", "This area is edited in MP1 Configuration Studio."));
+                }
             }
             RefreshControls();
         }
@@ -360,6 +364,14 @@ namespace MP1.ConfigurationStudio.Plugin
             string key = (field.Section ?? string.Empty) + "/" + (field.Entry ?? string.Empty);
             List<Choice> cached;
             if (choiceCache.TryGetValue(key, out cached)) return cached;
+            List<ChoiceOption> catalog = ChoiceCatalog.Resolve(field.Section, field.Entry);
+            if (catalog.Count > 0)
+            {
+                var catalogChoices = new List<Choice>();
+                foreach (ChoiceOption option in catalog) catalogChoices.Add(new Choice { Value = option.Value, Label = option.Label });
+                choiceCache[key] = catalogChoices;
+                return catalogChoices;
+            }
             List<Choice> choices = null;
             if (String.Equals(key, "skin/name", StringComparison.OrdinalIgnoreCase)) choices = SkinChoices();
             else if (String.Equals(key, "gui/language", StringComparison.OrdinalIgnoreCase)) choices = LanguageChoices();
