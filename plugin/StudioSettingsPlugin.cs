@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Windows.Forms;
+using System.Xml;
 using MediaPortal.Dialogs;
 using MediaPortal.GUI.Library;
 using MediaPortal.Profile;
@@ -26,8 +29,15 @@ namespace MP1.ConfigurationStudio.Plugin
         private const int StatusId = 7;
 
         private readonly List<Row> rows = new List<Row>();
+        private readonly Dictionary<string, List<Choice>> choiceCache = new Dictionary<string, List<Choice>>(StringComparer.OrdinalIgnoreCase);
         private PluginSettingsStore settings;
         private string loadError;
+
+        private sealed class Choice
+        {
+            public string Value;
+            public string Label;
+        }
         private NativeSection section;
         private int page;
         private int focus;
@@ -206,12 +216,15 @@ namespace MP1.ConfigurationStudio.Plugin
                 settings.SetBool(row.Field.Section, row.Field.Entry, !settings.GetBool(row.Field.Section, row.Field.Entry, false));
                 dirty = true;
                 RefreshControls();
+                return;
             }
-            else if (row.Field.Kind == NativeFieldKind.Combo)
+            List<Choice> choices = ChoicesFor(row.Field);
+            if (choices.Count > 0)
             {
-                CycleCombo(row.Field, direction);
+                CycleChoice(row.Field, choices, direction);
+                return;
             }
-            else if (row.Field.Kind == NativeFieldKind.Integer)
+            if (row.Field.Kind == NativeFieldKind.Integer)
             {
                 int value = settings.GetInt(row.Field.Section, row.Field.Entry, row.Field.Minimum) + direction;
                 value = Math.Max(row.Field.Minimum, Math.Min(row.Field.Maximum, value));
@@ -261,7 +274,7 @@ namespace MP1.ConfigurationStudio.Plugin
             }
             else if (field.Kind == NativeFieldKind.Combo)
             {
-                CycleCombo(field, 1);
+                ShowChoice(field);
             }
             else if (field.Kind == NativeFieldKind.Integer)
             {
@@ -277,11 +290,15 @@ namespace MP1.ConfigurationStudio.Plugin
             }
             else if (field.Kind == NativeFieldKind.Text || field.Kind == NativeFieldKind.Folder)
             {
-                string value;
-                if (EditValue(GetValue(field), false, out value))
+                if (ShowChoice(field)) { }
+                else
                 {
-                    settings.Set(field.Section, field.Entry, value);
-                    dirty = true;
+                    string value;
+                    if (EditValue(GetValue(field), false, out value))
+                    {
+                        settings.Set(field.Section, field.Entry, value);
+                        dirty = true;
+                    }
                 }
             }
             else
@@ -292,15 +309,167 @@ namespace MP1.ConfigurationStudio.Plugin
             RefreshControls();
         }
 
-        private void CycleCombo(NativeField field, int direction)
+        private bool ShowChoice(NativeField field)
         {
-            if (field.Options.Count == 0) return;
-            string current = settings.Get(field.Section, field.Entry, string.Empty);
-            int index = field.Options.FindIndex(option => String.Equals(option.Value, current, StringComparison.OrdinalIgnoreCase));
-            if (index < 0) index = 0;
-            index = (index + direction + field.Options.Count) % field.Options.Count;
-            settings.Set(field.Section, field.Entry, field.Options[index].Value);
+            List<Choice> source = ChoicesFor(field);
+            if (source.Count == 0) return false;
+            var dialog = (GUIDialogSelect)GUIWindowManager.GetWindow((int)GUIWindow.Window.WINDOW_DIALOG_SELECT);
+            if (dialog == null) return false;
+            string current = GetValue(field);
+            var choices = new List<Choice>(source);
+            int selected = choices.FindIndex(choice => String.Equals(choice.Value, current, StringComparison.OrdinalIgnoreCase));
+            if (selected > 0)
+            {
+                Choice active = choices[selected];
+                choices.RemoveAt(selected);
+                choices.Insert(0, active);
+            }
+            dialog.SetHeading(LocalizationEnglish ? field.LabelEn : field.LabelDe);
+            foreach (Choice choice in choices) dialog.Add(choice.Label);
+            dialog.SelectedLabel = 0;
+            dialog.DoModal(GetID);
+            int index = dialog.SelectedLabel;
+            if (index < 0 || index >= choices.Count) return true;
+            settings.Set(field.Section, field.Entry, choices[index].Value);
             dirty = true;
+            status = LocalizationText("Ausgewählt: ", "Selected: ") + choices[index].Label;
+            return true;
+        }
+
+        private void CycleChoice(NativeField field, List<Choice> choices, int direction)
+        {
+            string current = GetValue(field);
+            int index = choices.FindIndex(choice => String.Equals(choice.Value, current, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) index = 0;
+            index = (index + direction + choices.Count) % choices.Count;
+            settings.Set(field.Section, field.Entry, choices[index].Value);
+            dirty = true;
+            status = LocalizationText("Ausgewählt: ", "Selected: ") + choices[index].Label;
+        }
+
+        private List<Choice> ChoicesFor(NativeField field)
+        {
+            if (field == null) return new List<Choice>();
+            if (field.Kind == NativeFieldKind.Combo)
+            {
+                var options = new List<Choice>();
+                foreach (NativeOption option in field.Options)
+                    options.Add(new Choice { Value = option.Value, Label = LocalizationEnglish ? option.LabelEn : option.LabelDe });
+                return options;
+            }
+            string key = (field.Section ?? string.Empty) + "/" + (field.Entry ?? string.Empty);
+            List<Choice> cached;
+            if (choiceCache.TryGetValue(key, out cached)) return cached;
+            List<Choice> choices = null;
+            if (String.Equals(key, "skin/name", StringComparison.OrdinalIgnoreCase)) choices = SkinChoices();
+            else if (String.Equals(key, "gui/language", StringComparison.OrdinalIgnoreCase)) choices = LanguageChoices();
+            else if (String.Equals(key, "bdplayer/regioncode", StringComparison.OrdinalIgnoreCase)) choices = RegionChoices();
+            else if (String.Equals(key, "subtitles/language", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(key, "movieplayer/audiolanguage", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(key, "bdplayer/audiolanguage", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(key, "bdplayer/subtitlelanguage", StringComparison.OrdinalIgnoreCase)) choices = LanguageCodeChoices();
+            else if (String.Equals(key, "subtitles/fontface", StringComparison.OrdinalIgnoreCase)) choices = FontChoices();
+            if (choices == null) choices = new List<Choice>();
+            choiceCache[key] = choices;
+            return choices;
+        }
+
+        private bool HasChoices(NativeField field)
+        {
+            return field != null && ChoicesFor(field).Count > 0;
+        }
+
+        private List<Choice> SkinChoices()
+        {
+            var list = new List<Choice>();
+            try
+            {
+                string root = Path.Combine(Path.GetDirectoryName(MPSettings.ConfigPathName), "skin");
+                if (Directory.Exists(root))
+                {
+                    foreach (string directory in Directory.GetDirectories(root))
+                    {
+                        string name = Path.GetFileName(directory);
+                        if (String.IsNullOrEmpty(name) || name.StartsWith(".", StringComparison.Ordinal)) continue;
+                        if (!File.Exists(Path.Combine(directory, "references.xml")) && !Directory.Exists(Path.Combine(directory, "Media"))) continue;
+                        list.Add(new Choice { Value = name, Label = name });
+                    }
+                }
+            }
+            catch { }
+            list.Sort((left, right) => String.Compare(left.Label, right.Label, StringComparison.CurrentCultureIgnoreCase));
+            return list;
+        }
+
+        private List<Choice> LanguageChoices()
+        {
+            var list = new List<Choice>();
+            try
+            {
+                string root = Path.Combine(Path.GetDirectoryName(MPSettings.ConfigPathName), "language");
+                if (Directory.Exists(root))
+                {
+                    foreach (string file in Directory.GetFiles(root, "strings_*.xml"))
+                    {
+                        try
+                        {
+                            var document = new XmlDocument { XmlResolver = null };
+                            document.Load(file);
+                            string name = document.DocumentElement == null ? null : document.DocumentElement.GetAttribute("name");
+                            string code = Path.GetFileNameWithoutExtension(file);
+                            if (code.StartsWith("strings_", StringComparison.OrdinalIgnoreCase)) code = code.Substring("strings_".Length);
+                            if (String.IsNullOrEmpty(name)) name = code;
+                            list.Add(new Choice { Value = name, Label = name + " (" + code + ")" });
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+            list.Sort((left, right) => String.Compare(left.Label, right.Label, StringComparison.CurrentCultureIgnoreCase));
+            return list;
+        }
+
+        private static List<Choice> RegionChoices()
+        {
+            return new List<Choice>
+            {
+                new Choice { Value = "A", Label = "A (Americas)" },
+                new Choice { Value = "B", Label = "B (Europe, Africa, Australia)" },
+                new Choice { Value = "C", Label = "C (Asia, Russia)" }
+            };
+        }
+
+        private static List<Choice> FontChoices()
+        {
+            var list = new List<Choice>();
+            try
+            {
+                using (var fonts = new InstalledFontCollection())
+                {
+                    foreach (FontFamily family in fonts.Families)
+                        list.Add(new Choice { Value = family.Name, Label = family.Name });
+                }
+            }
+            catch { }
+            list.Sort((left, right) => String.Compare(left.Label, right.Label, StringComparison.CurrentCultureIgnoreCase));
+            return list;
+        }
+
+        private static List<Choice> LanguageCodeChoices()
+        {
+            var codes = new[]
+            {
+                new[] { "de", "German" }, new[] { "en", "English" }, new[] { "fr", "French" },
+                new[] { "it", "Italian" }, new[] { "es", "Spanish" }, new[] { "nl", "Dutch" },
+                new[] { "pl", "Polish" }, new[] { "pt", "Portuguese" }, new[] { "ru", "Russian" },
+                new[] { "sv", "Swedish" }, new[] { "da", "Danish" }, new[] { "fi", "Finnish" },
+                new[] { "no", "Norwegian" }, new[] { "cs", "Czech" }, new[] { "hu", "Hungarian" },
+                new[] { "tr", "Turkish" }, new[] { "ja", "Japanese" }, new[] { "zh", "Chinese" }
+            };
+            var list = new List<Choice>();
+            foreach (string[] code in codes) list.Add(new Choice { Value = code[0], Label = code[0] + " – " + code[1] });
+            return list;
         }
 
         private string GetValue(NativeField field)
@@ -330,6 +499,7 @@ namespace MP1.ConfigurationStudio.Plugin
             if (field.Kind == NativeFieldKind.Bool) value = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ? LocalizationText("Ja", "Yes") : LocalizationText("Nein", "No");
             if (String.IsNullOrEmpty(value)) value = LocalizationText("(leer)", "(empty)");
             if (value.Length > 80) value = value.Substring(0, 77) + "…";
+            if (HasChoices(field)) value += "  ▸";
             return value;
         }
 

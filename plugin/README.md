@@ -17,9 +17,22 @@ The plugin reads and writes the XML file directly and deliberately does not use 
 ## Navigation
 
 - **Up/Down**: move between rows, page controls, **Sichern**, and **Zurück/Schließen**
-- **Left/Right**: change the selected boolean, combo, or integer value
-- **OK/Enter**: open a section, toggle a boolean, cycle a combo, or edit text
+- **Left/Right**: change the selected boolean, combo, or choice value
+- **OK/Enter**: open a section, toggle a boolean, or open a selection dialog
 - **Back/Esc**: leave the section or close the plugin and return to the MediaPortal home screen
+
+## Selection dialogs
+
+Fields with a known or discoverable set of values open a MediaPortal selection dialog instead of the virtual keyboard:
+
+- installed skins
+- installed languages
+- installed subtitle fonts
+- Blu-ray region codes
+- common audio/subtitle language codes
+- every schema combo field
+
+Rows with a selection list are marked `▸`. The current value is first and preselected; Left/Right cycles the list without opening the dialog.
 
 ## Build
 
