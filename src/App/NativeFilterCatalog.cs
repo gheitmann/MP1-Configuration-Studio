@@ -9,12 +9,23 @@ namespace MP1.ConfigurationStudio
     internal static class NativeFilterCatalog
     {
         private static readonly Dictionary<NativeFilterKind, List<string>> cache = new Dictionary<NativeFilterKind, List<string>>();
+        private static readonly Dictionary<NativeFilterKind, Dictionary<string, object>> devices = new Dictionary<NativeFilterKind, Dictionary<string, object>>();
         private static string runtimePath = AppDomain.CurrentDomain.BaseDirectory;
 
         public static void Configure(string runtime)
         {
             if (!String.IsNullOrEmpty(runtime)) runtimePath = runtime;
             cache.Clear();
+            devices.Clear();
+        }
+
+        public static object Device(NativeFilterKind kind, string name)
+        {
+            if (String.IsNullOrEmpty(name)) return null;
+            Names(kind);
+            Dictionary<string, object> map;
+            object device;
+            return devices.TryGetValue(kind, out map) && map.TryGetValue(name, out device) ? device : null;
         }
 
         public static IList<string> Names(NativeFilterKind kind)
@@ -29,25 +40,58 @@ namespace MP1.ConfigurationStudio
             }
         }
 
+        private static List<string> CoreNames(NativeFilterKind kind)
+        {
+            try
+            {
+                string corePath = Path.Combine(runtimePath, "Core.dll");
+                if (!File.Exists(corePath)) return null;
+                Assembly core = Assembly.LoadFrom(corePath);
+                Type helper = core.GetType("DShowNET.Helper.FilterHelper");
+                if (helper == null) return null;
+                string method = kind == NativeFilterKind.Video ? "GetVideoCodec"
+                    : kind == NativeFilterKind.Audio ? "GetAudioCodec"
+                    : kind == NativeFilterKind.AudioRenderer ? "GetAudioRenderers"
+                    : null;
+                if (method == null) return null;
+                MethodInfo invoke = helper.GetMethod(method, Type.EmptyTypes);
+                if (invoke == null) return null;
+                var values = invoke.Invoke(null, null) as System.Collections.IEnumerable;
+                if (values == null) return null;
+                var names = new List<string>();
+                foreach (object item in values)
+                    if (item != null && !String.IsNullOrWhiteSpace(item.ToString())) names.Add(item.ToString());
+                return names.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            }
+            catch (Exception ex)
+            {
+                StudioLog.Warn("Filter catalog core lookup failed for " + kind + ": " + ex.Message);
+                return null;
+            }
+        }
+
         private static List<string> Load(NativeFilterKind kind)
         {
             var result = new List<string>();
+            var map = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            devices[kind] = map;
             try
             {
                 string library = Path.Combine(runtimePath, "DirectShowLib.dll");
+                StudioLog.Info("Filter catalog: path=" + library + " exists=" + File.Exists(library));
                 if (!File.Exists(library)) return result;
                 Assembly assembly = Assembly.LoadFrom(library);
                 Type devices = assembly.GetType("DirectShowLib.DsDevice");
                 Type categories = assembly.GetType("DirectShowLib.FilterCategory");
+                StudioLog.Info("Filter catalog types: devices=" + (devices != null) + " categories=" + (categories != null));
                 if (devices == null || categories == null) return result;
-                string field = kind == NativeFilterKind.Video ? "VideoCompressorCategory"
-                    : kind == NativeFilterKind.Audio ? "AudioCompressorCategory"
-                    : kind == NativeFilterKind.AudioRenderer ? "AudioRendererCategory"
-                    : "LegacyAmFilterCategory";
+                string field = kind == NativeFilterKind.AudioRenderer ? "AudioRendererCategory" : "LegacyAmFilterCategory";
                 FieldInfo categoryField = categories.GetField(field, BindingFlags.Public | BindingFlags.Static);
                 MethodInfo enumerate = devices.GetMethod("GetDevicesOfCat", new[] { typeof(Guid) });
+                StudioLog.Info("Filter catalog field=" + (categoryField != null) + " method=" + (enumerate != null));
                 if (categoryField == null || enumerate == null) return result;
                 Array found = enumerate.Invoke(null, new object[] { (Guid)categoryField.GetValue(null) }) as Array;
+                StudioLog.Info("Filter catalog devices=" + (found == null ? 0 : found.Length));
                 if (found == null) return result;
                 foreach (object device in found)
                 {
@@ -55,14 +99,38 @@ namespace MP1.ConfigurationStudio
                     PropertyInfo name = device.GetType().GetProperty("Name");
                     string value = name == null ? null : name.GetValue(device, null) as string;
                     if (String.IsNullOrWhiteSpace(value)) continue;
-                    if ((kind == NativeFilterKind.Video || kind == NativeFilterKind.Audio)
-                        && (value.IndexOf("Encoder", StringComparison.OrdinalIgnoreCase) >= 0 || value.IndexOf("Compressor", StringComparison.OrdinalIgnoreCase) >= 0))
-                        continue;
-                    result.Add(value);
+                    if (!map.ContainsKey(value)) map[value] = device;
+                }
+
+                List<string> compatible = CoreNames(kind);
+                if (compatible != null)
+                {
+                    StudioLog.Info("Filter catalog core=" + kind + " names=" + compatible.Count);
+                    result.AddRange(compatible);
+                    if (kind == NativeFilterKind.AudioRenderer)
+                    {
+                        var portal = map.Where(pair => pair.Key.IndexOf("MediaPortal", StringComparison.OrdinalIgnoreCase) >= 0).Select(pair => pair.Value).FirstOrDefault();
+                        if (portal != null)
+                        {
+                            map["MediaPortal - Audio Renderer"] = portal;
+                            map["MediaPortal Audio Renderer"] = portal;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (string value in map.Keys)
+                    {
+                        if ((kind == NativeFilterKind.Video || kind == NativeFilterKind.Audio)
+                            && (value.IndexOf("Encoder", StringComparison.OrdinalIgnoreCase) >= 0 || value.IndexOf("Compressor", StringComparison.OrdinalIgnoreCase) >= 0))
+                            continue;
+                        result.Add(value);
+                    }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                StudioLog.Warn("Filter catalog failed for " + kind + ": " + ex.Message);
                 return new List<string>();
             }
             return result.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value => value, StringComparer.CurrentCultureIgnoreCase).ToList();

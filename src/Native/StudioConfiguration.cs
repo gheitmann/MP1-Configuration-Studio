@@ -124,6 +124,12 @@ namespace MP1.ConfigurationStudio
                 if (node.Name == "entry") yield return new System.Collections.Generic.KeyValuePair<string, string>(Attribute(node, "name"), node.InnerText);
         }
 
+        public System.Collections.Generic.IEnumerable<string> Sections()
+        {
+            foreach (XmlNode node in document.DocumentElement.ChildNodes)
+                if (node.Name == "section") yield return Attribute(node, "name");
+        }
+
         public void Remove(string section, string entry)
         {
             XmlNode node = FindEntry(section, entry);

@@ -255,6 +255,21 @@ namespace MP1.ConfigurationStudio
 
         private void ShowSection(NativeSection section, StudioAction selected = null)
         {
+            if (current != null && !Object.ReferenceEquals(current, section))
+            {
+                NativeXmlFileEditor xmlEditor = table.Controls.OfType<NativeXmlFileEditor>().FirstOrDefault();
+                if (xmlEditor != null && xmlEditor.HasUnsavedChanges && !xmlEditor.ConfirmDiscardChanges())
+                {
+                    StudioAction currentItem = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, current));
+                    foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
+                    {
+                        item.Selected = Object.ReferenceEquals(item, currentItem);
+                        item.ClearHover();
+                    }
+                    navigation.Invalidate();
+                    return;
+                }
+            }
             current = section;
             table.SuspendLayout();
             try
@@ -315,6 +330,39 @@ namespace MP1.ConfigurationStudio
 
         private void AddField(NativeField field)
         {
+            if (field.Kind == NativeFieldKind.RawSections)
+            {
+                var editor = new NativeRawSectionEditor(configuration, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                editor.Changed += delegate { MarkDirty(); };
+                table.Controls.Add(editor, 0, table.RowCount);
+                table.SetColumnSpan(editor, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(500)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.Classic)
+            {
+                var button = new Button { Text = Localization.IsEnglish ? field.LabelEn : field.LabelDe, Font = body, Height = Px(32), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(12), 0, Px(12), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, Px(2), 0, Px(4)) };
+                button.FlatAppearance.BorderColor = palette.Border;
+                button.Click += delegate { StartClassic(); };
+                table.Controls.Add(button, 0, table.RowCount);
+                table.SetColumnSpan(button, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.XmlFiles)
+            {
+                var editor = new NativeXmlFileEditor(Path.GetDirectoryName(configuration.Path), runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(editor, 0, table.RowCount);
+                table.SetColumnSpan(editor, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(500)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
             if (field.Kind == NativeFieldKind.DynamicEntries)
             {
                 var entries = configuration.Entries(field.Section).ToArray();
@@ -432,7 +480,10 @@ namespace MP1.ConfigurationStudio
             }
             else if (field.Kind == NativeFieldKind.Filter)
             {
-                var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = body, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0) };
+                var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0), Height = Px(30) };
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(34)));
+                var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = body, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0) };
                 string current = configuration.Get(field.Section, field.Entry, "");
                 foreach (string name in NativeFilterCatalog.Names(field.FilterKind))
                     if (!combo.Items.Contains(name)) combo.Items.Add(name);
@@ -440,7 +491,12 @@ namespace MP1.ConfigurationStudio
                 if (!String.IsNullOrWhiteSpace(current)) combo.SelectedItem = current;
                 else if (combo.Items.Count > 0) combo.SelectedIndex = 0;
                 combo.SelectedIndexChanged += delegate { if (combo.SelectedItem != null) { configuration.Set(field.Section, field.Entry, combo.SelectedItem.ToString()); MarkDirty(); } };
-                input = combo;
+                var configure = new Button { Text = "…", Font = body, FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
+                configure.FlatAppearance.BorderColor = palette.Border;
+                configure.Click += delegate { NativeFilterProperties.Show(FindForm(), field.FilterKind, combo.SelectedItem == null ? null : combo.SelectedItem.ToString()); };
+                row.Controls.Add(combo, 0, 0);
+                row.Controls.Add(configure, 1, 0);
+                input = row;
             }
             else if (field.Kind == NativeFieldKind.Integer)
             {
@@ -578,7 +634,17 @@ namespace MP1.ConfigurationStudio
 
         private void OnClosing(object sender, FormClosingEventArgs e)
         {
-            if (!dirty || suppressClosePrompt) return;
+            if (suppressClosePrompt) return;
+            NativeXmlFileEditor xmlEditor = table.Controls.OfType<NativeXmlFileEditor>().FirstOrDefault();
+            if (xmlEditor != null && xmlEditor.HasUnsavedChanges)
+            {
+                if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved XML file changes?" : "Ungespeicherte XML-Dateiänderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+            if (!dirty) return;
             if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes?" : "Ungespeicherte Änderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) e.Cancel = true;
         }
 

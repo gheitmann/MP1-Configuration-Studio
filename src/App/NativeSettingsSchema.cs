@@ -13,7 +13,10 @@ namespace MP1.ConfigurationStudio
         DynamicBools,
         Folder,
         Filter,
-        DynamicEntries
+        DynamicEntries,
+        XmlFiles,
+        RawSections,
+        Classic
     }
 
     internal enum NativeFilterKind
@@ -679,7 +682,8 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("daemon", "askbeforeplaying", "Vor Wiedergabe fragen", "Ask before playing", NativeFieldKind.Bool))),
                 new NativeSection("plugins", "Plugins", "Plugins", "Plugins aktivieren oder deaktivieren; die Konfiguration bleibt klassisch.", "Enable or disable plugins; configuration stays classic.", "plugin")
                     .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
-                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Die Gruppen entsprechen den drei Schaltern der klassischen Plugin-Verwaltung: Aktiviert, Im Home-Menü und In My Plugins. Plugin-Konfigurationsfenster öffnen sich weiterhin über Klassisch / Plugins.", "The groups mirror the three classic plugin switches: Enabled, Listed in Home, and Listed in My Plugins. Plugin configuration windows still open via Classic / plugins.")))
+                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Die Gruppen entsprechen den drei Schaltern der klassischen Plugin-Verwaltung: Aktiviert, Im Home-Menü und In My Plugins. Plugin-Konfigurationsfenster öffnen sich weiterhin über Klassisch / Plugins.", "The groups mirror the three classic plugin switches: Enabled, Listed in Home, and Listed in My Plugins. Plugin configuration windows still open via Classic / plugins."))
+                        .Add(new NativeField("plugins", "classic", "Klassische Plugin-Konfiguration öffnen", "Open classic plugin configuration", NativeFieldKind.Classic, "Öffnet die Plugin-Konfigurationsfenster in der klassischen MediaPortal-Konfiguration.", "Opens the plugin configuration windows in the classic MediaPortal configuration.")))
                     .Group(new NativeGroup("Aktiviert", "Enabled")
                         .Add(new NativeField("plugins", "windows", "Aktivierte Plugins", "Enabled plugins", NativeFieldKind.DynamicBools, "Entspricht „Enabled“ im klassischen Plugin-Menü. Änderungen werden nach einem Neustart wirksam.", "Matches “Enabled” in the classic plugin menu. Changes take effect after a restart.")))
                     .Group(new NativeGroup("Im Home-Menü", "Listed in Home")
@@ -721,6 +725,12 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("mymusic", "entries", "Vorlagen", "Templates", NativeFieldKind.DynamicEntries).Entries("Name", "Date", "Size", "Track", "Duration", "Title", "Artist", "Album", "Filename", "Rating", "Year", "DiscID", "Composer", "Times Played", "File Type")))
                     .Group(new NativeGroup("Video-Ansicht", "Video view")
                         .Add(new NativeField("movies", "entries", "Ansicht", "View", NativeFieldKind.DynamicEntries).Entries("start", "last"))),
+                new NativeSection("files", "Spezialdateien", "Special files", "Tastaturbelegung, Ansichten, Musik-DSP und weitere XML-Dateien bearbeiten.", "Edit key mapping, views, music DSP, and other XML files.", "file")
+                    .Group(new NativeGroup("XML-Dateien", "XML files")
+                        .Add(new NativeField("files", "xml", "Datei", "File", NativeFieldKind.XmlFiles, "Keymap, Ansichten, DSP und weitere XML-Dateien werden mit Backup und atomarem Schreiben gespeichert. Über Andere Datei lässt sich jede XML- oder Konfigurationsdatei öffnen.", "Keymap, views, DSP, and other XML files are saved with backup and atomic replacement. Other file opens any XML or configuration file."))),
+                new NativeSection("rawxml", "XML-Rohdaten", "Raw XML", "Jeden Bereich und Eintrag der MediaPortal.xml direkt bearbeiten, auch Plugins und unbekannte Werte.", "Edit every section and entry of MediaPortal.xml, including plugin settings and unknown values.", "file")
+                    .Group(new NativeGroup("Bereich", "Section")
+                        .Add(new NativeField("raw", "entries", "Bereich", "Section", NativeFieldKind.RawSections, "Alle Einträge des gewählten XML-Bereichs. Unbekannte Werte bleiben erhalten.", "All entries of the selected XML section. Unknown values are preserved."))),
             };
         }
     }

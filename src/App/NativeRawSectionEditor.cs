@@ -1,0 +1,138 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
+
+namespace MP1.ConfigurationStudio
+{
+    internal sealed class NativeRawSectionEditor : UserControl
+    {
+        private readonly StudioConfiguration configuration;
+        private readonly float scale;
+        private readonly Palette palette = Palette.For(true);
+        private readonly ComboBox choice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+        private readonly TextBox filter = new TextBox { BorderStyle = BorderStyle.FixedSingle };
+        private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
+        private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
+        private readonly List<string> sections;
+        private bool updating;
+
+        public event EventHandler Changed;
+
+        public NativeRawSectionEditor(StudioConfiguration configuration, float scale)
+        {
+            this.configuration = configuration;
+            this.scale = scale;
+            BackColor = palette.Background;
+            ForeColor = palette.Text;
+            var body = Typography.Create(10f * scale, FontStyle.Regular);
+            var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(38), ColumnCount = 3, BackColor = palette.Background };
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(180)));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(230)));
+            top.Controls.Add(new Label { Text = Localization.IsEnglish ? "XML section" : "XML-Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+            choice.Dock = DockStyle.Fill;
+            choice.Font = body;
+            choice.BackColor = palette.Input;
+            choice.ForeColor = palette.Text;
+            sections = configuration.Sections().OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase).ToList();
+            foreach (string name in sections) choice.Items.Add(name);
+            choice.SelectedIndexChanged += delegate { if (!updating) Build(); };
+            top.Controls.Add(choice, 1, 0);
+            filter.Dock = DockStyle.Fill;
+            filter.Font = body;
+            filter.BackColor = palette.Input;
+            filter.ForeColor = palette.Muted;
+            filter.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …";
+            filter.GotFocus += delegate { if (filter.ForeColor == palette.Muted) { filter.Text = string.Empty; filter.ForeColor = palette.Text; RebuildChoices(); } };
+            filter.LostFocus += delegate { if (filter.Text.Length == 0) { filter.ForeColor = palette.Muted; filter.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …"; RebuildChoices(); } };
+            filter.TextChanged += delegate { RebuildChoices(); };
+            top.Controls.Add(filter, 2, 0);
+
+            table.Padding = new Padding(0);
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(300)));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            scroll.Controls.Add(table);
+            scroll.Resize += delegate { LayoutTable(); };
+            Controls.Add(scroll);
+            Controls.Add(top);
+            int general = choice.Items.IndexOf("general");
+            if (choice.Items.Count > 0) choice.SelectedIndex = general >= 0 ? general : 0;
+        }
+
+        private int Px(float value) { return (int)Math.Round(value * scale); }
+
+        private void RebuildChoices()
+        {
+            if (updating) return;
+            string query = filter.ForeColor == palette.Muted ? string.Empty : filter.Text.Trim();
+            string selected = choice.SelectedItem as string;
+            updating = true;
+            try
+            {
+                choice.Items.Clear();
+                foreach (string name in sections)
+                    if (query.Length == 0 || name.IndexOf(query, StringComparison.CurrentCultureIgnoreCase) >= 0)
+                        choice.Items.Add(name);
+                if (selected != null && choice.Items.Contains(selected)) choice.SelectedItem = selected;
+                else if (choice.Items.Count > 0) choice.SelectedIndex = 0;
+            }
+            finally { updating = false; }
+            Build();
+        }
+
+        private void LayoutTable()
+        {
+            table.Width = Math.Max(Px(300), scroll.ClientSize.Width - scroll.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
+        }
+
+        private void Build()
+        {
+            table.SuspendLayout();
+            try
+            {
+                table.Controls.Clear();
+                table.RowStyles.Clear();
+                table.RowCount = 0;
+                string section = choice.SelectedItem == null ? null : choice.SelectedItem.ToString();
+                if (section == null) return;
+                foreach (var entry in configuration.Entries(section).ToArray())
+                {
+                    string key = entry.Key;
+                    string value = entry.Value ?? "";
+                    bool boolValue = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                        || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+                    if (boolValue)
+                    {
+                        var check = new CheckBox { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                        check.CheckedChanged += delegate { configuration.SetBool(section, key, check.Checked); RaiseChanged(); };
+                        table.Controls.Add(check, 0, table.RowCount);
+                        table.SetColumnSpan(check, 2);
+                        table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        table.RowCount++;
+                    }
+                    else
+                    {
+                        var label = new Label { Text = key, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
+                        var text = new TextBox { Text = value, Font = Typography.Create(10f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                        text.TextChanged += delegate { configuration.Set(section, key, text.Text); RaiseChanged(); };
+                        table.Controls.Add(label, 0, table.RowCount);
+                        table.Controls.Add(text, 1, table.RowCount);
+                        table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        table.RowCount++;
+                    }
+                }
+            }
+            finally { table.ResumeLayout(true); }
+            LayoutTable();
+            scroll.AutoScrollPosition = Point.Empty;
+        }
+
+        private void RaiseChanged()
+        {
+            var handler = Changed;
+            if (handler != null) handler(this, EventArgs.Empty);
+        }
+    }
+}
