@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace MP1.ConfigurationStudio
@@ -23,7 +25,7 @@ namespace MP1.ConfigurationStudio
         private Button glassButton;
         private StudioLogo logo;
         private FlowLayoutPanel footerActions;
-        private Button saveButton, closeButton, backupButton;
+        private Button saveButton, closeButton, backupButton, updateButton;
         private readonly Label title = new Label { AutoSize = true };
         private readonly Label subtitle = new Label { AutoSize = true };
         private readonly Label status = new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
@@ -169,7 +171,7 @@ namespace MP1.ConfigurationStudio
             status.Font = small;
             status.ForeColor = palette.Muted;
             footer.Controls.Add(status);
-            footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(360) };
+            footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(520) };
             closeButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             closeButton.FlatAppearance.BorderColor = palette.Border;
             closeButton.Click += delegate { Close(); };
@@ -182,6 +184,10 @@ namespace MP1.ConfigurationStudio
             backupButton.FlatAppearance.BorderColor = palette.Border;
             backupButton.Click += delegate { CreateBackup(); };
             footerActions.Controls.Add(backupButton);
+            updateButton = new GlassButton { Colors = () => palette, Text = "Update", Width = Px(84), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            updateButton.FlatAppearance.BorderColor = palette.Border;
+            updateButton.Click += delegate { CheckForUpdates(); };
+            footerActions.Controls.Add(updateButton);
             footer.Controls.Add(footerActions);
             Controls.Add(footer);
             Controls.Add(header);
@@ -227,7 +233,7 @@ namespace MP1.ConfigurationStudio
             }
             footer.Height = Px(62);
             footer.Padding = new Padding(Px(24), Px(12), Px(20), Px(10));
-            footerActions.Width = Px(360);
+            footerActions.Width = Px(520);
             status.Font = small;
             closeButton.Font = body;
             closeButton.Width = Px(110);
@@ -763,6 +769,45 @@ namespace MP1.ConfigurationStudio
                 StudioLog.Error(ex, "Native configuration save failed");
                 MessageBox.Show(this, (Localization.IsEnglish ? "The configuration could not be saved.\r\n\r\n" : "Die Konfiguration konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+        }
+
+        private void CheckForUpdates()
+        {
+            if (updateButton == null) return;
+            updateButton.Enabled = false;
+            status.Text = Localization.IsEnglish ? "Checking for updates …" : "Update-Prüfung läuft …";
+            status.ForeColor = palette.Muted;
+            string current = UpdateChecker.CurrentVersion;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                UpdateChecker.Result result = UpdateChecker.Check(current);
+                try
+                {
+                    if (IsDisposed || !IsHandleCreated) return;
+                    BeginInvoke(new Action(delegate
+                    {
+                        updateButton.Enabled = true;
+                        if (!String.IsNullOrEmpty(result.Error))
+                        {
+                            status.Text = result.Error;
+                            MessageBox.Show(this, (Localization.IsEnglish ? "Update check failed:\r\n" : "Update-Prüfung fehlgeschlagen:\r\n") + result.Error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                        if (!result.Newer)
+                        {
+                            status.Text = (Localization.IsEnglish ? "Up to date: " : "Aktuell: ") + result.Latest;
+                            MessageBox.Show(this, (Localization.IsEnglish ? "You are using the latest version (" : "Sie verwenden die neueste Version (") + current + ").", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+                        status.Text = (Localization.IsEnglish ? "Update available: " : "Update verfügbar: ") + result.Latest;
+                        if (MessageBox.Show(this, (Localization.IsEnglish ? "Version " : "Version ") + result.Latest + (Localization.IsEnglish ? " is available. Open the release page?" : " ist verfügbar. Release-Seite öffnen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                        {
+                            try { Process.Start(result.Url); } catch { }
+                        }
+                    }));
+                }
+                catch { }
+            });
         }
 
         private void CreateBackup()

@@ -406,7 +406,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.30"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.31"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -527,6 +527,10 @@ namespace MP1.ConfigurationStudio
    NativeKeymapEditor.ClearActionKey(conflicts[0]);
    Check(NativeKeymapEditor.DuplicateActions(globalKeys,"F9",secondAction).Count==0,"keymap conflict resolution clears the conflicting key");
    Check(NativeKeymapEditor.DuplicateActions((XmlElement)keymapDoc.SelectSingleNode("/keymap/window"),"F9",null).Count==1,"keymap conflict detection stays within the selected window");
+   Check(UpdateChecker.Compare("v2.0.0-beta.32","2.0.0-beta.31")>0,"update check compares newer beta versions");
+   Check(UpdateChecker.Compare("2.0.0","2.0.0-beta.31")>0,"update check ranks stable above beta");
+   Check(UpdateChecker.Compare("2.0.0-beta.31","v2.0.0-beta.31")==0,"update check treats v-prefix as equal");
+   Check(UpdateChecker.Compare("2.0.1-beta.1","2.0.0-beta.99")>0,"update check compares numeric components before beta number");
             Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
             Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
             Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");
