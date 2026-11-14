@@ -20,7 +20,8 @@ namespace MP1.ConfigurationStudio
         Keymap,
         Views,
         Dsp,
-        TvServer
+        TvServer,
+        PluginConfig
     }
 
     internal enum NativeFilterKind
@@ -698,10 +699,11 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("daemon", "extensions", "Unterstützte Endungen", "Supported extensions", NativeFieldKind.Text, "Kommagetrennte Liste, z. B. .iso,.bin.", "Comma-separated list, e.g. .iso,.bin."))
                         .Add(new NativeField("daemon", "driveNo", "Laufwerksnummer", "Drive number", NativeFieldKind.Integer).Range(0, 25))
                         .Add(new NativeField("daemon", "askbeforeplaying", "Vor Wiedergabe fragen", "Ask before playing", NativeFieldKind.Bool))),
-                new NativeSection("plugins", "Plugins", "Plugins", "Plugins aktivieren oder deaktivieren; die Konfiguration bleibt klassisch.", "Enable or disable plugins; configuration stays classic.", "plugin")
+                new NativeSection("plugins", "Plugins", "Plugins", "Plugins aktivieren, deaktivieren und direkt konfigurieren.", "Enable, disable, and configure plugins directly.", "plugin")
                     .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
-                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Die Gruppen entsprechen den drei Schaltern der klassischen Plugin-Verwaltung: Aktiviert, Im Home-Menü und In My Plugins. Plugin-Konfigurationsfenster öffnen sich weiterhin über Klassisch / Plugins.", "The groups mirror the three classic plugin switches: Enabled, Listed in Home, and Listed in My Plugins. Plugin configuration windows still open via Classic / plugins."))
-                        .Add(new NativeField("plugins", "classic", "Klassische Plugin-Konfiguration öffnen", "Open classic plugin configuration", NativeFieldKind.Classic, "Öffnet die Plugin-Konfigurationsfenster in der klassischen MediaPortal-Konfiguration.", "Opens the plugin configuration windows in the classic MediaPortal configuration.")))
+                        .Add(new NativeField("plugins", "native", "Plugin-Konfiguration", "Plugin configuration", NativeFieldKind.PluginConfig, "Erkennt Plugins mit eigenem Konfigurationsfenster und öffnet es direkt. Die Fenster selbst bleiben im Plugin-Stil.", "Detects plugins with their own configuration window and opens it directly. The windows keep the plugin's own style.")))
+                    .Group(new NativeGroup("Klassische Konfiguration", "Classic configuration")
+                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Fallback: Die klassische MediaPortal-Konfiguration öffnet weiterhin alle Plugin-Fenster.", "Fallback: the classic MediaPortal configuration still opens every plugin window.")))
                     .Group(new NativeGroup("Aktiviert", "Enabled")
                         .Add(new NativeField("plugins", "windows", "Aktivierte Plugins", "Enabled plugins", NativeFieldKind.DynamicBools, "Entspricht „Enabled“ im klassischen Plugin-Menü. Änderungen werden nach einem Neustart wirksam.", "Matches “Enabled” in the classic plugin menu. Changes take effect after a restart.")))
                     .Group(new NativeGroup("Im Home-Menü", "Listed in Home")

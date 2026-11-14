@@ -20,6 +20,19 @@ namespace MP1.ConfigurationStudio
         private readonly Label status = new Label();
         private readonly Label database = new Label();
         private readonly Label overview = new Label();
+        private readonly Button details;
+        private OverviewResult overviewData;
+
+        private sealed class OverviewResult
+        {
+            public string Text;
+            public readonly List<string> TvChannels = new List<string>();
+            public readonly List<string> RadioChannels = new List<string>();
+            public readonly List<string> Groups = new List<string>();
+            public readonly List<string> RadioGroups = new List<string>();
+            public readonly List<string> Recordings = new List<string>();
+            public readonly List<string> Schedules = new List<string>();
+        }
 
         public NativeTvServerPanel(string runtime, float scale)
         {
@@ -61,8 +74,11 @@ namespace MP1.ConfigurationStudio
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
             var setup = ButtonFor(Localization.IsEnglish ? "Open TV Server configuration" : "TV-Server-Konfiguration öffnen", delegate { OpenSetup(); }, body);
             var folder = ButtonFor(Localization.IsEnglish ? "Open TV Server folder" : "TV-Server-Ordner öffnen", delegate { OpenFolder(); }, body);
+            details = ButtonFor(Localization.IsEnglish ? "Show details" : "Details anzeigen", delegate { ShowDetails(); }, body);
+            details.Enabled = false;
             actions.Controls.Add(setup);
             actions.Controls.Add(folder);
+            actions.Controls.Add(details);
             table.Controls.Add(actions, 0, 3);
 
             var note = new Label
@@ -190,22 +206,25 @@ namespace MP1.ConfigurationStudio
             overview.ForeColor = palette.Muted;
             ThreadPool.QueueUserWorkItem(delegate
             {
-                string text = ReadOverview();
+                OverviewResult result = ReadOverview();
                 try
                 {
                     if (!IsDisposed && IsHandleCreated)
                         BeginInvoke(new Action(delegate
                         {
-                            overview.Text = text;
-                            overview.ForeColor = text.StartsWith("TV:", StringComparison.Ordinal) ? palette.Text : palette.Muted;
+                            overviewData = result;
+                            overview.Text = result.Text;
+                            overview.ForeColor = result.Text.StartsWith("TV:", StringComparison.Ordinal) ? palette.Text : palette.Muted;
+                            details.Enabled = result.TvChannels.Count + result.RadioChannels.Count + result.Groups.Count + result.Recordings.Count + result.Schedules.Count > 0;
                         }));
                 }
                 catch { }
             });
         }
 
-        private string ReadOverview()
+        private OverviewResult ReadOverview()
         {
+            var result = new OverviewResult();
             try
             {
                 string config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Team MediaPortal", "MediaPortal TV Server");
@@ -222,34 +241,58 @@ namespace MP1.ConfigurationStudio
                 };
                 using (Process process = Process.Start(info))
                 {
-                    if (!process.WaitForExit(20000))
+                    var outputTask = process.StandardOutput.ReadToEndAsync();
+                    var errorTask = process.StandardError.ReadToEndAsync();
+                    if (!process.WaitForExit(30000))
                     {
                         try { process.Kill(); } catch { }
-                        return Localization.IsEnglish ? "TV Server overview timed out." : "Zeitüberschreitung bei der TV-Server-Übersicht.";
+                        result.Text = Localization.IsEnglish ? "TV Server overview timed out." : "Zeitüberschreitung bei der TV-Server-Übersicht.";
+                        return result;
                     }
-                    string output = process.StandardOutput.ReadToEnd();
-                    string error = process.StandardError.ReadToEnd();
+                    string output = outputTask.Result;
+                    string error = errorTask.Result;
                     var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     foreach (string line in (output ?? string.Empty).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         int index = line.IndexOf('=');
-                        if (index > 0) values[line.Substring(0, index)] = line.Substring(index + 1);
+                        if (index <= 0) continue;
+                        string key = line.Substring(0, index);
+                        string value = line.Substring(index + 1);
+                        switch (key)
+                        {
+                            case "tvChannel": result.TvChannels.Add(value); break;
+                            case "radioChannel": result.RadioChannels.Add(value); break;
+                            case "group": result.Groups.Add(value); break;
+                            case "radioGroup": result.RadioGroups.Add(value); break;
+                            case "recording": result.Recordings.Add(value); break;
+                            case "schedule": result.Schedules.Add(value); break;
+                            default: if (!values.ContainsKey(key)) values[key] = value; break;
+                        }
                     }
                     if (!values.ContainsKey("ok") || values["ok"] != "1")
                     {
                         string message = values.ContainsKey("error") ? values["error"] : (String.IsNullOrWhiteSpace(error) ? "unknown error" : error.Trim());
-                        return (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + message;
+                        result.Text = (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + message;
+                        return result;
                     }
                     string Number(string key) { string value; return values.TryGetValue(key, out value) ? value : "0"; }
-                    return (Localization.IsEnglish
+                    result.Text = (Localization.IsEnglish
                         ? "TV: " + Number("tvChannels") + " channels  ·  Radio: " + Number("radioChannels") + "  ·  " + Number("groups") + " groups  ·  " + Number("recordings") + " recordings  ·  " + Number("schedules") + " schedules  ·  " + Number("cards") + " cards"
                         : "TV: " + Number("tvChannels") + " Kanäle  ·  Radio: " + Number("radioChannels") + "  ·  " + Number("groups") + " Gruppen  ·  " + Number("recordings") + " Aufnahmen  ·  " + Number("schedules") + " Timer  ·  " + Number("cards") + " Karten");
+                    return result;
                 }
             }
             catch (Exception ex)
             {
-                return (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + ex.Message;
+                result.Text = (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + ex.Message;
+                return result;
             }
+        }
+
+        private void ShowDetails()
+        {
+            if (overviewData == null) return;
+            using (var dialog = new TvDetailsDialog(scale, overviewData)) dialog.ShowDialog(FindForm());
         }
 
         private void OpenSetup()
@@ -272,6 +315,86 @@ namespace MP1.ConfigurationStudio
             }
             try { Process.Start("explorer.exe", "\"" + tvServerDirectory + "\""); }
             catch (Exception ex) { MessageBox.Show(FindForm(), ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        }
+
+        private sealed class TvDetailsDialog : Form
+        {
+            private readonly float scale;
+            private readonly ComboBox category = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+            private readonly ListBox list = new ListBox();
+            private readonly List<string[]> groups = new List<string[]>();
+
+            public TvDetailsDialog(float scale, OverviewResult data)
+            {
+                this.scale = scale;
+                Text = Localization.IsEnglish ? "TV Server details" : "TV-Server-Details";
+                FormBorderStyle = FormBorderStyle.Sizable;
+                StartPosition = FormStartPosition.CenterParent;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+                BackColor = Palette.For(true).Panel;
+                ForeColor = Palette.For(true).Text;
+                ClientSize = new Size(Px(660), Px(520));
+                MinimumSize = new Size(Px(460), Px(320));
+                Add(data.TvChannels, Localization.IsEnglish ? "TV channels" : "TV-Kanäle");
+                Add(data.RadioChannels, Localization.IsEnglish ? "Radio channels" : "Radio-Kanäle");
+                Add(data.Groups, Localization.IsEnglish ? "TV groups" : "TV-Gruppen");
+                Add(data.RadioGroups, Localization.IsEnglish ? "Radio groups" : "Radio-Gruppen");
+                Add(data.Recordings, Localization.IsEnglish ? "Recordings" : "Aufnahmen");
+                Add(data.Schedules, Localization.IsEnglish ? "Schedules" : "Timer");
+
+                var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(40), ColumnCount = 2, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(6), Px(10), 0) };
+                top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
+                top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Category" : "Kategorie", ForeColor = Palette.For(true).Muted, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+                category.Dock = DockStyle.Fill;
+                category.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                category.BackColor = Palette.For(true).Input;
+                category.ForeColor = Palette.For(true).Text;
+                foreach (string[] group in groups) category.Items.Add(group[0] + " (" + group[1].Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Length + ")");
+                category.SelectedIndexChanged += delegate { FillList(); };
+                top.Controls.Add(category, 1, 0);
+
+                list.Dock = DockStyle.Fill;
+                list.BackColor = Palette.For(true).Input;
+                list.ForeColor = Palette.For(true).Text;
+                list.BorderStyle = BorderStyle.FixedSingle;
+                list.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                list.IntegralHeight = false;
+                list.Margin = new Padding(Px(10), Px(4), Px(10), Px(10));
+
+                var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(48), FlowDirection = FlowDirection.RightToLeft, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(8), Px(10), Px(8)) };
+                var close = new Button { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                close.FlatAppearance.BorderColor = Palette.For(true).Border;
+                bottom.Controls.Add(close);
+                Controls.Add(list);
+                Controls.Add(bottom);
+                Controls.Add(top);
+                CancelButton = close;
+                if (category.Items.Count > 0) category.SelectedIndex = 0;
+            }
+
+            private int Px(float value) { return (int)Math.Round(value * scale); }
+
+            private void Add(List<string> values, string label)
+            {
+                if (values == null) values = new List<string>();
+                groups.Add(new[] { label, string.Join("\n", values.ToArray()) });
+            }
+
+            private void FillList()
+            {
+                list.BeginUpdate();
+                try
+                {
+                    list.Items.Clear();
+                    if (category.SelectedIndex < 0 || category.SelectedIndex >= groups.Count) return;
+                    string[] lines = groups[category.SelectedIndex][1].Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string line in lines) list.Items.Add(line);
+                    if (list.Items.Count == 0) list.Items.Add(Localization.IsEnglish ? "(empty)" : "(leer)");
+                }
+                finally { list.EndUpdate(); }
+            }
         }
     }
 }

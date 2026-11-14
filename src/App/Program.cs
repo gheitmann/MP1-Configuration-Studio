@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.18")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.19")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -25,6 +25,10 @@ namespace MP1.ConfigurationStudio
         [STAThread]
         public static int Main(string[] args)
         {
+            if (args.Length >= 2 && String.Equals(args[0], "--plugin-list", StringComparison.OrdinalIgnoreCase))
+                return PluginConfigHelper.List(args[1]);
+            if (args.Length >= 4 && String.Equals(args[0], "--plugin-config", StringComparison.OrdinalIgnoreCase))
+                return PluginConfigHelper.Show(args[1], args[2], args[3]);
             if (args.Length >= 3 && String.Equals(args[0], "--tv-overview", StringComparison.OrdinalIgnoreCase))
                 return TvServerOverview.Run(args[1], args[2]);
             StudioLog.Initialize();

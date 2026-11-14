@@ -215,7 +215,8 @@ namespace MP1.ConfigurationStudio.Plugin
                 || field.Kind == NativeFieldKind.DynamicEntries || field.Kind == NativeFieldKind.XmlFiles
                 || field.Kind == NativeFieldKind.RawSections || field.Kind == NativeFieldKind.Classic
                 || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views
-                || field.Kind == NativeFieldKind.Dsp || field.Kind == NativeFieldKind.TvServer)
+                || field.Kind == NativeFieldKind.Dsp || field.Kind == NativeFieldKind.TvServer
+                || field.Kind == NativeFieldKind.PluginConfig)
                 return LocalizationText("im Studio bearbeiten", "edit in Studio");
             if (field.Kind == NativeFieldKind.Info) return LocalizationText("Hinweis", "note");
             string value = GetValue(field);

@@ -10,6 +10,7 @@ namespace MP1.ConfigurationStudio
     {
         bool HasUnsavedChanges { get; }
         bool ConfirmDiscardChanges();
+        bool SaveChanges();
     }
 
     internal static class NativeXmlFileStore

@@ -23,7 +23,7 @@ namespace MP1.ConfigurationStudio
         private readonly ComboBox contextChoice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
         private readonly TextBox search = new TextBox { BorderStyle = BorderStyle.FixedSingle };
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 4 };
+        private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = false, ColumnCount = 5 };
         private readonly Label status = new Label();
         private readonly List<Context> contexts = new List<Context>();
         private XmlDocument document;
@@ -40,10 +40,10 @@ namespace MP1.ConfigurationStudio
             var body = Typography.Create(10f * scale, FontStyle.Regular);
 
             var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(38), ColumnCount = 4, BackColor = palette.Background };
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(150)));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(220)));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(100)));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 24));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Context" : "Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
             contextChoice.Dock = DockStyle.Fill;
             contextChoice.Font = body;
@@ -64,11 +64,13 @@ namespace MP1.ConfigurationStudio
             save.Dock = DockStyle.Fill;
             top.Controls.Add(save, 3, 0);
 
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(38), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
             var reload = ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { Reload(); }, body);
+            var add = ButtonFor(Localization.IsEnglish ? "Add action" : "Aktion hinzufügen", delegate { AddAction(); }, body);
             actions.Controls.Add(reload);
+            actions.Controls.Add(add);
             status.AutoSize = false;
-            status.Width = Px(600);
+            status.Width = Px(260);
             status.Height = Px(28);
             status.AutoEllipsis = true;
             status.TextAlign = ContentAlignment.MiddleLeft;
@@ -77,10 +79,11 @@ namespace MP1.ConfigurationStudio
             actions.Controls.Add(status);
 
             table.Padding = new Padding(0);
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(150)));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(34)));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(160)));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 14));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 11));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 19));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 14));
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
             Controls.Add(scroll);
@@ -97,6 +100,12 @@ namespace MP1.ConfigurationStudio
             return MessageBox.Show(FindForm(), Localization.IsEnglish ? "Discard unsaved key mapping changes?" : "Ungespeicherte Tastenbelegung verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
+        public bool SaveChanges()
+        {
+            SaveFile();
+            return !dirty;
+        }
+
         private int Px(float value) { return (int)Math.Round(value * scale); }
 
         private Button ButtonFor(string text, EventHandler click, Font font)
@@ -109,7 +118,10 @@ namespace MP1.ConfigurationStudio
 
         private void LayoutTable()
         {
-            table.Width = Math.Max(Px(620), scroll.ClientSize.Width - scroll.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
+            int width = Math.Max(Px(420), scroll.ClientSize.Width - scroll.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - Px(4));
+            table.Width = width;
+            table.PerformLayout();
+            table.Height = Math.Max(Px(40), table.GetPreferredSize(new Size(width, 0)).Height);
         }
 
         private void LoadFile()
@@ -192,7 +204,7 @@ namespace MP1.ConfigurationStudio
                 {
                     var empty = new Label { Text = Localization.IsEnglish ? "No actions in this context." : "Keine Aktionen in diesem Bereich.", Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(6), 0, Px(6)) };
                     table.Controls.Add(empty, 0, table.RowCount);
-                    table.SetColumnSpan(empty, 4);
+                    table.SetColumnSpan(empty, 5);
                     table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                     table.RowCount++;
                 }
@@ -205,8 +217,8 @@ namespace MP1.ConfigurationStudio
         private void AddHeader()
         {
             string[] titles = Localization.IsEnglish
-                ? new[] { "Action", "Key", "", "Sound" }
-                : new[] { "Aktion", "Taste", "", "Sound" };
+                ? new[] { "Action", "Key", "", "Sound", "" }
+                : new[] { "Aktion", "Taste", "", "Sound", "" };
             for (int i = 0; i < titles.Length; i++)
             {
                 var label = new Label { Text = titles[i], Font = Typography.Create(9f * scale, FontStyle.Bold), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, 0, 0, Px(4)) };
@@ -218,9 +230,18 @@ namespace MP1.ConfigurationStudio
 
         private void AddActionRow(XmlElement action, string description, string id, string key)
         {
-            var info = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0, Px(2), Px(8), Px(2)), BackColor = palette.Background };
-            info.Controls.Add(new Label { Text = String.IsNullOrEmpty(description) ? (Localization.IsEnglish ? "(no description)" : "(ohne Beschreibung)") : description, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Margin = new Padding(0) }, 0, 0);
-            info.Controls.Add(new Label { Text = "#" + id, Font = Typography.Create(8.5f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0) }, 0, 1);
+            var info = new Label
+            {
+                Text = (String.IsNullOrEmpty(description) ? (Localization.IsEnglish ? "(no description)" : "(ohne Beschreibung)") : description) + "\n#" + id,
+                Font = Typography.Create(10f * scale, FontStyle.Regular),
+                ForeColor = palette.Text,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Height = Px(42),
+                TextAlign = ContentAlignment.MiddleLeft,
+                UseMnemonic = false,
+                Margin = new Padding(0, Px(2), Px(8), Px(2))
+            };
             table.Controls.Add(info, 0, table.RowCount);
 
             var keyButton = new Button { Text = String.IsNullOrEmpty(key) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : key, Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
@@ -228,12 +249,12 @@ namespace MP1.ConfigurationStudio
             keyButton.Click += delegate { CaptureKey(action, keyButton); };
             table.Controls.Add(keyButton, 1, table.RowCount);
 
-            var clear = new Button { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(8), Px(2)) };
+            var clear = new Button { Text = Localization.IsEnglish ? "Clear" : "Leer", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             clear.FlatAppearance.BorderColor = palette.Border;
             clear.Click += delegate { SetActionValue(action, "key", string.Empty); keyButton.Text = Localization.IsEnglish ? "(empty)" : "(leer)"; MarkDirty(); BuildTable(); };
             table.Controls.Add(clear, 2, table.RowCount);
 
-            var sound = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown, FlatStyle = FlatStyle.Flat, Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), 0, Px(2)) };
+            var sound = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown, FlatStyle = FlatStyle.Flat, Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             foreach (string name in new[] { "", "click.wav", "back.wav", "cursor.wav", "photo.wav" })
                 sound.Items.Add(name);
             string soundValue = ChildText(action, "sound") ?? string.Empty;
@@ -244,8 +265,67 @@ namespace MP1.ConfigurationStudio
             sound.Leave += delegate { SetActionValue(action, "sound", sound.Text); MarkDirty(); };
             table.Controls.Add(sound, 3, table.RowCount);
 
+            var remove = new Button { Text = Localization.IsEnglish ? "Delete" : "Löschen", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), 0, Px(2)) };
+            remove.FlatAppearance.BorderColor = palette.Border;
+            remove.Click += delegate { RemoveAction(action); };
+            table.Controls.Add(remove, 4, table.RowCount);
+
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowCount++;
+        }
+
+        private void AddAction()
+        {
+            Context context = SelectedContext();
+            if (context == null || document == null) return;
+            using (var dialog = new ActionDialog(scale, NextActionId(context)))
+            {
+                if (dialog.ShowDialog(FindForm()) != DialogResult.OK) return;
+                XmlElement action = document.CreateElement("action");
+                AppendText(action, "id", dialog.ActionId);
+                AppendText(action, "key", dialog.ActionKey);
+                AppendText(action, "sound", dialog.ActionSound);
+                AppendText(action, "description", dialog.ActionDescription);
+                context.Element.AppendChild(action);
+                dirty = true;
+                BuildTable();
+                status.Text = (Localization.IsEnglish ? "Action added · unsaved" : "Aktion hinzugefügt · ungespeichert");
+            }
+        }
+
+        private void RemoveAction(XmlElement action)
+        {
+            if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "Delete this action?" : "Diese Aktion löschen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            action.ParentNode.RemoveChild(action);
+            dirty = true;
+            BuildTable();
+            status.Text = (Localization.IsEnglish ? "Action deleted · unsaved" : "Aktion gelöscht · ungespeichert");
+        }
+
+        private Context SelectedContext()
+        {
+            int index = contextChoice.SelectedIndex;
+            return index >= 0 && index < contexts.Count ? contexts[index] : contexts.FirstOrDefault();
+        }
+
+        private string NextActionId(Context context)
+        {
+            int maximum = 0;
+            foreach (XmlNode node in context.Element.ChildNodes)
+            {
+                var action = node as XmlElement;
+                if (action == null) continue;
+                int value;
+                if (Int32.TryParse(ChildText(action, "id"), out value) && value > maximum) maximum = value;
+            }
+            return (maximum + 1).ToString();
+        }
+
+        private static void AppendText(XmlElement parent, string name, string value)
+        {
+            XmlElement element = parent.OwnerDocument.CreateElement(name);
+            element.InnerText = value ?? string.Empty;
+            parent.AppendChild(element);
         }
 
         private void CaptureKey(XmlElement action, Button button)
@@ -335,6 +415,102 @@ namespace MP1.ConfigurationStudio
             {
                 status.Text = ex.Message;
                 MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The key mapping could not be saved.\r\n\r\n" : "Die Tastenbelegung konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private sealed class ActionDialog : Form
+        {
+            private readonly float scale;
+            private readonly TextBox id = new TextBox();
+            private readonly TextBox description = new TextBox();
+            private readonly TextBox key = new TextBox();
+            private readonly ComboBox sound = new ComboBox();
+            public string ActionId { get { return id.Text.Trim(); } }
+            public string ActionDescription { get { return description.Text.Trim(); } }
+            public string ActionKey { get { return key.Text.Trim(); } }
+            public string ActionSound { get { return sound.Text.Trim(); } }
+
+            public ActionDialog(float scale, string suggestedId)
+            {
+                this.scale = scale;
+                Text = Localization.IsEnglish ? "Add action" : "Aktion hinzufügen";
+                FormBorderStyle = FormBorderStyle.FixedDialog;
+                StartPosition = FormStartPosition.CenterParent;
+                MaximizeBox = false;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+                BackColor = Palette.For(true).Panel;
+                ForeColor = Palette.For(true).Text;
+                ClientSize = new Size(Px(500), Px(300));
+
+                var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 5, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
+                AddRow(table, 0, Localization.IsEnglish ? "Action ID" : "Aktions-ID", id);
+                id.Text = suggestedId ?? string.Empty;
+                AddRow(table, 1, Localization.IsEnglish ? "Description" : "Beschreibung", description);
+                AddRow(table, 2, Localization.IsEnglish ? "Key" : "Taste", key, false);
+                var capture = new Button { Text = Localization.IsEnglish ? "Capture …" : "Aufnehmen …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
+                capture.FlatAppearance.BorderColor = Palette.For(true).Border;
+                capture.Click += delegate
+                {
+                    using (var dialog = new KeyCaptureDialog(this.scale, key.Text))
+                        if (dialog.ShowDialog(this) == DialogResult.OK) key.Text = dialog.CapturedKey;
+                };
+                table.Controls.Add(capture, 2, 2);
+                AddRow(table, 3, "Sound", sound);
+                sound.DropDownStyle = ComboBoxStyle.DropDown;
+                sound.FlatStyle = FlatStyle.Flat;
+                sound.BackColor = Palette.For(true).Input;
+                sound.ForeColor = Palette.For(true).Text;
+                foreach (string name in new[] { "", "click.wav", "back.wav", "cursor.wav", "photo.wav" }) sound.Items.Add(name);
+                sound.Text = "click.wav";
+
+                var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
+                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
+                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                ok.FlatAppearance.BorderColor = Palette.For(true).Border;
+                ok.Click += delegate
+                {
+                    int value;
+                    if (!Int32.TryParse(id.Text.Trim(), out value) || value < 0)
+                    {
+                        MessageBox.Show(this, Localization.IsEnglish ? "The action ID must be a non-negative number." : "Die Aktions-ID muss eine nicht negative Zahl sein.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (String.IsNullOrWhiteSpace(description.Text))
+                    {
+                        MessageBox.Show(this, Localization.IsEnglish ? "Please enter a description." : "Bitte eine Beschreibung eingeben.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    DialogResult = DialogResult.OK;
+                    Close();
+                };
+                buttons.Controls.Add(cancel);
+                buttons.Controls.Add(ok);
+                table.Controls.Add(buttons, 0, 4);
+                table.SetColumnSpan(buttons, 3);
+                Controls.Add(table);
+                AcceptButton = ok;
+                CancelButton = cancel;
+            }
+
+            private int Px(float value) { return (int)Math.Round(value * scale); }
+
+            private void AddRow(TableLayoutPanel table, int row, string label, Control input, bool span = true)
+            {
+                table.Controls.Add(new Label { Text = label, ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, row);
+                input.Dock = DockStyle.Fill;
+                input.Font = Typography.Create(10f * scale, FontStyle.Regular);
+                if (input is TextBox)
+                {
+                    input.BackColor = Palette.For(true).Input;
+                    input.ForeColor = Palette.For(true).Text;
+                }
+                table.Controls.Add(input, 1, row);
+                if (span) table.SetColumnSpan(input, 2);
             }
         }
 

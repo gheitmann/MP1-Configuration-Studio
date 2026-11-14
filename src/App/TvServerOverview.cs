@@ -26,13 +26,19 @@ namespace MP1.ConfigurationStudio
                 if (businessType == null) return Fail("TvBusinessLayer not found");
                 object business = Activator.CreateInstance(businessType);
 
-                int tvChannels = Count(GetProperty(businessType, business, "Channels"));
+                object tvChannelList = GetProperty(businessType, business, "Channels");
+                int tvChannels = CountWhere(tvChannelList, "IsTv");
                 int cards = Count(GetProperty(businessType, business, "Cards"));
-                int radioChannels = Count(Call(businessType, business, "GetAllRadioChannels"));
-                int groups = CountStatic(databaseAssembly, "TvDatabase.ChannelGroup");
-                int radioGroups = CountStatic(databaseAssembly, "TvDatabase.RadioChannelGroup");
-                int recordings = CountStatic(databaseAssembly, "TvDatabase.Recording");
-                int schedules = CountStatic(databaseAssembly, "TvDatabase.Schedule");
+                object radioChannelList = Call(businessType, business, "GetAllRadioChannels");
+                int radioChannels = Count(radioChannelList);
+                object groupList = StaticList(databaseAssembly, "TvDatabase.ChannelGroup");
+                object radioGroupList = StaticList(databaseAssembly, "TvDatabase.RadioChannelGroup");
+                object recordingList = StaticList(databaseAssembly, "TvDatabase.Recording");
+                object scheduleList = StaticList(databaseAssembly, "TvDatabase.Schedule");
+                int groups = Count(groupList);
+                int radioGroups = Count(radioGroupList);
+                int recordings = Count(recordingList);
+                int schedules = Count(scheduleList);
 
                 var output = new StringBuilder();
                 output.AppendLine("ok=1");
@@ -43,6 +49,12 @@ namespace MP1.ConfigurationStudio
                 output.AppendLine("cards=" + cards);
                 output.AppendLine("recordings=" + recordings);
                 output.AppendLine("schedules=" + schedules);
+                AppendNames(output, "tvChannel", tvChannelList, "DisplayName", "IsTv");
+                AppendNames(output, "radioChannel", radioChannelList, "DisplayName");
+                AppendNames(output, "group", groupList, "GroupName");
+                AppendNames(output, "radioGroup", radioGroupList, "GroupName");
+                AppendNames(output, "recording", recordingList, "Title");
+                AppendNames(output, "schedule", scheduleList, "ProgramName");
                 Console.Write(output.ToString());
                 Console.Out.Flush();
                 return 0;
@@ -90,16 +102,83 @@ namespace MP1.ConfigurationStudio
             return count;
         }
 
+        private static int CountWhere(object value, string property)
+        {
+            var enumerable = value as IEnumerable;
+            if (enumerable == null) return 0;
+            int count = 0;
+            foreach (object item in enumerable)
+            {
+                try
+                {
+                    PropertyInfo info = item.GetType().GetProperty(property);
+                    if (info != null && info.GetValue(item, null) is bool && (bool)info.GetValue(item, null)) count++;
+                }
+                catch { }
+            }
+            return count;
+        }
+
+        private static void AppendNames(StringBuilder output, string prefix, object value, string property, string filterProperty = null)
+        {
+            var enumerable = value as IEnumerable;
+            if (enumerable == null) return;
+            foreach (object item in enumerable)
+            {
+                if (item == null) continue;
+                string text = null;
+                try
+                {
+                    if (filterProperty != null)
+                    {
+                        PropertyInfo filter = item.GetType().GetProperty(filterProperty);
+                        if (filter == null || !(filter.GetValue(item, null) is bool) || !(bool)filter.GetValue(item, null)) continue;
+                    }
+                    PropertyInfo info = item.GetType().GetProperty(property);
+                    if (info != null) text = info.GetValue(item, null) as string;
+                }
+                catch { }
+                if (text == null) text = item.ToString();
+                text = (text ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
+                output.AppendLine(prefix + "=" + text);
+            }
+        }
+
         private static int CountStatic(Assembly assembly, string typeName)
+        {
+            return Count(StaticList(assembly, typeName));
+        }
+
+        private static object StaticList(Assembly assembly, string typeName)
         {
             try
             {
                 Type type = assembly.GetType(typeName);
-                if (type == null) return 0;
+                if (type == null) return null;
                 MethodInfo method = type.GetMethod("ListAll", Type.EmptyTypes);
-                return method == null ? 0 : Count(method.Invoke(null, null));
+                return method == null ? null : method.Invoke(null, null);
             }
-            catch { return 0; }
+            catch { return null; }
+        }
+
+        private static void AppendNames(StringBuilder output, string prefix, object value, string property)
+        {
+            var enumerable = value as IEnumerable;
+            if (enumerable == null) return;
+            foreach (object item in enumerable)
+            {
+                if (item == null) continue;
+                string text = null;
+                try
+                {
+                    PropertyInfo info = item.GetType().GetProperty(property);
+                    if (info != null) text = info.GetValue(item, null) as string;
+                }
+                catch { }
+                if (text == null) text = item.ToString();
+                text = (text ?? string.Empty).Replace("\r", " ").Replace("\n", " ");
+                output.AppendLine(prefix + "=" + text);
+            }
         }
     }
 }

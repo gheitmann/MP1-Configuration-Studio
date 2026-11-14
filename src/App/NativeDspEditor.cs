@@ -31,10 +31,10 @@ namespace MP1.ConfigurationStudio
             var body = Typography.Create(10f * scale, FontStyle.Regular);
 
             var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(38), ColumnCount = 4, BackColor = palette.Background };
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(150)));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
-            top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(100)));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Music folder" : "Musikordner", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
             musicDirectory.Dock = DockStyle.Fill;
             musicDirectory.Font = body;
@@ -49,13 +49,13 @@ namespace MP1.ConfigurationStudio
             save.Dock = DockStyle.Fill;
             top.Controls.Add(save, 3, 0);
 
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(38), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { Reload(); }, body));
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add BASS effect" : "BASS-Effekt hinzufügen", delegate { AddElement("BASS", "EffectName"); }, body));
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add VST plugin" : "VST-Plugin hinzufügen", delegate { AddElement("VST", "PluginDll"); }, body));
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add Winamp plugin" : "Winamp-Plugin hinzufügen", delegate { AddElement("Winamp", "PluginDll"); }, body));
             status.AutoSize = false;
-            status.Width = Px(300);
+            status.Width = Px(160);
             status.Height = Px(28);
             status.AutoEllipsis = true;
             status.TextAlign = ContentAlignment.MiddleLeft;
@@ -77,6 +77,12 @@ namespace MP1.ConfigurationStudio
         {
             if (!dirty) return true;
             return MessageBox.Show(FindForm(), Localization.IsEnglish ? "Discard unsaved music DSP changes?" : "Ungespeicherte Musik-DSP-Änderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+        }
+
+        public bool SaveChanges()
+        {
+            SaveFile();
+            return !dirty;
         }
 
         private int Px(float value) { return (int)Math.Round(value * scale); }

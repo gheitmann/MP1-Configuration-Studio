@@ -405,7 +405,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.18"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.19"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -510,12 +510,22 @@ namespace MP1.ConfigurationStudio
             var schemaSections=NativeSettingsSchema.Sections();
             Check(schemaSections.Select(section=>section.Id).Distinct().Count()==schemaSections.Count,"native schema section ids are unique");
    Check(schemaSections.Any(section=>section.Id=="keymap")&&schemaSections.Any(section=>section.Id=="musicviews")&&schemaSections.Any(section=>section.Id=="videoviews")&&schemaSections.Any(section=>section.Id=="musicdsp")&&schemaSections.Any(section=>section.Id=="rawxml"),"native schema exposes structured and raw file editors");
-   Check(fields.Any(field=>field.Kind==NativeFieldKind.Keymap)&&fields.Any(field=>field.Kind==NativeFieldKind.Views)&&fields.Any(field=>field.Kind==NativeFieldKind.Dsp)&&fields.Any(field=>field.Kind==NativeFieldKind.TvServer),"native schema includes keyboard, views, DSP, and TV server fields");
+   Check(fields.Any(field=>field.Kind==NativeFieldKind.Keymap)&&fields.Any(field=>field.Kind==NativeFieldKind.Views)&&fields.Any(field=>field.Kind==NativeFieldKind.Dsp)&&fields.Any(field=>field.Kind==NativeFieldKind.TvServer)&&fields.Any(field=>field.Kind==NativeFieldKind.PluginConfig),"native schema includes keyboard, views, DSP, TV server, and plugin config fields");
             Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
             Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
             Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");
             Check(NativeShareEditor.IsShareKey("sharename3")&&NativeShareEditor.IsShareKey("sharepath0")&&NativeShareEditor.IsShareKey("sharescan12")&&NativeShareEditor.IsShareKey("pincode1")&&NativeShareEditor.IsShareKey("hostdetectmethod0"),"native share editor recognises all media folder entries");
             Check(!NativeShareEditor.IsShareKey("sharename")&&!NativeShareEditor.IsShareKey("volume0")&&!NativeShareEditor.IsShareKey("sharepathabc"),"native share editor leaves unrelated entries untouched");
+   string entryPath=Path.Combine(directory,"native-entry-editor.xml");
+   File.WriteAllText(entryPath,"<?xml version=\"1.0\" encoding=\"utf-8\"?><profile><section name=\"general\"><entry name=\"keep\">yes</entry></section></profile>");
+   var entryConfiguration=StudioConfiguration.Load(entryPath);
+   entryConfiguration.Set("general","newEntry","42");
+   entryConfiguration.Save(Path.Combine(directory,"native-entry-backups"));
+   var entryReloaded=StudioConfiguration.Load(entryPath);
+   Check(entryReloaded.Get("general","newEntry","")=="42","raw XML editor can add entries");
+   entryReloaded.Remove("general","newEntry");
+   entryReloaded.Save(Path.Combine(directory,"native-entry-backups"));
+   Check(StudioConfiguration.Load(entryPath).Get("general","newEntry","")=="","raw XML editor can delete entries");
             string runtime=Path.Combine(directory,"native-runtime");
             Directory.CreateDirectory(Path.Combine(runtime,"config"));
             File.Copy(path,Path.Combine(runtime,"config","MediaPortal.xml"),true);

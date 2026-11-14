@@ -69,7 +69,7 @@ namespace MP1.ConfigurationStudio
             actions.Controls.Add(save);
             actions.Controls.Add(browse);
             status.AutoSize = false;
-            status.Width = Px(420);
+            status.Width = Px(140);
             status.Height = Px(28);
             status.AutoEllipsis = true;
             status.TextAlign = ContentAlignment.MiddleLeft;
@@ -107,6 +107,12 @@ namespace MP1.ConfigurationStudio
         public bool ConfirmDiscardChanges()
         {
             return ConfirmDiscard();
+        }
+
+        public bool SaveChanges()
+        {
+            SaveFile();
+            return !dirty;
         }
 
         private int Px(float value) { return (int)Math.Round(value * scale); }

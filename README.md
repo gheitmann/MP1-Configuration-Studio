@@ -4,7 +4,7 @@ A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.18](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.18) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.19](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.19) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -16,14 +16,15 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 - Media-folder editor with add, edit, remove, folder picker, scan toggle, and preservation of pincode/server/login/port and other share fields.
 - Dynamic plugin activation lists and a start-menu editor read directly from the configuration.
 - Editable 100–175% text size, live settings search, sidebar wheel scrolling, dark scrollbars and title bars.
-- Manual ZIP backup, save with automatic pre-save backup, atomic replacement of `MediaPortal.xml`, and keyboard shortcuts (`Ctrl+S`, `Ctrl+W`, `Ctrl+PageUp/PageDown`).
+- Manual ZIP backup, save with automatic pre-save backup, atomic replacement of `MediaPortal.xml`, and keyboard shortcuts (`Ctrl+S`, `Ctrl+W`, `Ctrl+PageUp/PageDown`). The main save also writes every dirty structured file editor.
 - `--section=<id>` opens a page directly, for example `--section=plugins`.
 - XML file editor for `keymap.xml`, `MusicViews.xml`, `VideoViews.xml`, `musicdsp.xml`, other configuration XML files, and any file chosen with **Other file**; each save validates XML, creates a ZIP backup, and replaces atomically.
-- Raw XML page for every section of `MediaPortal.xml`, including plugin sections and unknown values.
-- Native **Keyboard** editor: contexts, search, key capture, sound, duplicate warning, `keymap.xml` backup.
-- Native **Music views** and **Video views** editors: localized view names, filter field/operator/value, sort, view mode, reorder, and safe SOAP graph saves.
+- Raw XML page for every section of `MediaPortal.xml`, including plugin sections and unknown values; entries can be added and deleted.
+- Native **Keyboard** editor: contexts, search, key capture, sound, add/delete actions, duplicate warning, `keymap.xml` backup.
+- Native **Music views** and **Video views** editors: localized view names, add/delete views and filters, filter field/operator/value, sort, view mode, reorder, and safe SOAP graph saves.
 - Native **Music DSP** editor: music folder plus BASS, VST, and Winamp effects with parameters.
-- **TV** page shows TV Server, service, and database status, read-only channel/group/recording/schedule/card counts from the TV Server business layer, and opens SetupTv or the TV Server folder. TV Server channels, EPG, cards, and schedules remain in the TV Server subsystem.
+- **TV** page shows TV Server, service, and database status, read-only counts and detail lists for channels, groups, recordings, schedules, and cards from the TV Server business layer, and opens SetupTv or the TV Server folder.
+- **Plugins** page lists plugins with their own configuration window and opens the selected plugin directly through an isolated helper; classic configuration remains the fallback.
 - Codec and renderer lists come from MediaPortal's filter helper; the button next to each filter opens its real DirectShow property pages.
 - Plugin configuration windows still open on the classic interface; the Plugins page opens the classic configurator directly.
 

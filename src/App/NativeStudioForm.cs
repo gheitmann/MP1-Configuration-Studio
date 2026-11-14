@@ -396,6 +396,16 @@ namespace MP1.ConfigurationStudio
                 AddHelp(field);
                 return;
             }
+            if (field.Kind == NativeFieldKind.PluginConfig)
+            {
+                var panel = new NativePluginConfigPanel(runtime, scale, delegate { StartClassic(); }) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(panel, 0, table.RowCount);
+                table.SetColumnSpan(panel, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(210)));
+                table.RowCount++;
+                AddHelp(field);
+                return;
+            }
             if (field.Kind == NativeFieldKind.XmlFiles)
             {
                 var editor = new NativeXmlFileEditor(Path.GetDirectoryName(configuration.Path), runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
@@ -603,12 +613,27 @@ namespace MP1.ConfigurationStudio
         {
             try
             {
+                bool fileChanges = false;
+                bool fileFailure = false;
+                foreach (IStudioFileEditor editor in table.Controls.OfType<IStudioFileEditor>().Where(item => item.HasUnsavedChanges).ToArray())
+                {
+                    fileChanges = true;
+                    if (!editor.SaveChanges()) fileFailure = true;
+                }
+                if (fileFailure)
+                {
+                    status.Text = Localization.IsEnglish ? "One or more files could not be saved." : "Eine oder mehrere Dateien konnten nicht gespeichert werden.";
+                    status.ForeColor = palette.Muted;
+                    return;
+                }
                 string backup = configuration.Save();
                 dirty = false;
                 appearance.Save();
-                status.Text = String.IsNullOrEmpty(backup)
-                    ? (Localization.IsEnglish ? "No changes to save" : "Keine Änderungen zu speichern")
-                    : (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + System.IO.Path.GetFileName(backup);
+                status.Text = !String.IsNullOrEmpty(backup)
+                    ? (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + System.IO.Path.GetFileName(backup)
+                    : fileChanges
+                        ? (Localization.IsEnglish ? "Files saved" : "Dateien gespeichert")
+                        : (Localization.IsEnglish ? "No changes to save" : "Keine Änderungen zu speichern");
                 status.ForeColor = palette.Muted;
             }
             catch (Exception ex)
