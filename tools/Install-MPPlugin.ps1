@@ -28,19 +28,22 @@ if ($Enable -and (Test-Path -LiteralPath $ConfigPath)) {
     $document = New-Object System.Xml.XmlDocument
     $document.PreserveWhitespace = $true
     $document.Load($ConfigPath)
+    $sections = $document.SelectNodes("/profile/section[@name='plugins']")
     $section = $null
-    foreach ($candidate in $document.DocumentElement.ChildNodes) {
-        if ($candidate.Name -eq 'section' -and $candidate.GetAttribute('name') -eq 'plugins') { $section = $candidate; break }
+    $maxEntries = -1
+    foreach ($candidate in $sections) {
+        $count = $candidate.SelectNodes("entry").Count
+        if ($count -gt $maxEntries) { $section = $candidate; $maxEntries = $count }
     }
     if ($null -eq $section) {
         $section = $document.CreateElement('section')
         $name = $document.CreateAttribute('name'); $name.Value = 'plugins'; $section.Attributes.Append($name)
         $document.DocumentElement.AppendChild($section) | Out-Null
     }
-    $entry = $null
-    foreach ($candidate in $section.ChildNodes) {
-        if ($candidate.Name -eq 'entry' -and $candidate.GetAttribute('name') -eq 'MP1 Configuration Studio') { $entry = $candidate; break }
+    foreach ($candidate in @($sections)) {
+        if (-not [object]::ReferenceEquals($candidate, $section)) { $document.DocumentElement.RemoveChild($candidate) | Out-Null }
     }
+    $entry = $section.SelectSingleNode("entry[@name='MP1 Configuration Studio']")
     if ($null -eq $entry) {
         $entry = $document.CreateElement('entry')
         $name = $document.CreateAttribute('name'); $name.Value = 'MP1 Configuration Studio'; $entry.Attributes.Append($name)
