@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -17,6 +19,7 @@ namespace MP1.ConfigurationStudio
         private readonly string setupPath;
         private readonly Label status = new Label();
         private readonly Label database = new Label();
+        private readonly Label overview = new Label();
 
         public NativeTvServerPanel(string runtime, float scale)
         {
@@ -31,7 +34,8 @@ namespace MP1.ConfigurationStudio
             setupPath = tvServerDirectory == null ? null : Path.Combine(tvServerDirectory, "SetupTv.exe");
             var body = Typography.Create(10f * scale, FontStyle.Regular);
 
-            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, BackColor = palette.Background, Padding = new Padding(0) };
+            var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, BackColor = palette.Background, Padding = new Padding(0) };
+            table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -46,30 +50,36 @@ namespace MP1.ConfigurationStudio
             database.AutoSize = true;
             database.Font = Typography.Create(9.5f * scale, FontStyle.Regular);
             database.ForeColor = palette.Muted;
-            database.Margin = new Padding(0, 0, 0, Px(8));
+            database.Margin = new Padding(0, 0, 0, Px(4));
             table.Controls.Add(database, 0, 1);
+            overview.AutoSize = true;
+            overview.Font = Typography.Create(9.5f * scale, FontStyle.Regular);
+            overview.ForeColor = palette.Text;
+            overview.Margin = new Padding(0, 0, 0, Px(8));
+            table.Controls.Add(overview, 0, 2);
 
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
             var setup = ButtonFor(Localization.IsEnglish ? "Open TV Server configuration" : "TV-Server-Konfiguration öffnen", delegate { OpenSetup(); }, body);
             var folder = ButtonFor(Localization.IsEnglish ? "Open TV Server folder" : "TV-Server-Ordner öffnen", delegate { OpenFolder(); }, body);
             actions.Controls.Add(setup);
             actions.Controls.Add(folder);
-            table.Controls.Add(actions, 0, 2);
+            table.Controls.Add(actions, 0, 3);
 
             var note = new Label
             {
                 Text = Localization.IsEnglish
-                    ? "Channels, EPG, cards, schedules, and the TV database are managed by the TV Server service and its own SetupTv configuration. This Studio page shows the connection status and opens SetupTv; it does not replace channel scanning or TV Server administration."
-                    : "Kanäle, EPG, Karten, Aufnahmen und die TV-Datenbank werden vom TV-Server-Dienst und der eigenen SetupTv-Konfiguration verwaltet. Diese Studio-Seite zeigt den Verbindungsstatus und öffnet SetupTv; Kanalsuche und TV-Server-Verwaltung werden nicht ersetzt.",
+                    ? "The counts above are read-only and come from the TV Server business layer. Channels, EPG, cards, schedules, and the TV database are managed by the TV Server service and its own SetupTv configuration; this page does not replace channel scanning or TV Server administration."
+                    : "Die Zähler oben sind schreibgeschützt und kommen aus der TV-Server-Business-Layer. Kanäle, EPG, Karten, Aufnahmen und die TV-Datenbank werden vom TV-Server-Dienst und der eigenen SetupTv-Konfiguration verwaltet; Kanalsuche und TV-Server-Verwaltung werden nicht ersetzt.",
                 Font = Typography.Create(9f * scale, FontStyle.Regular),
                 ForeColor = palette.Muted,
                 AutoSize = true,
                 MaximumSize = new Size(Px(760), 0),
                 Margin = new Padding(0, Px(8), 0, 0)
             };
-            table.Controls.Add(note, 0, 3);
+            table.Controls.Add(note, 0, 4);
             Controls.Add(table);
             RefreshStatus();
+            LoadOverview();
         }
 
         private int Px(float value) { return (int)Math.Round(value * scale); }
@@ -166,6 +176,80 @@ namespace MP1.ConfigurationStudio
                         return part.Substring(index + 1).Trim();
             }
             return string.Empty;
+        }
+
+        private void LoadOverview()
+        {
+            if (String.IsNullOrEmpty(tvServerDirectory) || !File.Exists(Path.Combine(tvServerDirectory, "TvBusinessLayer.dll")))
+            {
+                overview.Text = Localization.IsEnglish ? "No TV Server business layer found." : "Keine TV-Server-Business-Layer gefunden.";
+                overview.ForeColor = palette.Muted;
+                return;
+            }
+            overview.Text = Localization.IsEnglish ? "Reading TV Server overview …" : "TV-Server-Übersicht wird gelesen …";
+            overview.ForeColor = palette.Muted;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                string text = ReadOverview();
+                try
+                {
+                    if (!IsDisposed && IsHandleCreated)
+                        BeginInvoke(new Action(delegate
+                        {
+                            overview.Text = text;
+                            overview.ForeColor = text.StartsWith("TV:", StringComparison.Ordinal) ? palette.Text : palette.Muted;
+                        }));
+                }
+                catch { }
+            });
+        }
+
+        private string ReadOverview()
+        {
+            try
+            {
+                string config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Team MediaPortal", "MediaPortal TV Server");
+                var info = new ProcessStartInfo
+                {
+                    FileName = Application.ExecutablePath,
+                    Arguments = "--tv-overview \"" + tvServerDirectory + "\" \"" + config + "\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    WorkingDirectory = tvServerDirectory
+                };
+                using (Process process = Process.Start(info))
+                {
+                    if (!process.WaitForExit(20000))
+                    {
+                        try { process.Kill(); } catch { }
+                        return Localization.IsEnglish ? "TV Server overview timed out." : "Zeitüberschreitung bei der TV-Server-Übersicht.";
+                    }
+                    string output = process.StandardOutput.ReadToEnd();
+                    string error = process.StandardError.ReadToEnd();
+                    var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string line in (output ?? string.Empty).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        int index = line.IndexOf('=');
+                        if (index > 0) values[line.Substring(0, index)] = line.Substring(index + 1);
+                    }
+                    if (!values.ContainsKey("ok") || values["ok"] != "1")
+                    {
+                        string message = values.ContainsKey("error") ? values["error"] : (String.IsNullOrWhiteSpace(error) ? "unknown error" : error.Trim());
+                        return (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + message;
+                    }
+                    string Number(string key) { string value; return values.TryGetValue(key, out value) ? value : "0"; }
+                    return (Localization.IsEnglish
+                        ? "TV: " + Number("tvChannels") + " channels  ·  Radio: " + Number("radioChannels") + "  ·  " + Number("groups") + " groups  ·  " + Number("recordings") + " recordings  ·  " + Number("schedules") + " schedules  ·  " + Number("cards") + " cards"
+                        : "TV: " + Number("tvChannels") + " Kanäle  ·  Radio: " + Number("radioChannels") + "  ·  " + Number("groups") + " Gruppen  ·  " + Number("recordings") + " Aufnahmen  ·  " + Number("schedules") + " Timer  ·  " + Number("cards") + " Karten");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + ex.Message;
+            }
         }
 
         private void OpenSetup()

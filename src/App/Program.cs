@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.17")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.18")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -25,6 +25,8 @@ namespace MP1.ConfigurationStudio
         [STAThread]
         public static int Main(string[] args)
         {
+            if (args.Length >= 3 && String.Equals(args[0], "--tv-overview", StringComparison.OrdinalIgnoreCase))
+                return TvServerOverview.Run(args[1], args[2]);
             StudioLog.Initialize();
             StudioLog.Info("MP1 Configuration Studio starting");
             CompatibilityPolicy.Initialize(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"compatibility.xml"));

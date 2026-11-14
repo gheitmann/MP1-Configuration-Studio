@@ -391,7 +391,7 @@ namespace MP1.ConfigurationStudio
                 var panel = new NativeTvServerPanel(runtime, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
                 table.Controls.Add(panel, 0, table.RowCount);
                 table.SetColumnSpan(panel, 2);
-                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(280)));
                 table.RowCount++;
                 AddHelp(field);
                 return;
