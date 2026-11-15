@@ -40,7 +40,7 @@ namespace MP1.ConfigurationStudio
         private readonly Palette palette = Palette.For(true);
         private readonly FlowLayoutPanel flow = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, BackColor = Palette.For(true).Background, Padding = new Padding(0) };
         private readonly Panel grid = new Panel { Dock = DockStyle.Fill, AutoScroll = false, BackColor = Palette.For(true).Background };
-        private readonly Label status = new Label { AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
+        private readonly Label status = new Label { AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
         private readonly List<PluginEntry> entries = new List<PluginEntry>();
         private readonly List<Label> headers = new List<Label>();
         private readonly ToolTip tips = new ToolTip();

@@ -43,7 +43,11 @@ namespace MP1.ConfigurationStudio
                         + "Ctrl+Plus — Increase text and interface size\r\n\r\n"
                         + "Ctrl+Minus — Decrease text and interface size\r\n\r\n"
                         + "F1 — Online help for the current section\r\n\r\n"
-                        + "Shift+F1 — This overview\r\n"
+                        + "Shift+F1 — This overview\r\n\r\n\r\n"
+                        + "Ctrl+S  ·  Save configuration\r\n\r\n"
+                        + "Ctrl+W  ·  Close the Studio\r\n\r\n"
+                        + "Ctrl+Page Down  ·  Next section\r\n\r\n"
+                        + "Ctrl+Page Up  ·  Previous section\r\n"
                     : "Strg+F — Suche öffnen\r\n\r\n"
                         + "Enter — ersten Treffer öffnen\r\n\r\n"
                         + "Esc — Suche leeren oder Dialog schließen\r\n\r\n"
@@ -52,7 +56,11 @@ namespace MP1.ConfigurationStudio
                         + "Strg+Plus — Schrift und Oberfläche vergrößern\r\n\r\n"
                         + "Strg+Minus — Schrift und Oberfläche verkleinern\r\n\r\n"
                         + "F1 — Online-Hilfe für den aktuellen Bereich\r\n\r\n"
-                        + "Umschalt+F1 — diese Übersicht\r\n"
+                        + "Umschalt+F1 — diese Übersicht\r\n\r\n\r\n"
+                        + "Strg+S  ·  Konfiguration speichern\r\n\r\n"
+                        + "Strg+W  ·  Studio schlieÃen\r\n\r\n"
+                        + "Strg+Bild ab  ·  nÃ¤chster Bereich\r\n\r\n"
+                        + "Strg+Bild auf  ·  vorheriger Bereich\r\n"
             };
             text.SelectionStart = 0;
             text.SelectionLength = 0;

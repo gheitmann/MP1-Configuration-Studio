@@ -1136,12 +1136,19 @@ namespace MP1.ConfigurationStudio
 
         private void MarkDirty()
         {
-            dirty = true;
+            dirty = HasUnsavedWork();
             if (statusTimer != null) statusTimer.Stop();
-            status.Text = Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen";
-            status.ForeColor = palette.Accent;
-            status.Font = smallUnderline;
-            status.Cursor = Cursors.Hand;
+            if (dirty)
+            {
+                status.Text = Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen";
+                status.ForeColor = palette.Accent;
+                status.Font = smallUnderline;
+                status.Cursor = Cursors.Hand;
+            }
+            else
+            {
+                RestoreStatus();
+            }
         }
 
         private void SaveConfiguration()
@@ -1410,6 +1417,23 @@ namespace MP1.ConfigurationStudio
             Font = body;
             ApplyMetrics();
             ShowSection(current);
+        }
+
+        private void ChangeScale(int delta)
+        {
+            if (sizeChoice == null || sizeChoice.Count == 0) return;
+            int next = Math.Max(0, Math.Min(sizeChoice.Count - 1, sizeChoice.SelectedIndex + delta));
+            if (next == sizeChoice.SelectedIndex) return;
+            sizeChoice.SelectedIndex = next;
+        }
+
+        private void OpenSectionHelp()
+        {
+            NativeSection section = current;
+            string query = section == null ? "MediaPortal" : (Localization.IsEnglish ? section.TitleEn : section.TitleDe);
+            string url = "https://www.team-mediaportal.com/wiki/dosearchsite.action?query=" + Uri.EscapeDataString(query);
+            try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (Exception ex) { StudioLog.Error(ex, "Could not open online help"); ShowStatusMessage(ex.Message, palette.Accent, 4000); }
         }
 
         private void StartStudioShell()
@@ -1802,6 +1826,48 @@ namespace MP1.ConfigurationStudio
             if (e.Control && (e.KeyCode == Keys.PageDown || e.KeyCode == Keys.PageUp))
             {
                 Navigate(e.KeyCode == Keys.PageDown ? 1 : -1);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.Alt && e.KeyCode == Keys.Left)
+            {
+                NavigateHistory(-1);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.Alt && e.KeyCode == Keys.Right)
+            {
+                NavigateHistory(1);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.Control && (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus))
+            {
+                ChangeScale(1);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.Control && (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus))
+            {
+                ChangeScale(-1);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+            if (e.KeyCode == Keys.F1)
+            {
+                if (e.Shift)
+                {
+                    using (var dialog = new KeyboardHelpDialog()) dialog.ShowDialog(this);
+                }
+                else
+                {
+                    OpenSectionHelp();
+                }
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 return;
