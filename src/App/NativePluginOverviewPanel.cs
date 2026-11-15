@@ -44,6 +44,7 @@ namespace MP1.ConfigurationStudio
         private readonly List<PluginEntry> entries = new List<PluginEntry>();
         private readonly List<Label> headers = new List<Label>();
         private readonly ToolTip tips = new ToolTip();
+        private ContextMenuStrip contextMenu;
         private readonly Button configure, toggle, home, myPlugins, browse;
         private PluginEntry selected;
         private bool loading;
@@ -337,27 +338,30 @@ namespace MP1.ConfigurationStudio
 
         private void ShowContextMenu(PluginEntry entry)
         {
-            var menu = new ContextMenuStrip
+            if (contextMenu == null)
             {
-                BackColor = palette.Panel,
-                ForeColor = palette.Text,
-                ShowImageMargin = false,
-                ShowCheckMargin = true,
-                Font = Typography.Create(9.5f * scale, FontStyle.Regular),
-                Renderer = new ToolStripProfessionalRenderer(new StudioMenuColorTable(palette))
-            };
-            menu.Items.Add(MenuItem(Localization.IsEnglish ? "Configure" : "Konfigurieren", entry.HasSetup, null, delegate { Select(entry); ConfigureSelected(); }));
-            menu.Items.Add(MenuItem(entry.Enabled
+                contextMenu = new ContextMenuStrip();
+            }
+            ToolStripItem[] oldItems = contextMenu.Items.Cast<ToolStripItem>().ToArray();
+            contextMenu.Items.Clear();
+            foreach (ToolStripItem old in oldItems) old.Dispose();
+            contextMenu.BackColor = palette.Panel;
+            contextMenu.ForeColor = palette.Text;
+            contextMenu.ShowImageMargin = false;
+            contextMenu.ShowCheckMargin = true;
+            contextMenu.Font = Typography.Create(9.5f * scale, FontStyle.Regular);
+            contextMenu.Renderer = new ToolStripProfessionalRenderer(new StudioMenuColorTable(palette));
+            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Configure" : "Konfigurieren", entry.HasSetup, null, delegate { Select(entry); ConfigureSelected(); }));
+            contextMenu.Items.Add(MenuItem(entry.Enabled
                 ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
                 : (Localization.IsEnglish ? "Enable" : "Aktivieren"), true, null, delegate { Select(entry); ToggleEnabled(); }));
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(MenuItem(Localization.IsEnglish ? "In Home" : "Im Home-Menü", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Home : null, delegate { Select(entry); ToggleHome(); }));
-            menu.Items.Add(MenuItem(Localization.IsEnglish ? "In Plugins" : "In My Plugins", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Plugins : null, delegate { Select(entry); TogglePlugins(); }));
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(MenuItem(Localization.IsEnglish ? "Browse and install plugins…" : "Plugins suchen und installieren…", true, null, delegate { Open("https://www.team-mediaportal.com/extensions"); }));
-            menu.Items.Add(MenuItem(Localization.IsEnglish ? "Classic configuration" : "Klassische Konfiguration", true, null, delegate { if (classic != null) classic(); }));
-            menu.Closed += delegate { menu.Dispose(); };
-            menu.Show(Cursor.Position);
+            contextMenu.Items.Add(new ToolStripSeparator());
+            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "In Home" : "Im Home-Menü", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Home : null, delegate { Select(entry); ToggleHome(); }));
+            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "In Plugins" : "In My Plugins", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Plugins : null, delegate { Select(entry); TogglePlugins(); }));
+            contextMenu.Items.Add(new ToolStripSeparator());
+            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Browse and install plugins…" : "Plugins suchen und installieren…", true, null, delegate { Open("https://www.team-mediaportal.com/extensions"); }));
+            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Classic configuration" : "Klassische Konfiguration", true, null, delegate { if (classic != null) classic(); }));
+            contextMenu.Show(Cursor.Position);
         }
 
         private ToolStripMenuItem MenuItem(string text, bool enabled, bool? check, EventHandler click)
@@ -500,6 +504,7 @@ namespace MP1.ConfigurationStudio
             if (disposing)
             {
                 tips.Dispose();
+                if (contextMenu != null) contextMenu.Dispose();
                 foreach (PluginEntry entry in entries) if (entry.Icon != null) entry.Icon.Dispose();
                 entries.Clear();
             }
