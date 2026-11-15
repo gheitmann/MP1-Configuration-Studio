@@ -36,8 +36,8 @@ namespace MP1.ConfigurationStudio
             var body = new Label
             {
                 Text = Localization.IsEnglish
-                    ? "The sidebar starts in Standard mode with general, playback, media, TV, subtitle and disc settings.\r\n\r\nSwitch the mode selector in the toolbar to Expert to show video/music databases, views, DSP, keyboard, codecs, plugins, remote and raw XML editors.\r\n\r\nYou can change the mode at any time; this hint appears only once."
-                    : "Die Seitenleiste startet im Standard-Modus mit Allgemein, Wiedergabe, Medien, TV, Untertiteln und Discs.\r\n\r\nStelle den Modus in der Werkzeugleiste auf Experte, um Video-/Musikdatenbanken, Ansichten, DSP, Tastatur, Codecs, Plugins, Fernbedienung und XML-Rohdaten zu sehen.\r\n\r\nDer Modus lässt sich jederzeit wechseln; dieser Hinweis erscheint nur einmal.",
+                    ? "The sidebar starts in Standard mode with Project, general, playback, media, TV, subtitle and disc settings.\r\n\r\nSwitch the mode selector in the toolbar to Expert to show video/music databases, views, DSP, keyboard, codecs, plugins, remote and raw XML editors.\r\n\r\nYou can change the mode at any time; this hint appears only once."
+                    : "Die Seitenleiste startet im Standard-Modus mit Projekt, Allgemein, Wiedergabe, Medien, TV, Untertiteln und Discs.\r\n\r\nStelle den Modus in der Werkzeugleiste auf Experte, um Video-/Musikdatenbanken, Ansichten, DSP, Tastatur, Codecs, Plugins, Fernbedienung und XML-Rohdaten zu sehen.\r\n\r\nDer Modus lässt sich jederzeit wechseln; dieser Hinweis erscheint nur einmal.",
                 Font = Typography.Create(9.5f * scale, FontStyle.Regular),
                 ForeColor = palette.Text,
                 BackColor = Color.Transparent,

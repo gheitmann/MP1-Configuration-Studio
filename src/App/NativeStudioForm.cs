@@ -21,6 +21,7 @@ namespace MP1.ConfigurationStudio
         private readonly Panel scroll = new StudioBufferedPanel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly TableLayoutPanel table = new StudioBufferedTable { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
         private readonly GlassFlowPanel navigation = new GlassFlowPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+        private readonly List<Label> navigationHeaders = new List<Label>();
         private GlassPanel header, footer, sidebar, glassBody, toolbar;
         private TableLayoutPanel topArea, toolbarRow;
         private StudioScrollHost contentScroll, sidebarScroll;
@@ -205,12 +206,38 @@ namespace MP1.ConfigurationStudio
             navigation.BackColor = palette.Panel;
             navigation.Padding = new Padding(0);
             sidebar.Controls.Add(navigation);
+            var groupCounts = sections.GroupBy(section => NavigationGroup(section)).ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+            string previousGroup = null;
             foreach (NativeSection section in sections)
             {
-                var item = new StudioAction { Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
+                string group = NavigationGroup(section);
+                bool header = groupCounts[group] > 1 && !String.Equals(group, previousGroup, StringComparison.OrdinalIgnoreCase);
+                if (header)
+                {
+                    var caption = new Label
+                    {
+                        Text = NavigationGroupTitle(group).ToUpperInvariant(),
+                        Font = Typography.Create(8.5f * Math.Min(scale, 1.3f), FontStyle.Bold),
+                        ForeColor = palette.Muted,
+                        BackColor = palette.Panel,
+                        AutoSize = false,
+                        Height = Px(26),
+                        Width = Px(198),
+                        Padding = new Padding(Px(8), Px(8), 0, 0),
+                        Margin = new Padding(0, previousGroup == null ? 0 : Px(10), 0, Px(2)),
+                        Tag = group
+                    };
+                    navigation.Controls.Add(caption);
+                    navigationHeaders.Add(caption);
+                }
+                string navTitle = Localization.IsEnglish
+                    ? (String.IsNullOrEmpty(section.NavTitleEn) ? section.TitleEn : section.NavTitleEn)
+                    : (String.IsNullOrEmpty(section.NavTitleDe) ? section.TitleDe : section.NavTitleDe);
+                var item = new StudioAction { Text = navTitle, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(header ? Px(12) : 0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
                 item.Click += delegate { ShowSection(section, item); };
                 item.Tag = section;
                 navigation.Controls.Add(item);
+                previousGroup = group;
             }
             var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
             classic.Click += delegate { StartClassic(); };
@@ -486,7 +513,7 @@ namespace MP1.ConfigurationStudio
                 if (tabs.Count > 0)
                 {
                     SectionTab tab = tabs[tabIndex];
-                    if (tab.Group != null) AddGroup(tab.Group, tabs.Count == 1);
+                    if (tab.Group != null) AddGroup(tab.Group, tabs.Count == 1 && !String.Equals(section.Id, "project", StringComparison.OrdinalIgnoreCase));
                     else AddRemaining(tab.Remaining, tabs.Count == 1);
                 }
             }
@@ -677,7 +704,7 @@ namespace MP1.ConfigurationStudio
                         prefixes.AddRange(field.EntryPrefixes);
                         continue;
                     }
-                    if (field.Kind == NativeFieldKind.Info || field.Kind == NativeFieldKind.XmlFiles || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views || field.Kind == NativeFieldKind.Dsp
+                    if (field.Kind == NativeFieldKind.Info || field.Kind == NativeFieldKind.ProjectInfo || field.Kind == NativeFieldKind.XmlFiles || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views || field.Kind == NativeFieldKind.Dsp
                         || field.Kind == NativeFieldKind.TvServer || field.Kind == NativeFieldKind.PluginConfig || field.Kind == NativeFieldKind.Classic) continue;
                     if (!String.IsNullOrEmpty(field.Entry)) exact.Add(field.Entry);
                 }
@@ -779,6 +806,15 @@ namespace MP1.ConfigurationStudio
 
         private void AddField(NativeField field)
         {
+            if (field.Kind == NativeFieldKind.ProjectInfo)
+            {
+                var panel = new NativeProjectPanel(scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(panel, 0, table.RowCount);
+                table.SetColumnSpan(panel, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(520)));
+                table.RowCount++;
+                return;
+            }
             if (field.Kind == NativeFieldKind.RawSections)
             {
                 var editor = new NativeRawSectionEditor(configuration, scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
@@ -1583,6 +1619,13 @@ namespace MP1.ConfigurationStudio
                 }
                 item.Visible = visible;
             }
+            foreach (Label header in navigationHeaders)
+            {
+                string group = header.Tag as string;
+                header.Visible = sections.Any(section => String.Equals(NavigationGroup(section), group, StringComparison.OrdinalIgnoreCase)
+                    && (appearance.ExpertMode || !IsAdvancedSection(section))
+                    && (!active || MatchesSection(section, query)));
+            }
             ClearNavigationHover();
             navigation.AutoScrollPosition = Point.Empty;
             if (sidebarScroll != null) sidebarScroll.SyncNow();
@@ -1596,6 +1639,54 @@ namespace MP1.ConfigurationStudio
             else
             {
                 RestoreStatus();
+            }
+        }
+
+        private static string NavigationGroup(NativeSection section)
+        {
+            switch ((section.Id ?? String.Empty).ToLowerInvariant())
+            {
+                case "project": return "project";
+                case "general":
+                case "volume":
+                case "keymap": return "general";
+                case "gui":
+                case "home": return "gui";
+                case "movies":
+                case "moviedatabase":
+                case "videoviews":
+                case "subtitles": return "videos";
+                case "discs": return "discs";
+                case "tv":
+                case "radio":
+                case "recordings": return "tvradio";
+                case "music":
+                case "musicfiles":
+                case "musicviews":
+                case "musicdsp": return "music";
+                case "pictures": return "pictures";
+                case "folders": return "folders";
+                case "remote": return "remote";
+                case "codecs": return "codecs";
+                case "plugins":
+                case "plugindata": return "plugins";
+                case "mediainfo": return "mediainfo";
+                case "system": return "system";
+                default: return "extras";
+            }
+        }
+
+        private static string NavigationGroupTitle(string group)
+        {
+            switch ((group ?? String.Empty).ToLowerInvariant())
+            {
+                case "general": return Localization.IsEnglish ? "General" : "Allgemein";
+                case "gui": return "GUI";
+                case "videos": return Localization.IsEnglish ? "Videos" : "Videos";
+                case "tvradio": return "TV / Radio";
+                case "music": return Localization.IsEnglish ? "Music" : "Musik";
+                case "plugins": return "Plugins";
+                default: return Localization.IsEnglish ? "More areas" : "Weitere Bereiche";
             }
         }
 
@@ -1613,6 +1704,7 @@ namespace MP1.ConfigurationStudio
                 case "codecs":
                 case "plugins":
                 case "plugindata":
+                case "mediainfo":
                 case "more":
                 case "files":
                 case "rawxml":

@@ -43,6 +43,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="config\compatibility.xml" LogicalName="MP1.ConfigurationStudio.compatibility.xml" />
+    <EmbeddedResource Include="assets\MediaPortalLogo.png" LogicalName="MP1.ConfigurationStudio.MediaPortalLogo.png" />
+    <EmbeddedResource Include="assets\MediaPortalIcon.png" LogicalName="MP1.ConfigurationStudio.MediaPortalIcon.png" />
     <None Include="LICENSE" />
   </ItemGroup>
 </Project>

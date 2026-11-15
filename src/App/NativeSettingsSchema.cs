@@ -26,7 +26,8 @@ namespace MP1.ConfigurationStudio
         PluginConfig,
         GroupedSection,
         SystemChecks,
-        VirtualDrive
+        VirtualDrive,
+        ProjectInfo
     }
 
     internal enum NativeFilterKind
@@ -129,6 +130,8 @@ namespace MP1.ConfigurationStudio
         public string Id;
         public string TitleDe;
         public string TitleEn;
+        public string NavTitleDe;
+        public string NavTitleEn;
         public string SubtitleDe;
         public string SubtitleEn;
         public string Icon;
@@ -149,6 +152,13 @@ namespace MP1.ConfigurationStudio
             Groups.Add(group);
             return this;
         }
+
+        public NativeSection Nav(string titleDe, string titleEn)
+        {
+            NavTitleDe = titleDe;
+            NavTitleEn = titleEn;
+            return this;
+        }
     }
 
     internal static class NativeSettingsSchema
@@ -157,6 +167,9 @@ namespace MP1.ConfigurationStudio
         {
             var sections = new List<NativeSection>
             {
+                new NativeSection("project", "Projekt", "Project", "Über MediaPortal, Links und Unterstützung des Projekts.", "About MediaPortal, links, and project support.", "info")
+                    .Group(new NativeGroup("Projekt", "Project")
+                        .Add(new NativeField("project", "info", "Projektinformationen", "Project information", NativeFieldKind.ProjectInfo))),
                 new NativeSection("general", "Allgemein", "General", "Start, Stabilität und Grundverhalten von MediaPortal.", "Startup, stability, and basic MediaPortal behavior.", "settings")
                     .Group(new NativeGroup("Protokollierung & Stabilität", "Logging & stability")
                         .Add(new NativeField("general", "loglevel", "Protokollstufe", "Log level", NativeFieldKind.Combo, "Höhere Stufen schreiben mehr Details ins MediaPortal-Log.", "Higher levels write more detail to the MediaPortal log.")
@@ -230,16 +243,13 @@ namespace MP1.ConfigurationStudio
                             .Option("ask what to do", "Fragen", "Ask").Option("play", "Wiedergeben", "Play").Option("do not play", "Nicht wiedergeben", "Do not play")))
                     .Group(new NativeGroup("TV-Server", "TV server")
                         .Add(new NativeField("general", "HostDetectMethod", "Host-Erkennung", "Host detection", NativeFieldKind.Text, "Zum Beispiel Ping.", "For example Ping."))
-                        .Add(new NativeField("general", "wait for tvserver", "Auf TV-Server warten", "Wait for TV server", NativeFieldKind.Bool, "Beim Start auf den TV-Server warten.", "Wait for the TV server during startup."))),
-                new NativeSection("system", "System und Laufwerke", "System and drives", "CD-/DVD-Geschwindigkeit, virtuelle Laufwerke und Systemprüfungen.", "CD/DVD speed, virtual drives, and system checks.", "settings")
+                        .Add(new NativeField("general", "wait for tvserver", "Auf TV-Server warten", "Wait for TV server", NativeFieldKind.Bool, "Beim Start auf den TV-Server warten.", "Wait for the TV server during startup.")))
                     .Group(new NativeGroup("CD/DVD-Geschwindigkeit", "CD/DVD speed")
                         .Add(new NativeField("cdspeed", "enabled", "CD/DVD-Geschwindigkeit regeln", "Control CD/DVD speed", NativeFieldKind.Bool, "Aktiviert die Geschwindigkeitsbegrenzung für optische Laufwerke.", "Enables speed limiting for optical drives."))
                         .Add(new NativeField("cdspeed", "drivespeedCD", "CD-Geschwindigkeit", "CD speed", NativeFieldKind.Text, "Kommagetrennte Geschwindigkeiten pro Laufwerk, z. B. 4,8,16.", "Comma-separated speeds per drive, e.g. 4,8,16."))
                         .Add(new NativeField("cdspeed", "drivespeedDVD", "DVD-Geschwindigkeit", "DVD speed", NativeFieldKind.Text, "Kommagetrennte Geschwindigkeiten pro Laufwerk.", "Comma-separated speeds per drive."))
                         .Add(new NativeField("cdspeed", "disableCD", "CD-Geschwindigkeit nicht ändern", "Do not change CD speed", NativeFieldKind.Text, "Kommagetrennte Flags pro Laufwerk: 1 deaktiviert die Regelung.", "Comma-separated flags per drive: 1 disables speed control."))
                         .Add(new NativeField("cdspeed", "disableDVD", "DVD-Geschwindigkeit nicht ändern", "Do not change DVD speed", NativeFieldKind.Text, "Kommagetrennte Flags pro Laufwerk: 1 deaktiviert die Regelung.", "Comma-separated flags per drive: 1 disables speed control.")))
-                    .Group(new NativeGroup("Systemprüfungen", "System checks")
-                        .Add(new NativeField("system", "checks", "Systemprüfungen", "System checks", NativeFieldKind.SystemChecks, "Media-Center-Dienste, MPTray-Autostart und Zugriff auf die klassischen Prüfungen.", "Media Center services, MPTray autostart, and access to the classic checks.")))
                     .Group(new NativeGroup("Daemon Tools", "Daemon Tools")
                         .Add(new NativeField("daemon", "enabled", "Daemon Tools verwenden", "Use Daemon Tools", NativeFieldKind.Bool, "Optische Images über Daemon Tools einbinden.", "Mount optical images through Daemon Tools."))
                         .Add(new NativeField("daemon", "path", "Daemon-Tools-Pfad", "Daemon Tools path", NativeFieldKind.Text))
@@ -248,6 +258,9 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("daemon", "driveNo", "Laufwerksnummer", "Drive number", NativeFieldKind.Integer).Range(0, 32))
                         .Add(new NativeField("daemon", "driveType", "Laufwerkstyp", "Drive type", NativeFieldKind.Text, "Typ des virtuellen Laufwerks, z. B. dvd.", "Virtual drive type, e.g. dvd."))
                         .Add(new NativeField("daemon", "askbeforeplaying", "Vor Wiedergabe fragen", "Ask before playing", NativeFieldKind.Bool))),
+                new NativeSection("system", "Zusätzliche Prüfungen", "Additional 3rd party checks", "Prüfung von Media-Center-Diensten, MPTray und weiteren Drittanbieter-Komponenten.", "Check Media Center services, MPTray, and other third-party components.", "settings").Nav("Prüfungen", "3rd-party checks")
+                    .Group(new NativeGroup("Systemprüfungen", "System checks")
+                        .Add(new NativeField("system", "checks", "Systemprüfungen", "System checks", NativeFieldKind.SystemChecks, "Media-Center-Dienste, MPTray-Autostart und Zugriff auf die klassischen Prüfungen.", "Media Center services, MPTray autostart, and access to the classic checks."))),
                 new NativeSection("volume", "Lautstärke", "Volume", "Lautstärkeverhalten und Bildschirmanzeige.", "Volume behavior and on-screen display.", "play")
                     .Group(new NativeGroup("Regelung", "Control")
                         .Add(new NativeField("volume", "digital", "Wave-Lautstärke", "Wave volume", NativeFieldKind.Bool, "Aus = Master-Lautstärke, Ein = Wave-Kanal.", "Off = master volume, on = wave channel."))
@@ -281,7 +294,7 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("pictures", "rememberlastfolder", "Letzten Ordner merken", "Remember last folder", NativeFieldKind.Bool))
                         .Add(new NativeField("pictures", "AddOpticalDiskDrives", "Optische Laufwerke einbinden", "Include optical drives", NativeFieldKind.Bool))
                         .Add(new NativeField("pictures", "SwitchRemovableDrives", "Wechseldatenträger einbinden", "Include removable drives", NativeFieldKind.Bool))),
-                new NativeSection("gui", "Oberfläche", "Interface", "Skin, Bedienung und Verhalten der MediaPortal-Oberfläche.", "Skin, input, and MediaPortal interface behavior.", "surface")
+                new NativeSection("gui", "GUI", "GUI", "Skin, Bedienung und Verhalten der MediaPortal-Oberfläche.", "Skin, input, and MediaPortal interface behavior.", "surface")
                     .Group(new NativeGroup("Allgemein", "General")
                         .Add(new NativeField("gui", "hideextensions", "Dateiendungen ausblenden", "Hide file extensions", NativeFieldKind.Bool))
                         .Add(new NativeField("gui", "enableguisounds", "Oberflächenklänge aktivieren", "Enable interface sounds", NativeFieldKind.Bool))
@@ -312,7 +325,7 @@ namespace MP1.ConfigurationStudio
                 new NativeSection("home", "Startmenü", "Start menu", "Einträge im MediaPortal-Startmenü ein- oder ausblenden.", "Show or hide entries in the MediaPortal home menu.", "surface")
                     .Group(new NativeGroup("Startmenü-Einträge", "Home menu entries")
                         .Add(new NativeField("home", "menu", "Einträge", "Entries", NativeFieldKind.DynamicBools, "Die Liste wird aus der Konfiguration gelesen. Plugin-Einträge und unbekannte Menüpunkte bleiben erhalten.", "The list is read from the configuration. Plugin entries and unknown menu items are preserved."))),
-                new NativeSection("movies", "Video", "Video", "Wiedergabe, Wiedergabelisten und Videoordner.", "Playback, playlists, and video folders.", "play")
+                new NativeSection("movies", "Videos", "Videos", "Wiedergabe, Wiedergabelisten und Videoordner.", "Playback, playlists, and video folders.", "play")
                     .Group(new NativeGroup("Wiedergabe", "Playback")
                         .Add(new NativeField("movies", "repeat", "Wiedergabe wiederholen", "Repeat playback", NativeFieldKind.Bool))
                         .Add(new NativeField("movies", "fuzzyMatching", "Unscharfe Titelsuche", "Fuzzy title matching", NativeFieldKind.Bool, "Findet Titel auch bei kleinen Schreibabweichungen.", "Finds titles despite small spelling differences."))
@@ -634,7 +647,7 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("subtitles", "subStyleOverride", "Stil überschreiben", "Override style", NativeFieldKind.Bool)))
                     .Group(new NativeGroup("Timing", "Timing")
                         .Add(new NativeField("subtitles", "delayInterval", "Verzögerungsschritt", "Delay step", NativeFieldKind.Integer).Range(50, 5000, "ms"))),
-                new NativeSection("remote", "Fernbedienung", "Remote", "Empfänger und Profile für Fernbedienungen.", "Receivers and profiles for remote controls.", "keyboard")
+                new NativeSection("remote", "Fernbedienung & Eingabe", "Remotes and Input Devices", "Empfänger und Profile für Fernbedienungen.", "Receivers and profiles for remote controls.", "keyboard").Nav("Fernbedienung", "Remotes & Input")
                     .Group(new NativeGroup("Hauppauge HCW", "Hauppauge HCW")
                         .Add(new NativeField("remote", "HCW", "HCW aktivieren", "Enable HCW", NativeFieldKind.Bool))
                         .Add(new NativeField("remote", "HCWAllowExternal", "Externe Steuerung erlauben", "Allow external control", NativeFieldKind.Bool))
@@ -677,10 +690,10 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("remote", "CentareaVerbose", "Ausführliches Log", "Verbose log", NativeFieldKind.Bool))
                         .Add(new NativeField("remote", "CentareaMouseOkMap", "Maus-OK-Zuordnung", "Mouse OK mapping", NativeFieldKind.Bool))
                         .Add(new NativeField("remote", "CentareaJoystickMap", "Joystick-Zuordnung", "Joystick mapping", NativeFieldKind.Bool))),
-                new NativeSection("keymap", "Tastatur", "Keyboard", "Tastenbelegung für Global und alle MediaPortal-Fenster bearbeiten.", "Edit key mappings for Global and all MediaPortal windows.", "keyboard")
+                new NativeSection("keymap", "Tastaturkürzel", "Keyboard shortcuts", "Tastenbelegung für Global und alle MediaPortal-Fenster bearbeiten.", "Edit key mappings for Global and all MediaPortal windows.", "keyboard")
                     .Group(new NativeGroup("Tastenbelegung", "Key mapping")
                         .Add(new NativeField("keymap", "keymap.xml", "Tastenbelegung", "Key mapping", NativeFieldKind.Keymap, "Aktion auswählen und eine neue Taste aufnehmen. Speichern erstellt ein Backup von keymap.xml.", "Select an action and capture a new key. Save creates a backup of keymap.xml."))),
-                new NativeSection("codecs", "Codecs", "Codecs", "Decoder und Renderer für Video, TV und Audio.", "Decoders and renderers for video, TV, and audio.", "settings")
+                new NativeSection("codecs", "Codecs und Renderer", "Codecs and Renderer", "Decoder und Renderer für Video, TV und Audio.", "Decoders and renderers for video, TV, and audio.", "settings").Nav("Codecs & Renderer", "Codecs & Renderer")
                     .Group(new NativeGroup("Video", "Video")
                         .Add(new NativeField("movieplayer", "autodecodersettings", "Automatische Decoder-Einstellungen", "Automatic decoder settings", NativeFieldKind.Bool))
                         .Add(new NativeField("movieplayer", "forcesourcesplitter", "Source-Splitter erzwingen", "Force source splitter", NativeFieldKind.Bool))
@@ -729,7 +742,7 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("general", "useMadVideoRenderer3D", "madVR 3D", "madVR 3D", NativeFieldKind.Bool))
                         .Add(new NativeField("general", "useInternalDRC", "Interne DRC verwenden", "Use internal DRC", NativeFieldKind.Bool))
                         .Add(new NativeField("general", "useRestoreMadvr1080p", "madVR 1080p wiederherstellen", "Restore madVR 1080p", NativeFieldKind.Bool))),
-                new NativeSection("discs", "BD / DVD", "BD / DVD", "Blu-ray- und DVD-Wiedergabe.", "Blu-ray and DVD playback.", "play")
+                new NativeSection("discs", "Blu-ray / DVD", "Blu-ray / DVD", "Blu-ray- und DVD-Wiedergabe.", "Blu-ray and DVD playback.", "play")
                     .Group(new NativeGroup("Blu-ray", "Blu-ray")
                         .Add(new NativeField("bdplayer", "useInternalBDPlayer", "Internen BD-Player verwenden", "Use internal BD player", NativeFieldKind.Bool))
                         .Add(new NativeField("bdplayer", "useforbluray", "Externen Player für Blu-rays", "External player for Blu-rays", NativeFieldKind.Bool))
@@ -824,7 +837,18 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("myextensions2", "entries", "Plugin-Erweiterungen", "Plugin extensions", NativeFieldKind.DynamicEntries, "Konfiguration installierter GUI-Erweiterungen und ihrer Sichtbarkeit.", "Configuration and visibility of installed GUI extensions.")))
                     .Group(new NativeGroup("Konfigurator", "Configurator")
                         .Add(new NativeField("Configuration", "entries", "Einträge", "Entries", NativeFieldKind.DynamicEntries))),
-                new NativeSection("more", "Spezialbereiche", "Special areas", "Dateimenü, Fernbedienungsgeräte, Medieninfo und weitere Spezialbereiche.", "File menu, remote devices, media info, and other special areas.", "settings")
+                new NativeSection("mediainfo", "Medieninformationen", "Media info", "MediaInfo-Datenbank und Zwischenspeicher für Filme, Musik und Bilder.", "MediaInfo database and caches for movies, music, and pictures.", "file")
+                    .Group(new NativeGroup("Medieninformationen", "Media info")
+                        .Add(new NativeField("MediaInfo", "DatabaseEnabled", "MediaInfo-Datenbank", "MediaInfo database", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForBluray", "Cache für Blu-ray", "Cache for Blu-ray", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForDVD", "Cache für DVD", "Cache for DVD", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForVideo", "Cache für Video", "Cache for video", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForAudio", "Cache für Audio", "Cache for audio", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForPicture", "Cache für Bilder", "Cache for pictures", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForImage", "Cache für Images", "Cache for images", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "EnableCachingForAudioCD", "Cache für Audio-CD", "Cache for audio CD", NativeFieldKind.Bool))
+                        .Add(new NativeField("MediaInfo", "RecordLifeTime", "Cache-Lebensdauer", "Cache lifetime", NativeFieldKind.Integer, "0 = unbegrenzt; sonst Tage bis zum Verfall.", "0 = unlimited; otherwise days until expiry.").Range(0, 3650, "d"))),
+                new NativeSection("more", "Spezialbereiche", "Special areas", "Dateimenü, Fernbedienungsgeräte und weitere Spezialbereiche.", "File menu, remote devices, and other special areas.", "settings")
                     .Group(new NativeGroup("Dateimenü", "File menu")
                         .Add(new NativeField("filemenu", "enabled", "Dateimenü aktivieren", "Enable file menu", NativeFieldKind.Bool))
                         .Add(new NativeField("filemenu", "trashcan", "Papierkorb-Ordner", "Trash folder", NativeFieldKind.Folder, "Zielordner für gelöschte Aufnahmen und Dateien.", "Target folder for deleted recordings and files."))
@@ -868,16 +892,6 @@ namespace MP1.ConfigurationStudio
                     .Group(new NativeGroup("Bildschirmauswahl", "Screen selector")
                         .Add(new NativeField("screenselector", "screendeviceid", "Geräte-ID", "Device ID", NativeFieldKind.Text))
                         .Add(new NativeField("screenselector", "screendisplayname", "Anzeigename", "Display name", NativeFieldKind.Text)))
-                    .Group(new NativeGroup("Medieninformationen", "Media info")
-                        .Add(new NativeField("MediaInfo", "DatabaseEnabled", "MediaInfo-Datenbank", "MediaInfo database", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForBluray", "Cache für Blu-ray", "Cache for Blu-ray", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForDVD", "Cache für DVD", "Cache for DVD", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForVideo", "Cache für Video", "Cache for video", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForAudio", "Cache für Audio", "Cache for audio", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForPicture", "Cache für Bilder", "Cache for pictures", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForImage", "Cache für Images", "Cache for images", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "EnableCachingForAudioCD", "Cache für Audio-CD", "Cache for audio CD", NativeFieldKind.Bool))
-                        .Add(new NativeField("MediaInfo", "RecordLifeTime", "Cache-Lebensdauer", "Cache lifetime", NativeFieldKind.Integer, "0 = unbegrenzt; sonst Tage bis zum Verfall.", "0 = unlimited; otherwise days until expiry.").Range(0, 3650, "d")))
                     .Group(new NativeGroup("Video Post-Processing", "Video post-processing")
                         .Add(new NativeField("movieplayer", "entries", "Filter", "Filters", NativeFieldKind.DynamicEntries).Entries("filter")))
                     .Group(new NativeGroup("DVD Post-Processing", "DVD post-processing")
@@ -904,9 +918,9 @@ namespace MP1.ConfigurationStudio
         {
             string[] order =
             {
-                "general", "volume", "gui", "home", "movies", "moviedatabase", "videoviews", "subtitles",
+                "project", "general", "volume", "keymap", "gui", "home", "movies", "moviedatabase", "videoviews", "subtitles",
                 "discs", "tv", "radio", "recordings", "music", "musicfiles", "musicviews", "musicdsp",
-                "pictures", "folders", "remote", "keymap", "codecs", "plugins", "plugindata", "system",
+                "pictures", "folders", "remote", "codecs", "plugins", "plugindata", "mediainfo", "system",
                 "more", "files", "rawxml"
             };
             return sections

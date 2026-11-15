@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace MP1.ConfigurationStudio
@@ -46,6 +47,7 @@ namespace MP1.ConfigurationStudio
                 case "help":g.DrawRectangle(p,3,3,18,18);g.DrawLine(p,15,3,15,21);break;
                 case "system":g.DrawRectangle(p,3,3,18,13);g.DrawLine(p,8,21,16,21);g.DrawLine(p,12,16,12,21);break;
                 case "check":g.DrawLines(p,new[]{new Point(4,12),new Point(9,17),new Point(20,6)});break;
+                case "info":g.DrawEllipse(p,3,3,18,18);g.DrawLine(p,12,10,12,17);g.DrawLine(p,12,7,12,7);break;
                 default:g.DrawLine(p,3,7,21,7);g.DrawLine(p,3,17,21,17);g.DrawEllipse(p,7,4,6,6);g.DrawEllipse(p,13,14,6,6);break;
                 }
             }g.Restore(state);
@@ -89,7 +91,46 @@ namespace MP1.ConfigurationStudio
     }
     internal sealed class StudioLogo : Control
     {
+        private static Image official;
+        private static bool officialLoaded;
         public Func<Palette> Colors;
-        protected override void OnPaint(PaintEventArgs e){var p=Colors();e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),8))using(var b=new SolidBrush(p.Primary))e.Graphics.FillPath(b,shape);if(Palette.HighContrastActive)using(var pen=new Pen(SystemColors.WindowFrame))e.Graphics.DrawRectangle(pen,0,0,Width-1,Height-1);TextRenderer.DrawText(e.Graphics,"MP",Font,ClientRectangle,p.PrimaryText,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
+
+        private static Image Official
+        {
+            get
+            {
+                if (!officialLoaded)
+                {
+                    officialLoaded = true;
+                    try
+                    {
+                        using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MP1.ConfigurationStudio.MediaPortalIcon.png"))
+                        {
+                            if (stream != null) using (var image = Image.FromStream(stream)) official = new Bitmap(image);
+                        }
+                    }
+                    catch { }
+                }
+                return official;
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var p = Colors();
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Image image = Official;
+            if (image != null)
+            {
+                e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                e.Graphics.DrawImage(image, new Rectangle(0, 0, Width, Height));
+                if (Palette.HighContrastActive) using (var pen = new Pen(SystemColors.WindowFrame)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+                return;
+            }
+            using (var shape = StudioIcons.Rounded(new RectangleF(0, 0, Width - 1, Height - 1), 8))
+            using (var b = new SolidBrush(p.Primary)) e.Graphics.FillPath(b, shape);
+            if (Palette.HighContrastActive) using (var pen = new Pen(SystemColors.WindowFrame)) e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+            TextRenderer.DrawText(e.Graphics, "MP", Font, ClientRectangle, p.PrimaryText, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        }
     }
 }
