@@ -353,7 +353,11 @@ namespace MP1.ConfigurationStudio
                 table.SetColumnSpan(pageLead, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 table.RowCount++;
-                if (tabs.Count > 1) AddTabStrip(tabs, tabIndex, selected);
+                if (tabs.Count > 1)
+                {
+                    AddTabStrip(tabs, tabIndex, selected);
+                    AddTabSpacer();
+                }
                 if (tabs.Count > 0)
                 {
                     SectionTab tab = tabs[tabIndex];
@@ -404,12 +408,13 @@ namespace MP1.ConfigurationStudio
 
         private void AddTabStrip(List<SectionTab> tabs, int active, StudioAction navigationItem)
         {
-            var strip = new StudioTabStrip(Px(6))
+            var strip = new StudioTabStrip(Px(9))
             {
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.Top,
+                Height = Px(36),
                 BackColor = palette.Background,
                 AccessibleName = Localization.IsEnglish ? "Subsections" : "Unterbereiche",
-                Margin = new Padding(0, 0, 0, Px(18))
+                Margin = new Padding(0)
             };
             for (int i = 0; i < tabs.Count; i++)
             {
@@ -439,8 +444,22 @@ namespace MP1.ConfigurationStudio
             strip.SizeChanged += delegate
             {
                 if (tabRowIndex < 0 || tabRowIndex >= table.RowStyles.Count) return;
-                if (table.RowStyles[tabRowIndex].Height != strip.Height) table.RowStyles[tabRowIndex].Height = strip.Height;
+                if (table.RowStyles[tabRowIndex].Height != strip.Height)
+                {
+                    table.RowStyles[tabRowIndex].Height = strip.Height;
+                    table.PerformLayout();
+                }
             };
+        }
+
+        private void AddTabSpacer()
+        {
+            int height = Px(26);
+            var spacer = new Panel { Height = height, Dock = DockStyle.Fill, BackColor = palette.Background, Margin = new Padding(0) };
+            table.Controls.Add(spacer, 0, table.RowCount);
+            table.SetColumnSpan(spacer, 2);
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
+            table.RowCount++;
         }
 
         private void AddGroup(NativeGroup group)
