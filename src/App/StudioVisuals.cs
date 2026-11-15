@@ -15,8 +15,26 @@ namespace MP1.ConfigurationStudio
             {
                 if(cached==null)
                 {
-                    try{cached=Icon.ExtractAssociatedIcon(Application.ExecutablePath);}
+                    try
+                    {
+                        using(var stream=Assembly.GetExecutingAssembly().GetManifestResourceStream("MP1.ConfigurationStudio.MediaPortalIcon.png"))
+                        {
+                            if(stream!=null)
+                            {
+                                using(var image=Image.FromStream(stream))
+                                using(var bitmap=new Bitmap(image))
+                                {
+                                    cached=Icon.FromHandle(bitmap.GetHicon());
+                                }
+                            }
+                        }
+                    }
                     catch(Exception){}
+                    if(cached==null)
+                    {
+                        try{cached=Icon.ExtractAssociatedIcon(Application.ExecutablePath);}
+                        catch(Exception){}
+                    }
                 }
                 return cached;
             }

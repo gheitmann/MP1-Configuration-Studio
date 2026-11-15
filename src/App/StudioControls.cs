@@ -942,7 +942,7 @@ namespace MP1.ConfigurationStudio
         {
             if (form == null) return;
             Palette palette = Palette.For(true);
-            if (form.Icon == null) form.Icon = StudioIcon.Value;
+            form.Icon = StudioIcon.Value;
             form.BackColor = palette.Panel;
             form.ForeColor = palette.Text;
             form.HandleCreated += delegate { NativeDarkMode.ApplyWindow(form.Handle, !Palette.UseLight); };
