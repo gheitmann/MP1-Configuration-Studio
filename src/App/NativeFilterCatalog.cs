@@ -105,6 +105,7 @@ namespace MP1.ConfigurationStudio
                 List<string> compatible = CoreNames(kind);
                 if (compatible != null)
                 {
+                    compatible = compatible.Where(name => IsCodec(kind, name)).ToList();
                     StudioLog.Info("Filter catalog core=" + kind + " names=" + compatible.Count);
                     result.AddRange(compatible);
                     if (kind == NativeFilterKind.AudioRenderer)
@@ -121,9 +122,7 @@ namespace MP1.ConfigurationStudio
                 {
                     foreach (string value in map.Keys)
                     {
-                        if ((kind == NativeFilterKind.Video || kind == NativeFilterKind.Audio)
-                            && (value.IndexOf("Encoder", StringComparison.OrdinalIgnoreCase) >= 0 || value.IndexOf("Compressor", StringComparison.OrdinalIgnoreCase) >= 0))
-                            continue;
+                        if (!IsCodec(kind, value)) continue;
                         result.Add(value);
                     }
                 }
@@ -134,6 +133,24 @@ namespace MP1.ConfigurationStudio
                 return new List<string>();
             }
             return result.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value => value, StringComparer.CurrentCultureIgnoreCase).ToList();
+        }
+
+        /// <summary>Keeps decoder/codec filters and removes encoders, muxers, parsers and other DirectShow utilities from codec lists.</summary>
+        private static bool IsCodec(NativeFilterKind kind, string name)
+        {
+            if (String.IsNullOrWhiteSpace(name)) return false;
+            string value = name.Trim();
+            if (kind == NativeFilterKind.AudioRenderer) return true;
+            if (kind == NativeFilterKind.Legacy)
+                return value.IndexOf("encoder", StringComparison.OrdinalIgnoreCase) < 0
+                    && value.IndexOf("compressor", StringComparison.OrdinalIgnoreCase) < 0
+                    && value.IndexOf("muxer", StringComparison.OrdinalIgnoreCase) < 0;
+            string[] blocked = kind == NativeFilterKind.Video
+                ? new[] { "encoder", "compressor", "muxer", "multiplexer", "parser", "splitter", "source", "renderer", "overlay", "allocator", "tee", "color space", "avi draw", "video port", "pbda", "vbi surface", "ditherer" }
+                : new[] { "encoder", "compressor", "muxer", "multiplexer", "parser", "splitter", "source", "renderer", "overlay", "allocator", "tee", "color space", "avi draw", "video port", "pbda", "acm wrapper", "audioswitcher", "stereo input", "audio input", "audio output", "audio mic", "audio line", "hd audio", "hdmi out", "spdif out" };
+            foreach (string word in blocked)
+                if (value.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            return true;
         }
     }
 }

@@ -27,7 +27,8 @@ namespace MP1.ConfigurationStudio
         GroupedSection,
         SystemChecks,
         VirtualDrive,
-        ProjectInfo
+        ProjectInfo,
+        PluginOverview
     }
 
     internal enum NativeFilterKind
@@ -800,6 +801,8 @@ namespace MP1.ConfigurationStudio
                     .Group(new NativeGroup("Virtuelles Laufwerk", "Virtual drive")
                         .Add(new NativeField("daemon", "path", "Virtuelles Laufwerk", "Virtual drive", NativeFieldKind.VirtualDrive, "Daemon Tools erkennen, Programm wählen, Endungen festlegen und den Pfad prüfen.", "Detect Daemon Tools, choose the program, set extensions, and check the path."))),
                 new NativeSection("plugins", "Plugins", "Plugins", "Plugins aktivieren, deaktivieren und direkt konfigurieren.", "Enable, disable, and configure plugins directly.", "plugin")
+                    .Group(new NativeGroup("Übersicht", "Overview")
+                        .Add(new NativeField("plugins", "overview", "Plugin-Übersicht", "Plugin overview", NativeFieldKind.PluginOverview, "Alle Fenster-, externe und Prozess-Plugins mit Symbol, Status und direktem Zugriff auf Konfiguration.", "All window, external and process plugins with icon, status and direct access to configuration.")))
                     .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
                         .Add(new NativeField("plugins", "native", "Plugin-Konfiguration", "Plugin configuration", NativeFieldKind.PluginConfig, "Erkennt Plugins mit eigenem Konfigurationsfenster und öffnet es direkt. Die Fenster selbst bleiben im Plugin-Stil.", "Detects plugins with their own configuration window and opens it directly. The windows keep the plugin's own style.")))
                     .Group(new NativeGroup("Klassische Konfiguration", "Classic configuration")

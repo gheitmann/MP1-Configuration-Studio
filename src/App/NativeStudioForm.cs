@@ -704,7 +704,7 @@ namespace MP1.ConfigurationStudio
                         prefixes.AddRange(field.EntryPrefixes);
                         continue;
                     }
-                    if (field.Kind == NativeFieldKind.Info || field.Kind == NativeFieldKind.ProjectInfo || field.Kind == NativeFieldKind.XmlFiles || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views || field.Kind == NativeFieldKind.Dsp
+                    if (field.Kind == NativeFieldKind.Info || field.Kind == NativeFieldKind.ProjectInfo || field.Kind == NativeFieldKind.PluginOverview || field.Kind == NativeFieldKind.XmlFiles || field.Kind == NativeFieldKind.Keymap || field.Kind == NativeFieldKind.Views || field.Kind == NativeFieldKind.Dsp
                         || field.Kind == NativeFieldKind.TvServer || field.Kind == NativeFieldKind.PluginConfig || field.Kind == NativeFieldKind.Classic) continue;
                     if (!String.IsNullOrEmpty(field.Entry)) exact.Add(field.Entry);
                 }
@@ -908,6 +908,15 @@ namespace MP1.ConfigurationStudio
                 table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(210)));
                 table.RowCount++;
                 AddHelp(field);
+                return;
+            }
+            if (field.Kind == NativeFieldKind.PluginOverview)
+            {
+                var panel = new NativePluginOverviewPanel(configuration, runtime, scale, delegate { StartClassic(); }, delegate { MarkDirty(); }) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(panel, 0, table.RowCount);
+                table.SetColumnSpan(panel, 2);
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(620)));
+                table.RowCount++;
                 return;
             }
             if (field.Kind == NativeFieldKind.GroupedSection)

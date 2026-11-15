@@ -66,7 +66,6 @@ namespace MP1.ConfigurationStudio
             AddLink(links, Localization.IsEnglish ? "Online documentation" : "Online-Dokumentation", Wiki, small);
             AddLink(links, Localization.IsEnglish ? "MediaPortal on GitHub" : "MediaPortal auf GitHub", MediaPortalGitHub, small);
             AddLink(links, Localization.IsEnglish ? "Studio on GitHub" : "Studio auf GitHub", StudioGitHub, small);
-            AddLink(links, "IRC", "https://webchat.freenode.net/?channels=MediaPortal", small);
             root.Controls.Add(links);
 
             root.Controls.Add(Paragraph((Localization.IsEnglish ? "About: " : "Über: ") + "Version " + UpdateChecker.CurrentVersion + "  ·  MediaPortal 1.39  ·  x64  ·  Endurance", small));

@@ -48,6 +48,15 @@ namespace MP1.ConfigurationStudio
                 case "system":g.DrawRectangle(p,3,3,18,13);g.DrawLine(p,8,21,16,21);g.DrawLine(p,12,16,12,21);break;
                 case "check":g.DrawLines(p,new[]{new Point(4,12),new Point(9,17),new Point(20,6)});break;
                 case "info":g.DrawEllipse(p,3,3,18,18);g.DrawLine(p,12,10,12,17);g.DrawLine(p,12,7,12,7);break;
+                case "home":g.DrawLines(p,new[]{new Point(3,12),new Point(12,4),new Point(21,12)});g.DrawLines(p,new[]{new Point(6,11),new Point(6,20),new Point(18,20),new Point(18,11)});g.DrawLine(p,10,20,10,15);g.DrawLine(p,14,20,14,15);break;
+                case "music":g.DrawLine(p,9,5,9,18);g.DrawLine(p,9,5,18,7);g.DrawLine(p,18,7,18,16);g.DrawEllipse(p,4,16,6,5);g.DrawEllipse(p,13,14,6,5);break;
+                case "picture":g.DrawRectangle(p,3,5,18,14);g.DrawEllipse(p,6,8,3,3);g.DrawLines(p,new[]{new Point(5,18),new Point(10,12),new Point(14,16),new Point(17,13),new Point(21,18)});break;
+                case "tv":g.DrawRectangle(p,3,7,18,13);g.DrawLine(p,8,3,12,7);g.DrawLine(p,16,3,12,7);break;
+                case "radio":g.DrawRectangle(p,3,8,18,12);g.DrawEllipse(p,6,11,5,5);g.DrawLine(p,14,12,20,12);g.DrawLine(p,14,16,20,16);break;
+                case "settings":g.DrawEllipse(p,8,8,8,8);g.DrawLine(p,12,2,12,6);g.DrawLine(p,12,18,12,22);g.DrawLine(p,2,12,6,12);g.DrawLine(p,18,12,22,12);break;
+                case "weather":g.DrawEllipse(p,4,4,9,9);g.DrawLines(p,new[]{new Point(10,16),new Point(18,16),new Point(21,19),new Point(18,21),new Point(8,21),new Point(5,19),new Point(6,17),new Point(10,16)});break;
+                case "rss":g.DrawArc(p,3,3,18,18,180,90);g.DrawArc(p,8,8,13,13,180,90);g.DrawEllipse(p,3,17,3,3);break;
+                case "game":g.DrawRectangle(p,3,8,18,10);g.DrawLine(p,8,10,8,16);g.DrawLine(p,5,13,11,13);g.DrawEllipse(p,15,11,2,2);g.DrawEllipse(p,18,14,2,2);break;
                 default:g.DrawLine(p,3,7,21,7);g.DrawLine(p,3,17,21,17);g.DrawEllipse(p,7,4,6,6);g.DrawEllipse(p,13,14,6,6);break;
                 }
             }g.Restore(state);

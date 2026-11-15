@@ -438,7 +438,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.51"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.52"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -571,6 +571,7 @@ namespace MP1.ConfigurationStudio
    Check(ChoiceCatalog.Resolve("subtitles","engine").Count==5&&ChoiceCatalog.Resolve("moviedatabase","actorslistsize").Count==2,"choice catalog exposes subtitle engine and actor list choices");
             Check(schemaSections.Take(4).Select(section=>section.Id).SequenceEqual(new[]{"project","general","volume","keymap"}),"native sections follow the classic configuration order");
             Check(schemaSections.Any(section=>section.Id=="mediainfo")&&schemaSections.First(section=>section.Id=="project").Groups.SelectMany(group=>group.Fields).Any(field=>field.Kind==NativeFieldKind.ProjectInfo),"native menu exposes the classic project start page and media info topic");
+            Check(schemaSections.First(section=>section.Id=="plugins").Groups.SelectMany(group=>group.Fields).Any(field=>field.Kind==NativeFieldKind.PluginOverview),"plugins page exposes the icon overview");
             var volumeSection=schemaSections.First(section=>section.Id=="volume");
             Check(volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="handler")&&volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="startupstyle")&&volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="table"),"volume page exposes classic control, startup and table settings");
             var generalEntries=schemaSections.First(section=>section.Id=="general").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
