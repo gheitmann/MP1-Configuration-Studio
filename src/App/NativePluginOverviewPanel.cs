@@ -43,6 +43,7 @@ namespace MP1.ConfigurationStudio
         private readonly Label status = new Label { AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
         private readonly List<PluginEntry> entries = new List<PluginEntry>();
         private readonly List<Label> headers = new List<Label>();
+        private readonly ToolTip tips = new ToolTip();
         private readonly Button configure, toggle, home, myPlugins, browse;
         private PluginEntry selected;
         private bool loading;
@@ -276,6 +277,13 @@ namespace MP1.ConfigurationStudio
                     };
                     tile.Click += delegate { Select(entry); };
                     tile.DoubleClick += delegate { Select(entry); ConfigureSelected(); };
+                    tile.MouseDown += delegate(object sender, MouseEventArgs e)
+                    {
+                        if (e.Button != MouseButtons.Right) return;
+                        Select(entry);
+                        ShowContextMenu(entry);
+                    };
+                    tips.SetToolTip(tile, Localization.IsEnglish ? "Right-click for quick actions" : "Rechtsklick für Schnellaktionen");
                     entry.Tile = tile;
                     flow.Controls.Add(tile);
                 }
@@ -289,7 +297,8 @@ namespace MP1.ConfigurationStudio
             }
             else
             {
-                status.Text = entries.Count + (Localization.IsEnglish ? " plugins · " : " Plugins · ") + entries.Count(entry => entry.Enabled) + (Localization.IsEnglish ? " enabled" : " aktiviert");
+                status.Text = entries.Count + (Localization.IsEnglish ? " plugins · " : " Plugins · ") + entries.Count(entry => entry.Enabled)
+                    + (Localization.IsEnglish ? " enabled · right-click a tile for quick actions" : " aktiviert · Rechtsklick auf ein Plugin für Schnellaktionen");
             }
             status.ForeColor = entries.Count == 0 ? palette.Muted : palette.Text;
             UpdateActions();
@@ -324,6 +333,46 @@ namespace MP1.ConfigurationStudio
                 case "process": return Localization.IsEnglish ? "Process plugins" : "Prozess-Plugins";
                 default: return Localization.IsEnglish ? "Other plugins" : "Weitere Plugins";
             }
+        }
+
+        private void ShowContextMenu(PluginEntry entry)
+        {
+            var menu = new ContextMenuStrip
+            {
+                BackColor = palette.Panel,
+                ForeColor = palette.Text,
+                ShowImageMargin = false,
+                ShowCheckMargin = true,
+                Font = Typography.Create(9.5f * scale, FontStyle.Regular),
+                Renderer = new ToolStripProfessionalRenderer(new StudioMenuColorTable(palette))
+            };
+            menu.Items.Add(MenuItem(Localization.IsEnglish ? "Configure" : "Konfigurieren", entry.HasSetup, null, delegate { Select(entry); ConfigureSelected(); }));
+            menu.Items.Add(MenuItem(entry.Enabled
+                ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
+                : (Localization.IsEnglish ? "Enable" : "Aktivieren"), true, null, delegate { Select(entry); ToggleEnabled(); }));
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(MenuItem(Localization.IsEnglish ? "In Home" : "Im Home-Menü", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Home : null, delegate { Select(entry); ToggleHome(); }));
+            menu.Items.Add(MenuItem(Localization.IsEnglish ? "In Plugins" : "In My Plugins", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Plugins : null, delegate { Select(entry); TogglePlugins(); }));
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(MenuItem(Localization.IsEnglish ? "Browse and install plugins…" : "Plugins suchen und installieren…", true, null, delegate { Open("https://www.team-mediaportal.com/extensions"); }));
+            menu.Items.Add(MenuItem(Localization.IsEnglish ? "Classic configuration" : "Klassische Konfiguration", true, null, delegate { if (classic != null) classic(); }));
+            menu.Closed += delegate { menu.Dispose(); };
+            menu.Show(Cursor.Position);
+        }
+
+        private ToolStripMenuItem MenuItem(string text, bool enabled, bool? check, EventHandler click)
+        {
+            var item = new ToolStripMenuItem(text)
+            {
+                Enabled = enabled,
+                ForeColor = palette.Text,
+                BackColor = palette.Panel,
+                Checked = check.HasValue && check.Value,
+                CheckOnClick = false,
+                Padding = new Padding(Px(4), Px(3), Px(18), Px(3))
+            };
+            item.Click += click;
+            return item;
         }
 
         private void Select(PluginEntry entry)
@@ -450,6 +499,7 @@ namespace MP1.ConfigurationStudio
         {
             if (disposing)
             {
+                tips.Dispose();
                 foreach (PluginEntry entry in entries) if (entry.Icon != null) entry.Icon.Dispose();
                 entries.Clear();
             }
@@ -462,6 +512,28 @@ namespace MP1.ConfigurationStudio
             public SuspendLayoutScope(Control control) { this.control = control; control.SuspendLayout(); }
             public void Dispose() { control.ResumeLayout(true); }
         }
+    }
+
+    internal sealed class StudioMenuColorTable : ProfessionalColorTable
+    {
+        private readonly Palette palette;
+        public StudioMenuColorTable(Palette palette) { this.palette = palette; }
+        public override Color ToolStripDropDownBackground { get { return palette.Panel; } }
+        public override Color ImageMarginGradientBegin { get { return palette.Panel; } }
+        public override Color ImageMarginGradientMiddle { get { return palette.Panel; } }
+        public override Color ImageMarginGradientEnd { get { return palette.Panel; } }
+        public override Color MenuBorder { get { return palette.Border; } }
+        public override Color MenuItemBorder { get { return palette.Accent; } }
+        public override Color MenuItemSelected { get { return palette.Selection; } }
+        public override Color MenuItemSelectedGradientBegin { get { return palette.Selection; } }
+        public override Color MenuItemSelectedGradientEnd { get { return palette.Selection; } }
+        public override Color MenuItemPressedGradientBegin { get { return palette.Selection; } }
+        public override Color MenuItemPressedGradientEnd { get { return palette.Selection; } }
+        public override Color SeparatorDark { get { return palette.Border; } }
+        public override Color SeparatorLight { get { return palette.Panel; } }
+        public override Color CheckBackground { get { return palette.Selection; } }
+        public override Color CheckSelectedBackground { get { return palette.Accent; } }
+        public override Color CheckPressedBackground { get { return palette.Accent; } }
     }
 
     internal sealed class StudioPluginTile : Control
