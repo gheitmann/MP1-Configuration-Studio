@@ -14,7 +14,7 @@ namespace MP1.ConfigurationStudio
         private readonly StudioChoice choice;
         private readonly StudioTextInput filter;
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 3 };
+        private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 4 };
         private readonly List<string> sections;
         private readonly ToolTip tips = new ToolTip();
         private bool updating;
@@ -47,14 +47,15 @@ namespace MP1.ConfigurationStudio
             top.Controls.Add(filter, 2, 0);
 
             table.Padding = new Padding(0);
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 8));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 7));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 7));
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(36), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(3), 0, 0) };
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen", delegate { AddEntry(); }, body));
-            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "  × removes an entry after confirmation; saving creates a ZIP backup." : "  × entfernt einen Eintrag nach Bestätigung; Speichern legt eine ZIP-Sicherung an.", ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
+            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "  × removes an entry (confirmation; backup on save).  ↺ resets to the MediaPortal default.  Highlighted values differ from the default." : "  × entfernt einen Eintrag (Bestätigung; Sicherung beim Speichern).  ↺ setzt auf den MediaPortal-Standard zurück.  Hervorgehobene Werte weichen vom Standard ab.", ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
             Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, table.Width), Math.Max(1, table.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
@@ -108,27 +109,31 @@ namespace MP1.ConfigurationStudio
                 {
                     string key = entry.Key;
                     string value = entry.Value ?? "";
+                    bool differs = DiffersFromDefault(section, key, value);
                     bool boolValue = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
                         || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
                     if (boolValue)
                     {
-                        var check = new StudioCheck(scale) { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), Font = Typography.Create(10f * scale, FontStyle.Regular), Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
+                        var check = new StudioCheck(scale) { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), Font = Typography.Create(10f * scale, FontStyle.Regular), Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)), InkOverride = differs ? palette.Accent : Color.Empty };
                         check.CheckedChanged += delegate { configuration.SetBool(section, key, check.Checked); RaiseChanged(); };
                         table.Controls.Add(check, 0, table.RowCount);
                         table.SetColumnSpan(check, 2);
                         table.Controls.Add(DeleteButton(section, key), 2, table.RowCount);
+                        table.Controls.Add(ResetButton(section, key), 3, table.RowCount);
                         table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                         table.RowCount++;
                     }
                     else
                     {
-                        var label = new Label { Text = key, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
+                        var label = new Label { Text = key, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = differs ? palette.Accent : palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
                         var text = new StudioTextInput(scale, Typography.Create(10f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
                         text.Text = value;
+                        text.Box.ForeColor = differs ? palette.Accent : palette.Text;
                         text.Box.TextChanged += delegate { configuration.Set(section, key, text.Text); RaiseChanged(); };
                         table.Controls.Add(label, 0, table.RowCount);
                         table.Controls.Add(text, 1, table.RowCount);
                         table.Controls.Add(DeleteButton(section, key), 2, table.RowCount);
+                        table.Controls.Add(ResetButton(section, key), 3, table.RowCount);
                         table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                         table.RowCount++;
                     }
@@ -143,6 +148,32 @@ namespace MP1.ConfigurationStudio
         {
             var handler = Changed;
             if (handler != null) handler(this, EventArgs.Empty);
+        }
+
+        private bool DiffersFromDefault(string section, string key, string value)
+        {
+            string defaultValue;
+            return MediaPortalDefaults.TryGet(section, key, out defaultValue) && !String.Equals(value ?? String.Empty, defaultValue, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private Button ResetButton(string section, string key)
+        {
+            string defaultValue;
+            bool hasDefault = MediaPortalDefaults.TryGet(section, key, out defaultValue);
+            string target = hasDefault ? defaultValue : configuration.OriginalValue(section, key);
+            var button = new StudioButton { Text = "↺", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = hasDefault ? palette.Accent : palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), Px(2), Px(2), Px(2)), Enabled = target != null };
+            button.FlatAppearance.BorderColor = palette.Border;
+            tips.SetToolTip(button, target == null
+                ? (Localization.IsEnglish ? "No MediaPortal default is known for this entry." : "Für diesen Eintrag ist kein MediaPortal-Standardwert bekannt.")
+                : (hasDefault ? (Localization.IsEnglish ? "Reset to MediaPortal default: " : "Auf MediaPortal-Standard zurücksetzen: ") : (Localization.IsEnglish ? "Restore last saved value: " : "Zuletzt gespeicherten Wert wiederherstellen: ")) + target);
+            button.Click += delegate
+            {
+                if (target == null) return;
+                configuration.Set(section, key, target);
+                RaiseChanged();
+                Build();
+            };
+            return button;
         }
 
         private Button DeleteButton(string section, string key)

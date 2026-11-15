@@ -20,6 +20,7 @@ namespace MP1.ConfigurationStudio
     {
         private readonly XmlDocument document;
         private readonly Dictionary<string, PendingChange> pending = new Dictionary<string, PendingChange>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> original = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private bool changed;
 
         public string Path { get; private set; }
@@ -34,6 +35,28 @@ namespace MP1.ConfigurationStudio
         {
             Path = path;
             this.document = document;
+            CaptureOriginals();
+        }
+
+        private void CaptureOriginals()
+        {
+            original.Clear();
+            foreach (XmlNode section in document.DocumentElement.ChildNodes)
+            {
+                if (section.Name != "section") continue;
+                string sectionName = Attribute(section, "name");
+                foreach (XmlNode entry in section.ChildNodes)
+                {
+                    if (entry.Name != "entry") continue;
+                    original[sectionName + "/" + Attribute(entry, "name")] = entry.InnerText;
+                }
+            }
+        }
+
+        public string OriginalValue(string section, string entry)
+        {
+            string value;
+            return original.TryGetValue((section ?? String.Empty) + "/" + (entry ?? String.Empty), out value) ? value : null;
         }
 
         public static string FindConfigPath(string runtime)
@@ -212,6 +235,7 @@ namespace MP1.ConfigurationStudio
             }
             changed = false;
             pending.Clear();
+            CaptureOriginals();
             StudioLog.Info("Native configuration saved: " + Path + "; backup=" + backup);
             return backup;
         }

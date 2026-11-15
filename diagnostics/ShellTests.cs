@@ -376,6 +376,8 @@ namespace MP1.ConfigurationStudio
             Check(lightPalette.Background.R>200&&lightPalette.Text.R<100,"light theme palette exposes a light surface with dark text");
             using(var dialog=new PendingChangesDialog(new[]{new PendingChange{Section="general",Entry="probe",OldValue="no",NewValue="yes"}},0,1f))
                 Check(dialog.Text.Length>0&&dialog.Controls.Count>0,"pending changes dialog constructs");
+            string defaultValue;
+            Check(MediaPortalDefaults.Count>300&&MediaPortalDefaults.TryGet("skin","name",out defaultValue)&&defaultValue=="Titan"&&!MediaPortalDefaults.TryGet("general","loglevel",out defaultValue),"MediaPortal defaults cover classic entries without symbolic nonsense");
             using(var about=new AboutDialog(1f))
                 Check(about.Text.Length>0&&about.Controls.Count>0,"themed about dialog constructs");
         }
@@ -436,7 +438,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.46"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.47"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -577,6 +579,7 @@ namespace MP1.ConfigurationStudio
    var entryConfiguration=StudioConfiguration.Load(entryPath);
    entryConfiguration.Set("general","newEntry","42");
    entryConfiguration.Save(Path.Combine(directory,"native-entry-backups"));
+   Check(entryConfiguration.OriginalValue("general","newEntry")=="42","configuration keeps the last saved value as reset fallback");
    entryConfiguration.Set("general","newEntry","43");
    Check(entryConfiguration.PendingCount==1&&entryConfiguration.PendingChanges.Any(change=>change.Entry=="newEntry"&&change.NewValue=="43"),"pending changes list tracks modified entries");
    entryConfiguration.Set("general","newEntry","42");

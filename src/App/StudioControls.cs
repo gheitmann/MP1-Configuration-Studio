@@ -527,6 +527,7 @@ namespace MP1.ConfigurationStudio
         private bool hover;
         private bool pressed;
         public Func<Palette> Colors;
+        public Color InkOverride = Color.Empty;
 
         public StudioCheck(float scale)
         {
@@ -596,7 +597,7 @@ namespace MP1.ConfigurationStudio
             }
             int textLeft = box.Right + S(10);
             TextRenderer.DrawText(e.Graphics, Text, Font,
-                new Rectangle(textLeft, 0, Math.Max(0, Width - textLeft - S(12)), Height), palette.Text,
+                new Rectangle(textLeft, 0, Math.Max(0, Width - textLeft - S(12)), Height), InkOverride.IsEmpty ? palette.Text : InkOverride,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
             if (Focused)
             {
