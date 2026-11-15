@@ -56,12 +56,6 @@ jobs:
         shell: powershell
         run: .\build.ps1
 
-      - name: Build MediaPortal plugin
-        shell: powershell
-        run: |
-          dotnet build 'plugin\MP1.ConfigurationStudio.Plugin.csproj' -c Release
-          if ($LASTEXITCODE -ne 0) { throw "Plugin build failed with exit code $LASTEXITCODE" }
-
       - name: Sign application
         shell: powershell
         env:
@@ -140,10 +134,15 @@ jobs:
         run: |
           $version = '${{ steps.version.outputs.value }}'
           $output = Join-Path (Get-Location) 'dist\package'
+          $plugin = 'plugin\bin\Release\MP1.ConfigurationStudio.Plugin.dll'
+          if (-not (Test-Path -LiteralPath $plugin)) {
+            Write-Output 'Plugin assembly not available; skipping plugin ZIP.'
+            exit 0
+          }
           $stage = Join-Path $output "plugin-$version"
           if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
-          Copy-Item -LiteralPath 'plugin\bin\Release\MP1.ConfigurationStudio.Plugin.dll' -Destination $stage
+          Copy-Item -LiteralPath $plugin -Destination $stage
           Copy-Item -LiteralPath 'plugin\Skin\MP1StudioSettings.xml' -Destination $stage
           Copy-Item -LiteralPath 'tools\Install-MPPlugin.ps1' -Destination $stage
           Copy-Item -LiteralPath 'plugin\README.md' -Destination $stage
@@ -161,7 +160,12 @@ jobs:
         shell: powershell
         run: |
           $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-          & $iscc "/DAppVersion=${{ steps.version.outputs.value }}" 'packaging\MP1ConfigurationStudio.iss'
+          $defines = @("/DAppVersion=${{ steps.version.outputs.value }}")
+          if (-not (Test-Path -LiteralPath 'plugin\bin\Release\MP1.ConfigurationStudio.Plugin.dll')) {
+            Write-Output 'Plugin assembly not available; building setup without the plugin component.'
+            $defines += '/DExcludePlugin'
+          }
+          & $iscc @defines 'packaging\MP1ConfigurationStudio.iss'
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
 
       - name: Sign setup executable

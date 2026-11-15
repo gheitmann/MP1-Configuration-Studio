@@ -1,4 +1,4 @@
-# MP1 Configuration Studio plugin 2.0.0-beta.41
+# MP1 Configuration Studio plugin 2.0.0-beta.42
 
 **Status:** Workflow-aligned preview. Unsigned preview.
 
