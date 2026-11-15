@@ -53,7 +53,7 @@ namespace MP1.ConfigurationStudio
     }
     internal sealed class StudioAction : Button
     {
-        public Func<Palette> Colors;public Func<bool> GlassMode;public string IconName;public bool Selected;public bool Navigation;public bool Secondary;
+        public Func<Palette> Colors;public string IconName;public bool Selected;public bool Navigation;public bool Secondary;
         private bool hover;
         public StudioAction(){FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;SetStyle(ControlStyles.OptimizedDoubleBuffer|ControlStyles.AllPaintingInWmPaint|ControlStyles.ResizeRedraw|ControlStyles.SupportsTransparentBackColor,true);Cursor=Cursors.Hand;}
         internal static Color Ink(Palette p,bool enabled,bool hovered,bool selected,bool secondary)
@@ -70,9 +70,9 @@ namespace MP1.ConfigurationStudio
         public void ClearHover(){if(hover){hover=false;Invalidate();}}
         protected override void OnPaint(PaintEventArgs e)
         {
-            var p=Colors==null?Palette.For(true):Colors();bool glass=GlassMode!=null&&GlassMode();if(glass)StudioGlass.Paint(e.Graphics,this,ClientRectangle,p);else e.Graphics.Clear(BackColor);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;
+            var p=Colors==null?Palette.For(true):Colors();e.Graphics.Clear(BackColor);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;
             bool isHover=hover&&ClientRectangle.Contains(PointToClient(Cursor.Position));
-            if(Selected||isHover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(Selected?p.Selection:(glass?Color.FromArgb(215,p.Hover):p.Hover)))e.Graphics.FillPath(b,shape);}
+            if(Selected||isHover){using(var shape=StudioIcons.Rounded(new RectangleF(0,0,Width-1,Height-1),6))using(var b=new SolidBrush(Selected?p.Selection:p.Hover))e.Graphics.FillPath(b,shape);}
             if(Selected&&Navigation)using(var b=new SolidBrush(p.Accent))e.Graphics.FillRectangle(b,0,7,3,Height-14);
             Color ink=Ink(p,Enabled,isHover,Selected,Secondary);
             int iconSize=Math.Min(23,Font.Height+2),left=Navigation?15:10;

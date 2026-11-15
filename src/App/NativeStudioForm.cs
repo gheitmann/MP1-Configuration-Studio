@@ -23,7 +23,6 @@ namespace MP1.ConfigurationStudio
         private readonly GlassFlowPanel navigation = new GlassFlowPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
         private GlassPanel header, footer, sidebar, glassBody;
         private StudioScrollHost contentScroll, sidebarScroll;
-        private Button glassButton;
         private StudioLogo logo;
         private FlowLayoutPanel footerActions;
         private Button saveButton, closeButton, backupButton, updateButton;
@@ -93,7 +92,7 @@ namespace MP1.ConfigurationStudio
 
         private void BuildChrome()
         {
-            header = new GlassPanel { Dock = DockStyle.Top, Height = Px(82), BackColor = palette.Background, Colors = () => palette, Glass = appearance.Glass };
+            header = new GlassPanel { Dock = DockStyle.Top, Height = Px(82), BackColor = palette.Background };
             logo = new StudioLogo { Colors = () => palette, Bounds = new Rectangle(Px(22), Px(20), Px(40), Px(40)), Font = Typography.Create(13f * scale, FontStyle.Bold) };
             header.Controls.Add(logo);
             title.Text = "MP1 / CONFIGURATION";
@@ -135,30 +134,24 @@ namespace MP1.ConfigurationStudio
                 }
             };
             header.Controls.Add(searchBox);
-            glassButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Glass" : "Glas", Font = body, Width = Px(70), Height = Px(28), FlatStyle = FlatStyle.Flat, BackColor = appearance.Glass ? palette.Selection : palette.Panel, ForeColor = palette.Text, AccessibleName = Localization.IsEnglish ? "Toggle glass effect" : "Glas-Effekt umschalten" };
-            glassButton.FlatAppearance.BorderColor = palette.Border;
-            glassButton.Click += delegate { appearance.Glass = !appearance.Glass; appearance.Save(); ApplyGlass(); };
-            header.Controls.Add(glassButton);
             header.Resize += delegate { sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24); };
 
-            glassBody = new GlassPanel { Dock = DockStyle.Fill, BackColor = palette.Background, Colors = () => palette, Glass = appearance.Glass };
-            sidebar = new GlassPanel { Dock = DockStyle.Left, Width = Px(230), BackColor = palette.Panel, Padding = new Padding(Px(10), Px(14), Px(8), Px(10)), Colors = () => palette, Glass = appearance.Glass };
-            navigation.Colors = () => palette;
-            navigation.GlassMode = () => appearance.Glass;
+            glassBody = new GlassPanel { Dock = DockStyle.Fill, BackColor = palette.Background };
+            sidebar = new GlassPanel { Dock = DockStyle.Left, Width = Px(230), BackColor = palette.Panel, Padding = new Padding(Px(10), Px(14), Px(8), Px(10)) };
             navigation.BackColor = palette.Panel;
             navigation.Padding = new Padding(0);
             sidebar.Controls.Add(navigation);
             foreach (NativeSection section in sections)
             {
-                var item = new StudioAction { Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe, IconName = section.Icon, Colors = () => palette, GlassMode = () => appearance.Glass, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
+                var item = new StudioAction { Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
                 item.Click += delegate { ShowSection(section, item); };
                 item.Tag = section;
                 navigation.Controls.Add(item);
             }
-            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, GlassMode = () => appearance.Glass, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
+            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
             classic.Click += delegate { StartClassic(); };
             navigation.Controls.Add(classic);
-            var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, GlassMode = () => appearance.Glass, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
+            var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
             legacy.Click += delegate { StartStudioShell(); };
             navigation.Controls.Add(legacy);
             navigation.MouseLeave += delegate { ClearNavigationHover(); };
@@ -184,10 +177,10 @@ namespace MP1.ConfigurationStudio
             glassBody.Controls.Add(sidebar);
             Controls.Add(glassBody);
 
-            footer = new GlassPanel { Dock = DockStyle.Bottom, Height = Px(62), BackColor = palette.Background, Padding = new Padding(Px(24), Px(12), Px(20), Px(10)), Colors = () => palette, Glass = appearance.Glass };
+            footer = new GlassPanel { Dock = DockStyle.Bottom, Height = Px(62), BackColor = palette.Background, Padding = new Padding(Px(24), Px(12), Px(20), Px(10)) };
             footer.Paint += delegate(object sender, PaintEventArgs e)
             {
-                using (var pen = new Pen(appearance.Glass ? Color.FromArgb(80, palette.Border) : palette.Border)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
+                using (var pen = new Pen(palette.Border)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
             };
             status.Text = Localization.IsEnglish ? "Ready" : "Bereit";
             status.Font = small;
@@ -232,16 +225,11 @@ namespace MP1.ConfigurationStudio
             sizeChoice.Height = Px(30);
             sizeChoice.Left = header.ClientSize.Width - sizeChoice.Width - Px(24);
             sizeChoice.Top = Px(24);
-            glassButton.Font = body;
-            glassButton.Width = Px(70);
-            glassButton.Height = Px(28);
-            glassButton.Left = sizeChoice.Left - glassButton.Width - Px(8);
-            glassButton.Top = Px(26);
             searchBox.Font = body;
             int titleRight = title.Left + TextRenderer.MeasureText(title.Text, title.Font).Width;
             int searchLeft = titleRight + Px(24);
-            int searchRight = glassButton.Left - Px(12);
-            int searchWidth = Math.Min(Px(300), Math.Max(Px(90), searchRight - searchLeft));
+            int searchRight = sizeChoice.Left - Px(16);
+            int searchWidth = Math.Min(Px(320), Math.Max(Px(90), searchRight - searchLeft));
             searchBox.Bounds = new Rectangle(searchLeft, Px(24), searchWidth, Px(30));
             sidebar.Width = Px(230);
             sidebar.Padding = new Padding(Px(10), Px(14), Px(8), Px(10));
@@ -421,7 +409,7 @@ namespace MP1.ConfigurationStudio
                 Dock = DockStyle.Fill,
                 BackColor = palette.Background,
                 AccessibleName = Localization.IsEnglish ? "Subsections" : "Unterbereiche",
-                Margin = new Padding(0, 0, 0, Px(8))
+                Margin = new Padding(0, 0, 0, Px(18))
             };
             for (int i = 0; i < tabs.Count; i++)
             {
@@ -1145,24 +1133,10 @@ namespace MP1.ConfigurationStudio
             ApplyCueBanner();
         }
 
-        private void ApplyGlass()
-        {
-            if (header == null) return;
-            header.Glass = sidebar.Glass = footer.Glass = glassBody.Glass = appearance.Glass;
-            glassButton.BackColor = appearance.Glass ? palette.Selection : palette.Panel;
-            ApplyChromeStyle();
-            header.Invalidate(true);
-            sidebar.Invalidate(true);
-            footer.Invalidate(true);
-            glassBody.Invalidate(true);
-        }
-
         private void ApplyChromeStyle()
         {
-            bool glass = appearance.Glass;
-            Color navigationBack = glass ? Color.Transparent : palette.Panel;
-            navigation.BackColor = navigationBack;
-            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.BackColor = navigationBack;
+            navigation.BackColor = palette.Panel;
+            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.BackColor = palette.Panel;
             status.BackColor = Color.Transparent;
             if (navigation.IsHandleCreated) navigation.Invalidate(true);
         }
@@ -1277,9 +1251,6 @@ namespace MP1.ConfigurationStudio
 
     internal sealed class GlassFlowPanel : FlowLayoutPanel
     {
-        public Func<Palette> Colors;
-        public Func<bool> GlassMode;
-
         public GlassFlowPanel()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
@@ -1292,12 +1263,6 @@ namespace MP1.ConfigurationStudio
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            Palette palette = Colors != null ? Colors() : Palette.For(true);
-            if (GlassMode != null && GlassMode())
-            {
-                StudioGlass.Paint(e.Graphics, this, ClientRectangle, palette);
-                return;
-            }
             if (BackColor.A > 0)
                 using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, ClientRectangle);
         }
@@ -1305,9 +1270,6 @@ namespace MP1.ConfigurationStudio
 
     internal sealed class GlassPanel : Panel
     {
-        public Func<Palette> Colors;
-        public bool Glass = true;
-
         public GlassPanel()
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
@@ -1317,15 +1279,7 @@ namespace MP1.ConfigurationStudio
         {
             Rectangle bounds = ClientRectangle;
             if (bounds.Width <= 0 || bounds.Height <= 0) return;
-            Palette palette = Colors != null ? Colors() : Palette.For(true);
-            if (!Glass)
-            {
-                using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, bounds);
-                return;
-            }
-            StudioGlass.Paint(e.Graphics, this, bounds, palette);
-            using (var pen = new Pen(Color.FromArgb(26, 255, 255, 255))) e.Graphics.DrawLine(pen, 0, 0, bounds.Width, 0);
-            using (var pen = new Pen(Color.FromArgb(90, palette.Border))) e.Graphics.DrawLine(pen, 0, bounds.Height - 1, bounds.Width, bounds.Height - 1);
+            using (var brush = new SolidBrush(BackColor)) e.Graphics.FillRectangle(brush, bounds);
         }
     }
 

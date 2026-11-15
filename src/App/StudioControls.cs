@@ -2,144 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Windows.Forms;
-using Microsoft.Win32;
 
 namespace MP1.ConfigurationStudio
 {
-    /// <summary>
-    /// Shared glass material. The classic gradient looked like a light gray frame,
-    /// so the chrome now draws the (blurred) desktop wallpaper behind it and tints
-    /// it to the current palette. Falls back to a dark glass gradient when no
-    /// wallpaper is available.
-    /// </summary>
-    internal static class StudioGlass
-    {
-        private static Bitmap canvas;
-        private static Rectangle screen;
-        private static bool prepared;
-
-        public static void Reset()
-        {
-            prepared = false;
-            if (canvas != null) { canvas.Dispose(); canvas = null; }
-        }
-
-        public static void Paint(Graphics g, Control control, Rectangle bounds, Palette palette)
-        {
-            if (bounds.Width <= 0 || bounds.Height <= 0) return;
-            if (Palette.HighContrastActive)
-            {
-                using (var brush = new SolidBrush(palette.Background)) g.FillRectangle(brush, bounds);
-                return;
-            }
-            Prepare(palette);
-            bool painted = false;
-            if (canvas != null)
-            {
-                Point origin;
-                try { origin = control.PointToScreen(Point.Empty); }
-                catch { origin = Point.Empty; }
-                Rectangle source = new Rectangle(origin.X - screen.X, origin.Y - screen.Y, bounds.Width, bounds.Height);
-                Rectangle visible = Rectangle.Intersect(source, new Rectangle(0, 0, canvas.Width, canvas.Height));
-                if (visible.Width > 0 && visible.Height > 0)
-                {
-                    Rectangle target = new Rectangle(bounds.X + visible.X - source.X, bounds.Y + visible.Y - source.Y, visible.Width, visible.Height);
-                    g.DrawImage(canvas, target, visible, GraphicsUnit.Pixel);
-                    painted = true;
-                }
-            }
-            if (!painted) PaintFallback(g, bounds, palette);
-            using (var tint = new SolidBrush(Color.FromArgb(206, palette.Background))) g.FillRectangle(tint, bounds);
-            if (bounds.Height > 4)
-                using (var sheen = new LinearGradientBrush(bounds, Color.FromArgb(24, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), LinearGradientMode.Vertical))
-                    g.FillRectangle(sheen, bounds);
-        }
-
-        private static void Prepare(Palette palette)
-        {
-            if (prepared) return;
-            prepared = true;
-            try
-            {
-                screen = SystemInformation.VirtualScreen;
-                if (screen.Width <= 0 || screen.Height <= 0) return;
-                string wallpaper = Registry.GetValue(@"HKEY_CURRENT_USER\Control Panel\Desktop", "Wallpaper", null) as string;
-                if (String.IsNullOrWhiteSpace(wallpaper) || !File.Exists(wallpaper)) return;
-                using (var original = new Bitmap(wallpaper))
-                {
-                    var raw = new Bitmap(screen.Width, screen.Height, PixelFormat.Format24bppRgb);
-                    using (var g = Graphics.FromImage(raw))
-                    {
-                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                        g.SmoothingMode = SmoothingMode.HighQuality;
-                        double scale = Math.Max((double)screen.Width / original.Width, (double)screen.Height / original.Height);
-                        int width = (int)Math.Ceiling(original.Width * scale);
-                        int height = (int)Math.Ceiling(original.Height * scale);
-                        g.DrawImage(original, new Rectangle((screen.Width - width) / 2, (screen.Height - height) / 2, width, height));
-                    }
-                    canvas = Blur(raw);
-                }
-            }
-            catch
-            {
-                canvas = null;
-            }
-        }
-
-        private static Bitmap Blur(Bitmap source)
-        {
-            int width = Math.Max(1, source.Width / 14);
-            int height = Math.Max(1, source.Height / 14);
-            using (var small = new Bitmap(width, height, PixelFormat.Format24bppRgb))
-            {
-                using (var g = Graphics.FromImage(small))
-                {
-                    g.InterpolationMode = InterpolationMode.HighQualityBilinear;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                    g.DrawImage(source, 0, 0, width, height);
-                }
-                var blurred = new Bitmap(source.Width, source.Height, PixelFormat.Format24bppRgb);
-                using (var g = Graphics.FromImage(blurred))
-                {
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                    g.DrawImage(small, new Rectangle(0, 0, source.Width, source.Height));
-                }
-                source.Dispose();
-                return blurred;
-            }
-        }
-
-        private static void PaintFallback(Graphics g, Rectangle bounds, Palette palette)
-        {
-            Color top = Blend(palette.Panel, Color.White, 0.16f);
-            using (var brush = new LinearGradientBrush(bounds, top, palette.Background, LinearGradientMode.ForwardDiagonal))
-                g.FillRectangle(brush, bounds);
-            using (var path = new GraphicsPath())
-            {
-                path.AddEllipse(bounds.X - bounds.Width / 3, bounds.Y - bounds.Height, bounds.Width, bounds.Height * 2);
-                using (var glow = new PathGradientBrush(path))
-                {
-                    glow.CenterColor = Color.FromArgb(58, palette.Accent);
-                    glow.SurroundColors = new[] { Color.FromArgb(0, palette.Accent) };
-                    g.FillPath(glow, path);
-                }
-            }
-        }
-
-        private static Color Blend(Color first, Color second, float amount)
-        {
-            return Color.FromArgb(
-                (int)(first.R + (second.R - first.R) * amount),
-                (int)(first.G + (second.G - first.G) * amount),
-                (int)(first.B + (second.B - first.B) * amount));
-        }
-    }
-
     /// <summary>Dark themed dropdown that replaces the native white framed combo box.</summary>
     internal sealed class StudioChoice : Control
     {
@@ -722,9 +588,6 @@ namespace MP1.ConfigurationStudio
                 Color border = Selected ? palette.Accent : (hover ? palette.Border : Color.FromArgb(70, palette.Border));
                 using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
             }
-            if (Selected)
-                using (var brush = new SolidBrush(palette.Accent))
-                    e.Graphics.FillRectangle(brush, S(10), Height - S(4), Math.Max(1, Width - S(20)), Math.Max(1, S(2)));
             Color ink = Selected ? palette.Accent : (hover || Focused ? palette.Text : palette.Muted);
             TextRenderer.DrawText(e.Graphics, Text, Font, new Rectangle(S(6), 0, Math.Max(0, Width - S(12)), Height), ink,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);

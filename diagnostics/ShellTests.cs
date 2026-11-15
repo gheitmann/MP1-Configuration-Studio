@@ -361,14 +361,6 @@ namespace MP1.ConfigurationStudio
                 Check(!check.AutoSize&&check.Height==30&&check.Checked,"check box uses the large owner drawn layout");
             using(var subTab=new StudioSubTab(1f){Text="Wiedergabe",Selected=true})
                 Check(subTab.Selected&&!subTab.AutoSize&&subTab.Height>=30,"subtab uses the 1.9 pill layout");
-            bool glassPainted=false;
-            using(var bmp=new Bitmap(160,48))
-            using(var g=Graphics.FromImage(bmp))
-            {
-                StudioGlass.Paint(g,new Panel(),new Rectangle(0,0,160,48),Palette.For(true));
-                glassPainted=bmp.GetPixel(12,12).A==255;
-            }
-            Check(glassPainted,"glass material paints an opaque chrome surface");
         }
         private static void RunCloseGuardChecks()
         {
@@ -427,7 +419,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.37"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.38"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
