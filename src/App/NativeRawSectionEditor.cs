@@ -55,7 +55,7 @@ namespace MP1.ConfigurationStudio
             scroll.Resize += delegate { LayoutTable(); };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(36), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(3), 0, 0) };
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen", delegate { AddEntry(); }, body));
-            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "  × removes an entry (confirmation; backup on save).  ↺ resets to the MediaPortal default.  Highlighted values differ from the default." : "  × entfernt einen Eintrag (Bestätigung; Sicherung beim Speichern).  ↺ setzt auf den MediaPortal-Standard zurück.  Hervorgehobene Werte weichen vom Standard ab.", ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
+            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "  × remove (confirmation) · ↺ reset to default · highlighted = differs from default" : "  × entfernen (Bestätigung) · ↺ auf Standard · farbig = weicht vom Standard ab", ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
             Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, table.Width), Math.Max(1, table.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
