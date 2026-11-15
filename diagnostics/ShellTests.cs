@@ -438,7 +438,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.49"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.50"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -572,6 +572,22 @@ namespace MP1.ConfigurationStudio
             Check(schemaSections.Take(3).Select(section=>section.Id).SequenceEqual(new[]{"general","volume","gui"}),"native sections follow the classic configuration order");
             var volumeSection=schemaSections.First(section=>section.Id=="volume");
             Check(volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="handler")&&volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="startupstyle")&&volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="table"),"volume page exposes classic control, startup and table settings");
+            var generalEntries=schemaSections.First(section=>section.Id=="general").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
+            Check(generalEntries.Contains("restart delay")&&generalEntries.Contains("reduceMadvrFrame")&&generalEntries.Contains("refreshrateTV_name")&&generalEntries.Contains("screendeviceid"),"general page covers restart delay, madVR frame control, TV refresh profile and screen id");
+            var autoplayField=schemaSections.First(section=>section.Id=="general").Groups.SelectMany(group=>group.Fields).First(field=>field.Entry=="autoplay_audio");
+            Check(autoplayField.Options.Select(option=>option.Value).SequenceEqual(new[]{"ask what to do","play","do not play"}),"autoplay uses the classic lowercase option values");
+            var guiEntries=schemaSections.First(section=>section.Id=="gui").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
+            Check(guiEntries.Contains("quality")&&guiEntries.Contains("videothumbcols")&&guiEntries.Contains("picturenolargethumbondemand"),"interface page covers classic thumbnail settings");
+            var musicEntries=schemaSections.First(section=>section.Id=="music").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
+            Check(musicEntries.Contains("sounddeviceid")&&musicEntries.Contains("asiobalance")&&musicEntries.Contains("playnowjumpto"),"music page covers sound device id, ASIO balance and play-now jump");
+            var movieEntries=schemaSections.First(section=>section.Id=="movies").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
+            Check(movieEntries.Contains("playlists")&&movieEntries.Contains("fuzzyMatching")&&movieEntries.Contains("settinglavplitter")&&movieEntries.Contains("audiodelayInterval"),"video page covers playlists, fuzzy matching, LAV splitter and audio delay step");
+            var discEntries=schemaSections.First(section=>section.Id=="discs").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
+            Check(discEntries.Contains("parentalcontrol")&&discEntries.Contains("useInternalBDMenu")&&discEntries.Contains("mediainfoused"),"disc page covers parental control, internal BD menu and MediaInfo");
+            var subtitleFields=schemaSections.First(section=>section.Id=="subtitles").Groups.SelectMany(group=>group.Fields).ToList();
+            Check(subtitleFields.Any(field=>field.Entry=="selection"&&field.Kind==NativeFieldKind.Combo&&field.Options.Count==4),"subtitles page exposes the four classic auto-load modes");
+            var moreEntries=schemaSections.First(section=>section.Id=="more").Groups.SelectMany(group=>group.Fields).Select(field=>field.Entry).ToList();
+            Check(moreEntries.Contains("internal")&&moreEntries.Contains("baudrate")&&moreEntries.Contains("RecordLifeTime")&&moreEntries.Contains("trashcan"),"special areas cover USBUIRT/SerialUIR, MediaInfo cache and file menu");
             Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
             Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
             Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");
@@ -623,7 +639,10 @@ namespace MP1.ConfigurationStudio
                 Check(subTabs.Length>1,"native Studio splits long sections into 1.9 style subtabs");
                 if(subTabs.Length>1)
                 {
+                    var stripBefore=subTabs[0].Parent;
                     subTabs[1].PerformClick();
+                    var stripAfter=nativeForm.Controls.Find("studioSubTab",true).OfType<StudioSubTab>().FirstOrDefault();
+                    Check(stripAfter!=null&&Object.ReferenceEquals(stripBefore,stripAfter.Parent),"subtab switch keeps the same tab strip instance instead of rebuilding the page");
                     Check(nativeForm.Controls.Find("studioSubTab",true).OfType<StudioSubTab>().Count()==subTabs.Length,"subtab switch keeps the section tab strip");
                 }
             }

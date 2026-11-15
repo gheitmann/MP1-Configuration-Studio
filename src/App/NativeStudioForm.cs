@@ -18,8 +18,8 @@ namespace MP1.ConfigurationStudio
         private readonly StudioConfiguration configuration;
         private readonly Palette palette;
         private readonly List<NativeSection> sections = NativeSettingsSchema.Sections();
-        private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
+        private readonly Panel scroll = new StudioBufferedPanel { Dock = DockStyle.Fill, AutoScroll = true };
+        private readonly TableLayoutPanel table = new StudioBufferedTable { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
         private readonly GlassFlowPanel navigation = new GlassFlowPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
         private GlassPanel header, footer, sidebar, glassBody, toolbar;
         private TableLayoutPanel topArea, toolbarRow;
@@ -46,6 +46,7 @@ namespace MP1.ConfigurationStudio
         private StudioTextInput searchBox;
         private StudioTabStrip tabStrip;
         private int tabRowIndex = -1;
+        private int contentRowIndex = -1;
         private readonly Dictionary<string, int> tabSelection = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private NativeSection current;
         private float scale;
@@ -413,7 +414,12 @@ namespace MP1.ConfigurationStudio
                 SelectNavigationItem(currentItem);
                 return;
             }
-            if (Object.ReferenceEquals(current, section) && requestedTab >= 0 && !ConfirmDiscardEditors()) return;
+            if (Object.ReferenceEquals(current, section) && requestedTab >= 0)
+            {
+                if (!ConfirmDiscardEditors()) return;
+                ShowSubTab(section, requestedTab);
+                return;
+            }
 
             current = section;
             RestartSection = section.Id;
@@ -454,6 +460,7 @@ namespace MP1.ConfigurationStudio
                 table.RowCount = 0;
                 tabStrip = null;
                 tabRowIndex = -1;
+                contentRowIndex = -1;
                 pageTitle.Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe;
                 pageTitle.Font = heading;
                 pageTitle.ForeColor = palette.Text;
@@ -475,6 +482,7 @@ namespace MP1.ConfigurationStudio
                     AddTabStrip(tabs, tabIndex, selected);
                     AddTabSpacer();
                 }
+                contentRowIndex = table.RowCount;
                 if (tabs.Count > 0)
                 {
                     SectionTab tab = tabs[tabIndex];
@@ -490,6 +498,50 @@ namespace MP1.ConfigurationStudio
             LayoutTable();
             scroll.AutoScrollPosition = Point.Empty;
             if (IsHandleCreated) BeginInvoke(new Action(delegate { scroll.AutoScrollPosition = Point.Empty; }));
+        }
+
+        /// <summary>Swaps only the content below the subsection strip so the page header, sidebar selection and scroll state stay stable.</summary>
+        private void ShowSubTab(NativeSection section, int requestedTab)
+        {
+            List<SectionTab> tabs = BuildTabs(section);
+            if (requestedTab < 0 || requestedTab >= tabs.Count) requestedTab = 0;
+            if (contentRowIndex < 0 || tabStrip == null || tabStrip.Parent != table)
+            {
+                tabSelection[section.Id] = requestedTab;
+                ShowSection(section, null, -1);
+                return;
+            }
+            tabSelection[section.Id] = requestedTab;
+            int index = 0;
+            foreach (StudioSubTab item in tabStrip.Controls.OfType<StudioSubTab>())
+            {
+                item.Selected = index == requestedTab;
+                item.Invalidate();
+                index++;
+            }
+            int scrollY = Math.Max(0, -scroll.AutoScrollPosition.Y);
+            table.SuspendLayout();
+            try
+            {
+                for (int i = table.Controls.Count - 1; i >= 0; i--)
+                {
+                    Control control = table.Controls[i];
+                    if (table.GetRow(control) >= contentRowIndex)
+                    {
+                        table.Controls.RemoveAt(i);
+                        control.Dispose();
+                    }
+                }
+                while (table.RowStyles.Count > contentRowIndex) table.RowStyles.RemoveAt(table.RowStyles.Count - 1);
+                table.RowCount = contentRowIndex;
+                SectionTab tab = tabs[requestedTab];
+                if (tab.Group != null) AddGroup(tab.Group, false);
+                else AddRemaining(tab.Remaining, false);
+            }
+            finally { table.ResumeLayout(true); }
+            LayoutTable();
+            scroll.AutoScrollPosition = new Point(0, scrollY);
+            if (contentScroll != null) contentScroll.SyncNow();
         }
 
         private bool ConfirmDiscardEditors()

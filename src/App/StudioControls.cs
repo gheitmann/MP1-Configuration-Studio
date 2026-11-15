@@ -697,6 +697,25 @@ namespace MP1.ConfigurationStudio
         }
     }
 
+    /// <summary>Flicker-free host for page content and subsection swaps.</summary>
+    internal sealed class StudioBufferedPanel : Panel
+    {
+        public StudioBufferedPanel()
+        {
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+        }
+    }
+
+    internal sealed class StudioBufferedTable : TableLayoutPanel
+    {
+        public StudioBufferedTable()
+        {
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+        }
+    }
+
     /// <summary>Panel that wraps the 1.9 style subsection tabs into rows itself.</summary>
     internal sealed class StudioTabStrip : Panel
     {
