@@ -361,6 +361,15 @@ namespace MP1.ConfigurationStudio
                 Check(!check.AutoSize&&check.Height==30&&check.Checked,"check box uses the large owner drawn layout");
             using(var subTab=new StudioSubTab(1f){Text="Wiedergabe",Selected=true})
                 Check(subTab.Selected&&!subTab.AutoSize&&subTab.Height>=30,"subtab uses the 1.9 pill layout");
+            using(var combo=new StudioComboInput(1f,Typography.Create(10f,FontStyle.Regular),Palette.For(true)))
+            {
+                combo.Items.Add("click.wav");
+                combo.Items.Add("back.wav");
+                combo.Text="back.wav";
+                Check(combo.Items.Count==2&&combo.Text=="back.wav","editable combo keeps its suggestion list and text");
+            }
+            using(var button=new StudioButton{Text="OK"})
+                Check(button.FlatStyle==FlatStyle.Flat&&!button.UseVisualStyleBackColor,"editor buttons use the rounded Studio style");
         }
         private static void RunCloseGuardChecks()
         {
@@ -419,7 +428,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.42"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.43"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }

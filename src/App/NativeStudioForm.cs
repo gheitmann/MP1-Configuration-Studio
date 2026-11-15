@@ -628,7 +628,7 @@ namespace MP1.ConfigurationStudio
             }
             if (field.Kind == NativeFieldKind.Classic)
             {
-                var button = new Button { Text = Localization.IsEnglish ? field.LabelEn : field.LabelDe, Font = body, Height = Px(32), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(12), 0, Px(12), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, Px(2), 0, Px(4)) };
+                var button = new StudioButton { Text = Localization.IsEnglish ? field.LabelEn : field.LabelDe, Font = body, Height = Px(32), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(12), 0, Px(12), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, Px(2), 0, Px(4)) };
                 button.FlatAppearance.BorderColor = palette.Border;
                 button.Click += delegate { StartClassic(); };
                 table.Controls.Add(button, 0, table.RowCount);
@@ -1139,6 +1139,12 @@ namespace MP1.ConfigurationStudio
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
+            NativeDarkMode.ApplyWindow(Handle, true);
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
             NativeDarkMode.ApplyWindow(Handle, true);
         }
 

@@ -26,7 +26,7 @@ namespace MP1.ConfigurationStudio
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
         private readonly ListBox viewList = new ListBox();
-        private readonly TextBox viewSearch = new TextBox { BorderStyle = BorderStyle.FixedSingle };
+        private readonly StudioTextInput viewSearch;
         private readonly Panel detail = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly FlowLayoutPanel detailFlow = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Palette.For(true).Background, Padding = new Padding(0) };
         private readonly Label status = new Label();
@@ -80,20 +80,17 @@ namespace MP1.ConfigurationStudio
             var left = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = palette.Background, Margin = new Padding(0, 0, Px(10), 0) };
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(32)));
             left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            viewSearch.Dock = DockStyle.Fill;
-            viewSearch.Font = body;
-            viewSearch.BackColor = palette.Input;
-            viewSearch.ForeColor = palette.Muted;
-            viewSearch.Margin = new Padding(0, 0, 0, Px(4));
-            viewSearch.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …";
-            viewSearch.GotFocus += delegate { if (viewSearch.ForeColor == palette.Muted) { viewSearch.Text = string.Empty; viewSearch.ForeColor = palette.Text; } };
-            viewSearch.LostFocus += delegate { if (viewSearch.Text.Length == 0) { viewSearch.ForeColor = palette.Muted; viewSearch.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …"; } };
-            viewSearch.TextChanged += delegate { if (viewSearch.ForeColor == palette.Text) SelectMatchingView(viewSearch.Text); };
+            viewSearch = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, Margin = new Padding(0, 0, 0, Px(4)), AccessibleName = Localization.IsEnglish ? "Find view" : "Ansicht suchen" };
+            viewSearch.Box.ForeColor = palette.Muted;
+            viewSearch.Box.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …";
+            viewSearch.Box.GotFocus += delegate { if (viewSearch.Box.ForeColor == palette.Muted) { viewSearch.Box.Text = string.Empty; viewSearch.Box.ForeColor = palette.Text; } };
+            viewSearch.Box.LostFocus += delegate { if (viewSearch.Box.Text.Length == 0) { viewSearch.Box.ForeColor = palette.Muted; viewSearch.Box.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …"; } };
+            viewSearch.Box.TextChanged += delegate { if (viewSearch.Box.ForeColor == palette.Text) SelectMatchingView(viewSearch.Text); };
             left.Controls.Add(viewSearch, 0, 0);
             viewList.Dock = DockStyle.Fill;
             viewList.BackColor = palette.Input;
             viewList.ForeColor = palette.Text;
-            viewList.BorderStyle = BorderStyle.FixedSingle;
+            viewList.BorderStyle = BorderStyle.None;
             viewList.Font = body;
             viewList.DrawMode = DrawMode.OwnerDrawFixed;
             viewList.ItemHeight = Px(34);
@@ -138,7 +135,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(60), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(60), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -148,13 +145,15 @@ namespace MP1.ConfigurationStudio
         {
             if (e.Index < 0 || e.Index >= views.Count) return;
             bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
-            using (var background = new SolidBrush(selected ? palette.Accent : palette.Input))
+            using (var background = new SolidBrush(selected ? palette.Selection : palette.Input))
                 e.Graphics.FillRectangle(background, e.Bounds);
             if (selected)
                 using (var accent = new SolidBrush(palette.Accent))
                     e.Graphics.FillRectangle(accent, e.Bounds.Left, e.Bounds.Top, Px(3), e.Bounds.Height);
-            using (var text = new SolidBrush(palette.Text))
-                e.Graphics.DrawString(views[e.Index].Label, e.Font, text, e.Bounds.Left + Px(10), e.Bounds.Top + Px(7));
+            TextRenderer.DrawText(e.Graphics, views[e.Index].Label, e.Font,
+                new Rectangle(e.Bounds.Left + Px(10), e.Bounds.Top, Math.Max(0, e.Bounds.Width - Px(14)), e.Bounds.Height),
+                selected ? palette.SelectionText : palette.Text,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
         }
 
         private void LoadStrings(string configDirectory, string language)
@@ -429,28 +428,30 @@ namespace MP1.ConfigurationStudio
             return panel;
         }
 
-        private ComboBox Combo(IEnumerable<string> values, string current, Action<string> changed)
+        private StudioComboInput Combo(IEnumerable<string> values, string current, Action<string> changed)
         {
-            var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown, FlatStyle = FlatStyle.Flat, Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text };
+            var combo = new StudioComboInput(scale, Typography.Create(9.5f * scale, FontStyle.Regular), palette) { Colors = () => palette };
             foreach (string value in values)
                 if (!combo.Items.Contains(value)) combo.Items.Add(value);
             if (!String.IsNullOrEmpty(current) && !combo.Items.Contains(current)) combo.Items.Add(current);
             combo.Text = current ?? string.Empty;
-            combo.SelectedIndexChanged += delegate { if (combo.SelectedItem != null) { changed(combo.SelectedItem.ToString()); } };
+            combo.SelectedIndexChanged += delegate { changed(combo.Text); };
             combo.Leave += delegate { changed(combo.Text); };
             return combo;
         }
 
-        private TextBox TextInput(string value, Action<string> changed)
+        private StudioTextInput TextInput(string value, Action<string> changed)
         {
-            var box = new TextBox { Text = value ?? string.Empty, Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle };
-            box.TextChanged += delegate { changed(box.Text); };
+            var box = new StudioTextInput(scale, Typography.Create(9.5f * scale, FontStyle.Regular), palette) { Colors = () => palette };
+            box.Text = value ?? string.Empty;
+            box.Box.TextChanged += delegate { changed(box.Text); };
             return box;
         }
 
-        private CheckBox Check(string label, string value, Action<bool> changed)
+        private StudioCheck Check(string label, string value, Action<bool> changed)
         {
-            var check = new CheckBox { Text = label, Checked = String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = Typography.Create(9f * scale, FontStyle.Regular), ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0, Px(16), 0, 0) };
+            var font = Typography.Create(9f * scale, FontStyle.Regular);
+            var check = new StudioCheck(scale) { Text = label, Checked = String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), Font = font, Colors = () => palette, Height = Px(30), Width = TextRenderer.MeasureText(label, font).Width + Px(50), Margin = new Padding(0, 0, Px(12), 0) };
             check.CheckedChanged += delegate { changed(check.Checked); };
             return check;
         }
@@ -813,9 +814,9 @@ namespace MP1.ConfigurationStudio
                 input.BackColor = Palette.For(true).Input;
                 input.ForeColor = Palette.For(true).Text;
                 input.Text = initial ?? string.Empty;
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(342), Top = Px(112), Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(342), Top = Px(112), Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
-                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(232), Top = Px(112), Width = Px(100), Height = Px(30) };
+                var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(232), Top = Px(112), Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate { if (input.Text.Trim().Length == 0) return; DialogResult = DialogResult.OK; Close(); };
                 Controls.Add(caption);
@@ -832,12 +833,12 @@ namespace MP1.ConfigurationStudio
         private sealed class FilterDialog : Form
         {
             private readonly float scale;
-            private readonly ComboBox fieldChoice = new ComboBox();
-            private readonly ComboBox sqlOperator = new ComboBox();
-            private readonly TextBox value = new TextBox();
-            private readonly ComboBox sort = new ComboBox();
-            private readonly ComboBox view = new ComboBox();
-            private readonly TextBox limit = new TextBox();
+            private readonly StudioComboInput fieldChoice;
+            private readonly StudioComboInput sqlOperator;
+            private readonly StudioTextInput value;
+            private readonly StudioComboInput sort;
+            private readonly StudioComboInput view;
+            private readonly StudioTextInput limit;
             public string Field { get { return fieldChoice.Text.Trim(); } }
             public string Operator { get { return sqlOperator.Text.Trim(); } }
             public string Value { get { return value.Text; } }
@@ -860,6 +861,13 @@ namespace MP1.ConfigurationStudio
                 var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 8, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                var dialogFont = Typography.Create(10f * scale, FontStyle.Regular);
+                fieldChoice = new StudioComboInput(scale, dialogFont, Palette.For(true)) { Colors = () => Palette.For(true) };
+                sqlOperator = new StudioComboInput(scale, dialogFont, Palette.For(true)) { Colors = () => Palette.For(true) };
+                value = new StudioTextInput(scale, dialogFont, Palette.For(true)) { Colors = () => Palette.For(true) };
+                sort = new StudioComboInput(scale, dialogFont, Palette.For(true)) { Colors = () => Palette.For(true) };
+                view = new StudioComboInput(scale, dialogFont, Palette.For(true)) { Colors = () => Palette.For(true) };
+                limit = new StudioTextInput(scale, dialogFont, Palette.For(true)) { Colors = () => Palette.For(true) };
                 Fill(fieldChoice, fields, null);
                 Fill(sqlOperator, new[] { "=", ">", "<", "group", "like", "<>" }, "=");
                 value.Text = "*";
@@ -873,9 +881,9 @@ namespace MP1.ConfigurationStudio
                 AddRow(table, 4, Localization.IsEnglish ? "View" : "Ansicht", view);
                 AddRow(table, 5, "Limit", limit);
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
-                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate
                 {
@@ -894,16 +902,12 @@ namespace MP1.ConfigurationStudio
 
             private int Px(float value) { return (int)Math.Round(value * scale); }
 
-            private void Fill(ComboBox combo, IEnumerable<string> values, string selected)
+            private void Fill(StudioComboInput combo, IEnumerable<string> values, string selected)
             {
-                combo.DropDownStyle = ComboBoxStyle.DropDown;
-                combo.FlatStyle = FlatStyle.Flat;
-                combo.BackColor = Palette.For(true).Input;
-                combo.ForeColor = Palette.For(true).Text;
                 combo.Font = Typography.Create(10f * scale, FontStyle.Regular);
-                foreach (string item in values) combo.Items.Add(item);
-                if (combo.Items.Count > 0) combo.SelectedIndex = 0;
-                if (selected != null) combo.Text = selected;
+                foreach (string item in values)
+                    if (!combo.Items.Contains(item)) combo.Items.Add(item);
+                combo.Text = selected ?? (combo.Items.Count > 0 ? combo.Items[0] : String.Empty);
             }
 
             private void AddRow(TableLayoutPanel table, int row, string label, Control input)

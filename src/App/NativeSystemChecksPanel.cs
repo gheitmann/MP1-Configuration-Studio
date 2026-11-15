@@ -56,7 +56,7 @@ namespace MP1.ConfigurationStudio
             table.Controls.Add(mptray, 0, 1);
 
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0, 0, 0, Px(6)) };
-            var open = new Button { Text = Localization.IsEnglish ? "Open classic checks" : "Klassische Prüfungen öffnen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var open = new StudioButton { Text = Localization.IsEnglish ? "Open classic checks" : "Klassische Prüfungen öffnen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             open.FlatAppearance.BorderColor = palette.Border;
             open.Click += delegate { if (classic != null) classic(); };
             actions.Controls.Add(open);

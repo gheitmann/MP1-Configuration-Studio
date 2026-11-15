@@ -15,7 +15,7 @@ namespace MP1.ConfigurationStudio
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
         private readonly Dictionary<string, string> files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private readonly ComboBox choice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+        private readonly StudioChoice choice;
         private readonly TextBox editor = new TextBox();
         private readonly Label status = new Label();
         private readonly string configDirectory;
@@ -53,11 +53,8 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(180)));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "XML file" : "XML-Datei", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            choice.Dock = DockStyle.Fill;
-            choice.Font = body;
-            choice.BackColor = palette.Input;
-            choice.ForeColor = palette.Text;
-            foreach (string name in files.Keys) choice.Items.Add(name);
+            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "XML file" : "XML-Datei" };
+            choice.SetOptions(files.Keys.Select(name => new ChoiceOption(name, name)), files.Keys.FirstOrDefault() ?? String.Empty);
             choice.SelectedIndexChanged += delegate { SelectionChanged(); };
             top.Controls.Add(choice, 1, 0);
 
@@ -92,12 +89,12 @@ namespace MP1.ConfigurationStudio
             Controls.Add(editor);
             Controls.Add(actions);
             Controls.Add(top);
-            if (choice.Items.Count > 0)
+            if (choice.Count > 0)
             {
                 suppress = true;
                 choice.SelectedIndex = 0;
                 suppress = false;
-                currentPath = files[choice.SelectedItem.ToString()];
+                currentPath = files[choice.SelectedValue];
             }
             LoadFile();
         }
@@ -124,7 +121,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(100), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(100), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -139,14 +136,14 @@ namespace MP1.ConfigurationStudio
 
         private void SelectionChanged()
         {
-            if (suppress || choice.SelectedItem == null) return;
-            string next = files[choice.SelectedItem.ToString()];
+            if (suppress || String.IsNullOrEmpty(choice.SelectedValue)) return;
+            string next = files[choice.SelectedValue];
             if (String.Equals(next, currentPath, StringComparison.OrdinalIgnoreCase)) return;
             if (!ConfirmDiscard())
             {
                 suppress = true;
                 string previous = DisplayName(currentPath);
-                if (previous != null) choice.SelectedItem = previous;
+                if (previous != null) choice.SelectValue(previous);
                 suppress = false;
                 return;
             }
@@ -174,14 +171,13 @@ namespace MP1.ConfigurationStudio
                     if (files.ContainsKey(display)) display = Path.GetFileName(currentPath) + "  ·  " + Path.GetDirectoryName(currentPath);
                     files[display] = currentPath;
                     suppress = true;
-                    choice.Items.Add(display);
-                    choice.SelectedItem = display;
+                    choice.SetOptions(files.Keys.Select(name => new ChoiceOption(name, name)), display);
                     suppress = false;
                 }
                 else
                 {
                     suppress = true;
-                    choice.SelectedItem = display;
+                    choice.SelectValue(display);
                     suppress = false;
                 }
                 LoadFile();

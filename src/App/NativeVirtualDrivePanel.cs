@@ -64,7 +64,7 @@ namespace MP1.ConfigurationStudio
             path.Margin = new Padding(0, Px(3), Px(6), Px(3));
             path.TextChanged += delegate { if (!loading) { configuration.Set("daemon", "path", path.Text); RaiseChanged(); } };
             pathRow.Controls.Add(path, 0, 0);
-            var browse = new Button { Text = Localization.IsEnglish ? "Browse …" : "Durchsuchen …", Font = body, Height = Px(28), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(3), 0, Px(3)) };
+            var browse = new StudioButton { Text = Localization.IsEnglish ? "Browse …" : "Durchsuchen …", Font = body, Height = Px(28), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(3), 0, Px(3)) };
             browse.FlatAppearance.BorderColor = palette.Border;
             browse.Click += delegate
             {
@@ -111,10 +111,10 @@ namespace MP1.ConfigurationStudio
             table.SetColumnSpan(ask, 2);
 
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0, Px(2), 0, Px(2)) };
-            var check = new Button { Text = Localization.IsEnglish ? "Check path" : "Pfad prüfen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var check = new StudioButton { Text = Localization.IsEnglish ? "Check path" : "Pfad prüfen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             check.FlatAppearance.BorderColor = palette.Border;
             check.Click += delegate { CheckPath(); };
-            applyDetected = new Button { Text = Localization.IsEnglish ? "Apply detected path" : "Erkannten Pfad übernehmen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0), Enabled = false };
+            applyDetected = new StudioButton { Text = Localization.IsEnglish ? "Apply detected path" : "Erkannten Pfad übernehmen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0), Enabled = false };
             applyDetected.FlatAppearance.BorderColor = palette.Border;
             applyDetected.Click += delegate
             {

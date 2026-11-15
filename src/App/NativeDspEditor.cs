@@ -18,7 +18,7 @@ namespace MP1.ConfigurationStudio
         private readonly string runtime;
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
-        private readonly TextBox musicDirectory = new TextBox { BorderStyle = BorderStyle.FixedSingle };
+        private readonly StudioTextInput musicDirectory;
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly FlowLayoutPanel cards = new FlowLayoutPanel { Dock = DockStyle.Top, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Palette.For(true).Background, Padding = new Padding(0) };
         private readonly Label status = new Label();
@@ -31,7 +31,7 @@ namespace MP1.ConfigurationStudio
         private TrackBar gainTrack;
         private Label gainLabel;
         private CheckBox dynCheck;
-        private ComboBox dynCombo;
+        private StudioChoice dynCombo;
         private CheckBox compCheck;
         private TrackBar compTrack;
         private Label compLabel;
@@ -51,11 +51,8 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 14));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Music folder" : "Musikordner", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            musicDirectory.Dock = DockStyle.Fill;
-            musicDirectory.Font = body;
-            musicDirectory.BackColor = palette.Input;
-            musicDirectory.ForeColor = palette.Text;
-            musicDirectory.TextChanged += delegate { if (!loading && document != null) { SetRootAttribute("MusicDirectory", musicDirectory.Text); MarkDirty(); } };
+            musicDirectory = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Music folder" : "Musikordner" };
+            musicDirectory.Box.TextChanged += delegate { if (!loading && document != null) { SetRootAttribute("MusicDirectory", musicDirectory.Text); MarkDirty(); } };
             top.Controls.Add(musicDirectory, 1, 0);
             var browse = ButtonFor(Localization.IsEnglish ? "Browse …" : "Ordner …", delegate { BrowseMusicDirectory(); }, body);
             browse.Dock = DockStyle.Fill;
@@ -109,7 +106,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(80), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(80), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -224,7 +221,7 @@ namespace MP1.ConfigurationStudio
                 double.TryParse(ReadParameter(gainEffect, "Gain_dbV"), NumberStyles.Float, CultureInfo.InvariantCulture, out gain);
             gainTrack = new TrackBar { Minimum = -160, Maximum = 160, TickFrequency = 20, SmallChange = 1, LargeChange = 10, Value = Math.Max(-160, Math.Min(160, (int)Math.Round(gain * 10))), Dock = DockStyle.Fill, BackColor = palette.Panel, Height = Px(30), Margin = new Padding(0) };
             gainLabel = new Label { Text = gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB", ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
-            gainCheck = new CheckBox { Text = "Gain", Checked = gainEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
+            gainCheck = new StudioCheck(scale) { Text = "Gain", Checked = gainEffect != null, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), Font = Typography.Create(9.5f * scale, FontStyle.Regular), Colors = () => palette, Margin = new Padding(0) };
             card.Controls.Add(KnownRow(gainCheck, gainTrack, gainLabel), 0, 1);
             gainCheck.CheckedChanged += delegate
             {
@@ -249,9 +246,9 @@ namespace MP1.ConfigurationStudio
             int preset = 0;
             XmlElement dynEffect = FindEffect("DynAmp");
             if (dynEffect != null) Int32.TryParse(ReadParameter(dynEffect, "Preset"), out preset);
-            dynCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill };
-            dynCombo.Items.AddRange(new object[] { "Soft", "Medium", "Hard" });
-            dynCheck = new CheckBox { Text = L("Dynamische Verstärkung", "Dynamic amplification"), Checked = dynEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
+            dynCombo = new StudioChoice(scale) { Font = Typography.Create(9.5f * scale, FontStyle.Regular), Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = L("Dynamische Verstärkung", "Dynamic amplification") };
+            dynCombo.SetOptions(new[] { new ChoiceOption("0", "Soft"), new ChoiceOption("1", "Medium"), new ChoiceOption("2", "Hard") }, Math.Max(0, Math.Min(2, preset)).ToString(CultureInfo.InvariantCulture));
+            dynCheck = new StudioCheck(scale) { Text = L("Dynamische Verstärkung", "Dynamic amplification"), Checked = dynEffect != null, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), Font = Typography.Create(9.5f * scale, FontStyle.Regular), Colors = () => palette, Margin = new Padding(0) };
             card.Controls.Add(KnownRow(dynCheck, dynCombo, new Label { Text = "Preset", ForeColor = palette.Muted, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight }), 0, 2);
             dynCheck.CheckedChanged += delegate
             {
@@ -275,7 +272,7 @@ namespace MP1.ConfigurationStudio
             if (compEffect != null) Int32.TryParse(ReadParameter(compEffect, "Threshold"), out threshold);
             compTrack = new TrackBar { Minimum = -250, Maximum = 0, TickFrequency = 25, SmallChange = 1, LargeChange = 10, Value = Math.Max(-250, Math.Min(0, threshold)), Dock = DockStyle.Fill, BackColor = palette.Panel, Height = Px(30), Margin = new Padding(0) };
             compLabel = new Label { Text = (threshold / 10.0).ToString("0.0", CultureInfo.InvariantCulture) + " dB", ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
-            compCheck = new CheckBox { Text = L("Kompressor", "Compressor"), Checked = compEffect != null, AutoSize = true, ForeColor = palette.Text, BackColor = palette.Panel, FlatStyle = FlatStyle.Flat, Margin = new Padding(0) };
+            compCheck = new StudioCheck(scale) { Text = L("Kompressor", "Compressor"), Checked = compEffect != null, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), Font = Typography.Create(9.5f * scale, FontStyle.Regular), Colors = () => palette, Margin = new Padding(0) };
             card.Controls.Add(KnownRow(compCheck, compTrack, compLabel), 0, 3);
             compCheck.CheckedChanged += delegate
             {
@@ -422,8 +419,9 @@ namespace MP1.ConfigurationStudio
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(100)));
             header.Controls.Add(new Label { Text = L("Effekt", "Effect"), Font = Typography.Create(9f * scale, FontStyle.Regular), ForeColor = palette.Muted, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            var name = new TextBox { Text = effect.GetAttribute("EffectName"), Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill };
-            name.TextChanged += delegate { if (effect.GetAttribute("EffectName") != name.Text) { effect.SetAttribute("EffectName", name.Text); MarkDirty(); } };
+            var name = new StudioTextInput(scale, Typography.Create(9.5f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill };
+            name.Text = effect.GetAttribute("EffectName");
+            name.Box.TextChanged += delegate { if (effect.GetAttribute("EffectName") != name.Text) { effect.SetAttribute("EffectName", name.Text); MarkDirty(); } };
             header.Controls.Add(name, 1, 0);
             var remove = ButtonFor(L("Entfernen", "Remove"), delegate { RemoveElement(effect, kind); }, Typography.Create(9f * scale, FontStyle.Regular));
             remove.Dock = DockStyle.Fill;
@@ -453,8 +451,9 @@ namespace MP1.ConfigurationStudio
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(90)));
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(100)));
             header.Controls.Add(new Label { Text = plugin.Name, Font = Typography.Create(9f * scale, FontStyle.Regular), ForeColor = palette.Muted, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            var dll = new TextBox { Text = plugin.GetAttribute("PluginDll"), Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill };
-            dll.TextChanged += delegate { if (plugin.GetAttribute("PluginDll") != dll.Text) { plugin.SetAttribute("PluginDll", dll.Text); MarkDirty(); } };
+            var dll = new StudioTextInput(scale, Typography.Create(9.5f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill };
+            dll.Text = plugin.GetAttribute("PluginDll");
+            dll.Box.TextChanged += delegate { if (plugin.GetAttribute("PluginDll") != dll.Text) { plugin.SetAttribute("PluginDll", dll.Text); MarkDirty(); } };
             header.Controls.Add(dll, 1, 0);
             var browse = ButtonFor("…", delegate { BrowseDll(dll); }, Typography.Create(9f * scale, FontStyle.Regular));
             browse.Dock = DockStyle.Fill;
@@ -497,17 +496,18 @@ namespace MP1.ConfigurationStudio
                 var index = Input(parameter.GetAttribute("Index"), delegate(string text) { parameter.SetAttribute("Index", text); MarkDirty(); });
                 row.Controls.Add(index, 2, 0);
             }
-            var remove = new Button { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
+            var remove = new StudioButton { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), 0, 0, 0) };
             remove.FlatAppearance.BorderColor = palette.Border;
             remove.Click += delegate { parameter.ParentNode.RemoveChild(parameter); MarkDirty(); BuildCards(); };
             row.Controls.Add(remove, withIndex ? 3 : 2, 0);
             return row;
         }
 
-        private TextBox Input(string value, Action<string> changed)
+        private StudioTextInput Input(string value, Action<string> changed)
         {
-            var box = new TextBox { Text = value ?? string.Empty, Font = Typography.Create(9f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0, 0, Px(4), 0) };
-            box.TextChanged += delegate { changed(box.Text); };
+            var box = new StudioTextInput(scale, Typography.Create(9f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0, 0, Px(4), 0) };
+            box.Text = value ?? string.Empty;
+            box.Box.TextChanged += delegate { changed(box.Text); };
             return box;
         }
 
@@ -524,7 +524,7 @@ namespace MP1.ConfigurationStudio
             }
         }
 
-        private void BrowseDll(TextBox target)
+        private void BrowseDll(StudioTextInput target)
         {
             using (var dialog = new OpenFileDialog { Title = L("DSP-Plugin wählen", "Choose DSP plugin"), Filter = "DLL (*.dll)|*.dll|Alle Dateien (*.*)|*.*", CheckFileExists = true })
             {
@@ -609,9 +609,9 @@ namespace MP1.ConfigurationStudio
                 foreach (string file in files) list.Items.Add(file);
                 if (list.Items.Count > 0) list.SelectedIndex = 0;
                 var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(48), FlowDirection = FlowDirection.RightToLeft, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(8), Px(10), Px(8)) };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
-                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate { if (list.SelectedItem == null) return; DialogResult = DialogResult.OK; Close(); };
                 bottom.Controls.Add(cancel);
@@ -721,7 +721,7 @@ namespace MP1.ConfigurationStudio
                 file.ForeColor = Palette.For(true).Text;
                 file.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
                 top.Controls.Add(file, 0, 0);
-                var browse = new Button { Text = Localization.IsEnglish ? "Browse …" : "Datei …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
+                var browse = new StudioButton { Text = Localization.IsEnglish ? "Browse …" : "Datei …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
                 browse.FlatAppearance.BorderColor = Palette.For(true).Border;
                 browse.Click += delegate
                 {
@@ -734,15 +734,15 @@ namespace MP1.ConfigurationStudio
                 top.Controls.Add(browse, 1, 0);
 
                 var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(48), FlowDirection = FlowDirection.LeftToRight, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(14), 0, Px(14), 0) };
-                play = new Button { Text = Localization.IsEnglish ? "Play" : "Wiedergabe", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(130), Height = Px(30) };
+                play = new StudioButton { Text = Localization.IsEnglish ? "Play" : "Wiedergabe", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(130), Height = Px(30) };
                 play.FlatAppearance.BorderColor = Palette.For(true).Border;
                 play.Click += delegate { StartPlayback(); };
-                stop = new Button { Text = Localization.IsEnglish ? "Stop" : "Stopp", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30), Enabled = false };
+                stop = new StudioButton { Text = Localization.IsEnglish ? "Stop" : "Stopp", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30), Enabled = false };
                 stop.FlatAppearance.BorderColor = Palette.For(true).Border;
                 stop.Click += delegate { StopPlayback(); };
                 actions.Controls.Add(play);
                 actions.Controls.Add(stop);
-                var close = new Button { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var close = new StudioButton { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 close.FlatAppearance.BorderColor = Palette.For(true).Border;
                 actions.Controls.Add(close);
                 status.AutoSize = true;

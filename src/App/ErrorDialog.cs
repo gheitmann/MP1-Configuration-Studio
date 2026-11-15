@@ -48,20 +48,20 @@ namespace MP1.ConfigurationStudio
             layout.Controls.Add(details, 0, 0);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = Localization.T("Schließen"), Width = 105, Height = 32, DialogResult = DialogResult.Cancel, Tag = "studio-primary" };
+            var close = new StudioButton { Text = Localization.T("Schließen"), Width = 105, Height = 32, DialogResult = DialogResult.Cancel, Tag = "studio-primary" };
             buttons.Controls.Add(close);
 
-            var log = new Button { Text = Localization.T("Protokoll öffnen"), Width = 135, Height = 32 };
+            var log = new StudioButton { Text = Localization.T("Protokoll öffnen"), Width = 135, Height = 32 };
             log.Click += delegate { OpenLog(); };
             buttons.Controls.Add(log);
 
-            var bundle = new Button { Text = Localization.T("Support-Bundle…"), Width = 140, Height = 32 };
+            var bundle = new StudioButton { Text = Localization.T("Support-Bundle…"), Width = 140, Height = 32 };
             bundle.Click += delegate { CreateSupportBundle(); };
             buttons.Controls.Add(bundle);
 
             if (!String.IsNullOrEmpty(nativePath) && File.Exists(nativePath))
             {
-                var classic = new Button { Text = Localization.T("Klassisch starten"), Width = 140, Height = 32 };
+                var classic = new StudioButton { Text = Localization.T("Klassisch starten"), Width = 140, Height = 32 };
                 classic.Click += delegate
                 {
                     Program.StartNative(nativePath, runtime);

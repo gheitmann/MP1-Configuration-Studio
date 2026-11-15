@@ -71,7 +71,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button
+            var button = new StudioButton
             {
                 Text = text,
                 Font = font,
@@ -304,7 +304,7 @@ namespace MP1.ConfigurationStudio
                 pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, (int)(36 * scale)));
                 path.Dock = DockStyle.Fill; path.BackColor = palette.Input; path.ForeColor = palette.Text; path.BorderStyle = BorderStyle.FixedSingle;
                 pathRow.Controls.Add(path, 0, 0);
-                var browse = new Button { Text = "…", Dock = DockStyle.Fill, FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text };
+                var browse = new StudioButton { Text = "…", Dock = DockStyle.Fill, FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text };
                 browse.FlatAppearance.BorderColor = palette.Border;
                 browse.Click += delegate { using (var picker = new FolderBrowserDialog()) if (picker.ShowDialog(this) == DialogResult.OK) path.Text = picker.SelectedPath; };
                 pathRow.Controls.Add(browse, 1, 0);
@@ -312,9 +312,9 @@ namespace MP1.ConfigurationStudio
                 scan.Dock = DockStyle.Fill; scan.ForeColor = palette.Text; scan.BackColor = palette.Background; scan.UseMnemonic = false;
                 if (supportsScan) table.Controls.Add(scan, 1, 2);
                 var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, DialogResult = DialogResult.Cancel };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, DialogResult = DialogResult.Cancel };
                 cancel.FlatAppearance.BorderColor = palette.Border;
-                var ok = new Button { Text = "OK", Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, DialogResult = DialogResult.OK, Margin = new Padding(8, 0, 0, 0) };
+                var ok = new StudioButton { Text = "OK", Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, DialogResult = DialogResult.OK, Margin = new Padding(8, 0, 0, 0) };
                 ok.FlatAppearance.BorderSize = 0;
                 buttons.Controls.Add(cancel); buttons.Controls.Add(ok);
                 table.Controls.Add(buttons, 0, 3); table.SetColumnSpan(buttons, 2);

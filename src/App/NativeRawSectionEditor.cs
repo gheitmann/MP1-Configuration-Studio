@@ -11,8 +11,8 @@ namespace MP1.ConfigurationStudio
         private readonly StudioConfiguration configuration;
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
-        private readonly ComboBox choice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
-        private readonly TextBox filter = new TextBox { BorderStyle = BorderStyle.FixedSingle };
+        private readonly StudioChoice choice;
+        private readonly StudioTextInput filter;
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 3 };
         private readonly List<string> sections;
@@ -32,22 +32,17 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "XML section" : "XML-Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            choice.Dock = DockStyle.Fill;
-            choice.Font = body;
-            choice.BackColor = palette.Input;
-            choice.ForeColor = palette.Text;
+            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "XML section" : "XML-Bereich" };
             sections = configuration.Sections().OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase).ToList();
-            foreach (string name in sections) choice.Items.Add(name);
+            choice.SetOptions(sections.Select(name => new ChoiceOption(name, name)), "general");
             choice.SelectedIndexChanged += delegate { if (!updating) Build(); };
             top.Controls.Add(choice, 1, 0);
-            filter.Dock = DockStyle.Fill;
-            filter.Font = body;
-            filter.BackColor = palette.Input;
-            filter.ForeColor = palette.Muted;
-            filter.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …";
-            filter.GotFocus += delegate { if (filter.ForeColor == palette.Muted) { filter.Text = string.Empty; filter.ForeColor = palette.Text; RebuildChoices(); } };
-            filter.LostFocus += delegate { if (filter.Text.Length == 0) { filter.ForeColor = palette.Muted; filter.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …"; RebuildChoices(); } };
-            filter.TextChanged += delegate { RebuildChoices(); };
+            filter = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Filter sections" : "Bereiche filtern" };
+            filter.Box.ForeColor = palette.Muted;
+            filter.Box.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …";
+            filter.Box.GotFocus += delegate { if (filter.Box.ForeColor == palette.Muted) { filter.Box.Text = string.Empty; filter.Box.ForeColor = palette.Text; RebuildChoices(); } };
+            filter.Box.LostFocus += delegate { if (filter.Box.Text.Length == 0) { filter.Box.ForeColor = palette.Muted; filter.Box.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …"; RebuildChoices(); } };
+            filter.Box.TextChanged += delegate { RebuildChoices(); };
             top.Controls.Add(filter, 2, 0);
 
             table.Padding = new Padding(0);
@@ -61,15 +56,14 @@ namespace MP1.ConfigurationStudio
             Controls.Add(scroll);
             Controls.Add(actions);
             Controls.Add(top);
-            int general = choice.Items.IndexOf("general");
-            if (choice.Items.Count > 0) choice.SelectedIndex = general >= 0 ? general : 0;
+            Build();
         }
 
         private int Px(float value) { return (int)Math.Round(value * scale); }
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -78,17 +72,16 @@ namespace MP1.ConfigurationStudio
         private void RebuildChoices()
         {
             if (updating) return;
-            string query = filter.ForeColor == palette.Muted ? string.Empty : filter.Text.Trim();
-            string selected = choice.SelectedItem as string;
+            string query = filter.Box.ForeColor == palette.Muted ? string.Empty : filter.Text.Trim();
+            string selected = choice.SelectedValue;
             updating = true;
             try
             {
-                choice.Items.Clear();
+                var options = new List<ChoiceOption>();
                 foreach (string name in sections)
                     if (query.Length == 0 || name.IndexOf(query, StringComparison.CurrentCultureIgnoreCase) >= 0)
-                        choice.Items.Add(name);
-                if (selected != null && choice.Items.Contains(selected)) choice.SelectedItem = selected;
-                else if (choice.Items.Count > 0) choice.SelectedIndex = 0;
+                        options.Add(new ChoiceOption(name, name));
+                choice.SetOptions(options, selected ?? String.Empty);
             }
             finally { updating = false; }
             Build();
@@ -107,7 +100,7 @@ namespace MP1.ConfigurationStudio
                 table.Controls.Clear();
                 table.RowStyles.Clear();
                 table.RowCount = 0;
-                string section = choice.SelectedItem == null ? null : choice.SelectedItem.ToString();
+                string section = choice.SelectedValue;
                 if (section == null) return;
                 foreach (var entry in configuration.Entries(section).ToArray())
                 {
@@ -117,7 +110,7 @@ namespace MP1.ConfigurationStudio
                         || String.Equals(value, "no", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
                     if (boolValue)
                     {
-                        var check = new CheckBox { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), AutoSize = true, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Text, BackColor = palette.Background, FlatStyle = FlatStyle.Flat, UseMnemonic = false, Margin = new Padding(0, Px(2), 0, Px(2)) };
+                        var check = new StudioCheck(scale) { Text = key, Checked = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase), Font = Typography.Create(10f * scale, FontStyle.Regular), Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
                         check.CheckedChanged += delegate { configuration.SetBool(section, key, check.Checked); RaiseChanged(); };
                         table.Controls.Add(check, 0, table.RowCount);
                         table.SetColumnSpan(check, 2);
@@ -128,8 +121,9 @@ namespace MP1.ConfigurationStudio
                     else
                     {
                         var label = new Label { Text = key, Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, Margin = new Padding(0, 0, Px(12), 0) };
-                        var text = new TextBox { Text = value, Font = Typography.Create(10f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle, Dock = DockStyle.Fill, Margin = new Padding(0) };
-                        text.TextChanged += delegate { configuration.Set(section, key, text.Text); RaiseChanged(); };
+                        var text = new StudioTextInput(scale, Typography.Create(10f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0) };
+                        text.Text = value;
+                        text.Box.TextChanged += delegate { configuration.Set(section, key, text.Text); RaiseChanged(); };
                         table.Controls.Add(label, 0, table.RowCount);
                         table.Controls.Add(text, 1, table.RowCount);
                         table.Controls.Add(DeleteButton(section, key), 2, table.RowCount);
@@ -151,7 +145,7 @@ namespace MP1.ConfigurationStudio
 
         private Button DeleteButton(string section, string key)
         {
-            var button = new Button { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), Px(2), 0, Px(2)) };
+            var button = new StudioButton { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), Px(2), 0, Px(2)) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += delegate
             {
@@ -165,7 +159,7 @@ namespace MP1.ConfigurationStudio
 
         private void AddEntry()
         {
-            string section = choice.SelectedItem == null ? null : choice.SelectedItem.ToString();
+            string section = choice.SelectedValue;
             if (section == null) return;
             using (var dialog = new EntryDialog(scale))
             {
@@ -217,9 +211,9 @@ namespace MP1.ConfigurationStudio
                 value.ForeColor = Palette.For(true).Text;
                 table.Controls.Add(value, 1, 1);
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
-                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate
                 {

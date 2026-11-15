@@ -20,8 +20,8 @@ namespace MP1.ConfigurationStudio
         private readonly string path;
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
-        private readonly ComboBox contextChoice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
-        private readonly TextBox search = new TextBox { BorderStyle = BorderStyle.FixedSingle };
+        private readonly StudioChoice contextChoice;
+        private readonly StudioTextInput search;
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = false, ColumnCount = 5 };
         private readonly Label status = new Label();
@@ -45,20 +45,15 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 24));
             top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Context" : "Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            contextChoice.Dock = DockStyle.Fill;
-            contextChoice.Font = body;
-            contextChoice.BackColor = palette.Input;
-            contextChoice.ForeColor = palette.Text;
+            contextChoice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Context" : "Bereich" };
             contextChoice.SelectedIndexChanged += delegate { if (!building) BuildTable(); };
             top.Controls.Add(contextChoice, 1, 0);
-            search.Dock = DockStyle.Fill;
-            search.Font = body;
-            search.BackColor = palette.Input;
-            search.ForeColor = palette.Muted;
-            search.Text = Localization.IsEnglish ? "Filter actions …" : "Aktionen filtern …";
-            search.GotFocus += delegate { if (search.ForeColor == palette.Muted) { search.Text = string.Empty; search.ForeColor = palette.Text; } };
-            search.LostFocus += delegate { if (search.Text.Length == 0) { search.ForeColor = palette.Muted; search.Text = Localization.IsEnglish ? "Filter actions …" : "Aktionen filtern …"; } };
-            search.TextChanged += delegate { if (!building) BuildTable(); };
+            search = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Filter actions" : "Aktionen filtern" };
+            search.Box.ForeColor = palette.Muted;
+            search.Box.Text = Localization.IsEnglish ? "Filter actions …" : "Aktionen filtern …";
+            search.Box.GotFocus += delegate { if (search.Box.ForeColor == palette.Muted) { search.Box.Text = string.Empty; search.Box.ForeColor = palette.Text; } };
+            search.Box.LostFocus += delegate { if (search.Box.Text.Length == 0) { search.Box.ForeColor = palette.Muted; search.Box.Text = Localization.IsEnglish ? "Filter actions …" : "Aktionen filtern …"; } };
+            search.Box.TextChanged += delegate { if (!building) BuildTable(); };
             top.Controls.Add(search, 2, 0);
             var save = ButtonFor(Localization.IsEnglish ? "Save" : "Speichern", delegate { SaveFile(); }, body);
             save.Dock = DockStyle.Fill;
@@ -112,7 +107,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(80), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(28), MinimumSize = new Size(Px(80), Px(28)), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -156,7 +151,7 @@ namespace MP1.ConfigurationStudio
 
         private void BuildContexts()
         {
-            string previous = contextChoice.SelectedItem as string;
+            string previous = contextChoice.SelectedValue;
             contexts.Clear();
             foreach (XmlNode node in document.DocumentElement.ChildNodes)
             {
@@ -172,10 +167,9 @@ namespace MP1.ConfigurationStudio
                 }
             }
             building = true;
-            contextChoice.Items.Clear();
-            foreach (Context context in contexts) contextChoice.Items.Add(context.Label);
-            int index = previous == null ? 0 : Math.Max(0, contextChoice.Items.IndexOf(previous));
-            if (contextChoice.Items.Count > 0) contextChoice.SelectedIndex = index;
+            var labels = new List<ChoiceOption>();
+            foreach (Context context in contexts) labels.Add(new ChoiceOption(context.Label, context.Label));
+            contextChoice.SetOptions(labels, previous ?? string.Empty);
             building = false;
         }
 
@@ -286,28 +280,27 @@ namespace MP1.ConfigurationStudio
             };
             table.Controls.Add(info, 0, table.RowCount);
 
-            var keyButton = new Button { Text = String.IsNullOrEmpty(key) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : key, Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
+            var keyButton = new StudioButton { Text = String.IsNullOrEmpty(key) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : key, Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             keyButton.FlatAppearance.BorderColor = palette.Border;
             keyButton.Click += delegate { CaptureKey(action, keyButton); };
             table.Controls.Add(keyButton, 1, table.RowCount);
 
-            var clear = new Button { Text = Localization.IsEnglish ? "Clear" : "Leer", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
+            var clear = new StudioButton { Text = Localization.IsEnglish ? "Clear" : "Leer", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             clear.FlatAppearance.BorderColor = palette.Border;
             clear.Click += delegate { SetActionValue(action, "key", string.Empty); keyButton.Text = Localization.IsEnglish ? "(empty)" : "(leer)"; MarkDirty(); BuildTable(); };
             table.Controls.Add(clear, 2, table.RowCount);
 
-            var sound = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown, FlatStyle = FlatStyle.Flat, Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
+            var sound = new StudioComboInput(scale, Typography.Create(9.5f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             foreach (string name in new[] { "", "click.wav", "back.wav", "cursor.wav", "photo.wav" })
                 sound.Items.Add(name);
             string soundValue = ChildText(action, "sound") ?? string.Empty;
             if (!sound.Items.Contains(soundValue)) sound.Items.Add(soundValue);
-            sound.SelectedItem = soundValue;
             sound.Text = soundValue;
-            sound.SelectedIndexChanged += delegate { if (sound.SelectedItem != null) { SetActionValue(action, "sound", sound.SelectedItem.ToString()); MarkDirty(); } };
+            sound.SelectedIndexChanged += delegate { SetActionValue(action, "sound", sound.Text); MarkDirty(); };
             sound.Leave += delegate { SetActionValue(action, "sound", sound.Text); MarkDirty(); };
             table.Controls.Add(sound, 3, table.RowCount);
 
-            var remove = new Button { Text = Localization.IsEnglish ? "Delete" : "Löschen", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), 0, Px(2)) };
+            var remove = new StudioButton { Text = Localization.IsEnglish ? "Delete" : "Löschen", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), 0, Px(2)) };
             remove.FlatAppearance.BorderColor = palette.Border;
             remove.Click += delegate { RemoveAction(action); };
             table.Controls.Add(remove, 4, table.RowCount);
@@ -539,9 +532,9 @@ namespace MP1.ConfigurationStudio
                 description.ForeColor = Palette.For(true).Text;
                 table.Controls.Add(description, 1, 1);
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
-                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate
                 {
@@ -577,7 +570,7 @@ namespace MP1.ConfigurationStudio
             private readonly TextBox id = new TextBox();
             private readonly TextBox description = new TextBox();
             private readonly TextBox key = new TextBox();
-            private readonly ComboBox sound = new ComboBox();
+            private readonly StudioComboInput sound;
             public string ActionId { get { return id.Text.Trim(); } }
             public string ActionDescription { get { return description.Text.Trim(); } }
             public string ActionKey { get { return key.Text.Trim(); } }
@@ -596,6 +589,10 @@ namespace MP1.ConfigurationStudio
                 ForeColor = Palette.For(true).Text;
                 ClientSize = new Size(Px(500), Px(300));
 
+                sound = new StudioComboInput(scale, Typography.Create(10f * scale, FontStyle.Regular), Palette.For(true)) { Colors = () => Palette.For(true), Dock = DockStyle.Fill };
+                foreach (string name in new[] { "", "click.wav", "back.wav", "cursor.wav", "photo.wav" }) sound.Items.Add(name);
+                sound.Text = "click.wav";
+
                 var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 5, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -604,7 +601,7 @@ namespace MP1.ConfigurationStudio
                 id.Text = suggestedId ?? string.Empty;
                 AddRow(table, 1, Localization.IsEnglish ? "Description" : "Beschreibung", description);
                 AddRow(table, 2, Localization.IsEnglish ? "Key" : "Taste", key, false);
-                var capture = new Button { Text = Localization.IsEnglish ? "Capture …" : "Aufnehmen …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
+                var capture = new StudioButton { Text = Localization.IsEnglish ? "Capture …" : "Aufnehmen …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
                 capture.FlatAppearance.BorderColor = Palette.For(true).Border;
                 capture.Click += delegate
                 {
@@ -613,17 +610,11 @@ namespace MP1.ConfigurationStudio
                 };
                 table.Controls.Add(capture, 2, 2);
                 AddRow(table, 3, "Sound", sound);
-                sound.DropDownStyle = ComboBoxStyle.DropDown;
-                sound.FlatStyle = FlatStyle.Flat;
-                sound.BackColor = Palette.For(true).Input;
-                sound.ForeColor = Palette.For(true).Text;
-                foreach (string name in new[] { "", "click.wav", "back.wav", "cursor.wav", "photo.wav" }) sound.Items.Add(name);
-                sound.Text = "click.wav";
 
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
-                var ok = new Button { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate
                 {
@@ -688,7 +679,7 @@ namespace MP1.ConfigurationStudio
                 var title = new Label { Text = Localization.IsEnglish ? "Press the new key for this action." : "Neue Taste für diese Aktion drücken.", Font = Typography.Create(11f * scale, FontStyle.Bold), ForeColor = Palette.For(true).Text, AutoSize = true, Left = Px(18), Top = Px(18) };
                 var hint = new Label { Text = (Localization.IsEnglish ? "Current: " : "Aktuell: ") + (String.IsNullOrEmpty(current) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : current), Font = Typography.Create(9.5f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Muted, AutoSize = true, Left = Px(18), Top = Px(52) };
                 var warning = new Label { Text = string.Empty, Font = Typography.Create(9f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Accent, AutoSize = false, Width = Px(394), Height = Px(48), Left = Px(18), Top = Px(78), Visible = false };
-                var cancel = new Button { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(310), Top = Px(148), Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(310), Top = Px(148), Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 Controls.Add(title);
                 Controls.Add(hint);

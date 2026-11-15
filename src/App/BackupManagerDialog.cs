@@ -10,8 +10,8 @@ namespace MP1.ConfigurationStudio
     {
         private readonly string backupRoot;
         private readonly ListBox list = new ListBox();
-        private readonly Button restore = new Button();
-        private readonly Button delete = new Button();
+        private readonly Button restore = new StudioButton();
+        private readonly Button delete = new StudioButton();
         private readonly Label empty = new Label();
         private readonly Label header = new Label();
 
@@ -54,9 +54,9 @@ namespace MP1.ConfigurationStudio
             layout.Controls.Add(empty, 0, 1);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = Localization.T("Schließen"), Width = 105, Height = 32, DialogResult = DialogResult.Cancel };
+            var close = new StudioButton { Text = Localization.T("Schließen"), Width = 105, Height = 32, DialogResult = DialogResult.Cancel };
             buttons.Controls.Add(close);
-            var folder = new Button { Text = Localization.T("Ordner öffnen"), Width = 125, Height = 32 };
+            var folder = new StudioButton { Text = Localization.T("Ordner öffnen"), Width = 125, Height = 32 };
             folder.Click += delegate { OpenFolder(); };
             buttons.Controls.Add(folder);
             delete.Text = Localization.T("Löschen");
@@ -70,7 +70,7 @@ namespace MP1.ConfigurationStudio
             restore.Tag = "studio-primary";
             restore.Click += delegate { RestoreSelected(); };
             buttons.Controls.Add(restore);
-            var prune = new Button { Text = Localization.T("Aufräumen"), Width = 110, Height = 32 };
+            var prune = new StudioButton { Text = Localization.T("Aufräumen"), Width = 110, Height = 32 };
             prune.Click += delegate { PruneBackups(); };
             buttons.Controls.Add(prune);
             layout.Controls.Add(buttons, 0, 2);

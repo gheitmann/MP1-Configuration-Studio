@@ -44,6 +44,14 @@ namespace MP1.ConfigurationStudio
             get { return selectedIndex >= 0 && selectedIndex < items.Count ? items[selectedIndex].Value : String.Empty; }
         }
 
+        public bool SelectValue(string value)
+        {
+            int index = items.FindIndex(option => String.Equals(option.Value, value, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) return false;
+            SetIndex(index, true);
+            return true;
+        }
+
         public void SetOptions(IEnumerable<ChoiceOption> options, string currentValue)
         {
             items.Clear();
@@ -344,6 +352,174 @@ namespace MP1.ConfigurationStudio
         }
     }
 
+    /// <summary>Editable combo box with the same dark frame as the other Studio controls.</summary>
+    internal sealed class StudioComboInput : Control
+    {
+        private readonly float scale;
+        private readonly TextBox inner;
+        private readonly List<string> items = new List<string>();
+        private bool hover;
+        private bool open;
+        private ToolStripDropDown drop;
+        public Func<Palette> Colors;
+
+        public StudioComboInput(float scale, Font font, Palette palette)
+        {
+            this.scale = scale;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            Height = S(32);
+            AccessibleRole = AccessibleRole.ComboBox;
+            inner = new TextBox { BorderStyle = BorderStyle.None, Font = font, BackColor = palette.Input, ForeColor = palette.Text };
+            Controls.Add(inner);
+            inner.TextChanged += delegate { OnTextChanged(EventArgs.Empty); };
+            inner.GotFocus += delegate { Invalidate(); };
+            inner.LostFocus += delegate { Invalidate(); };
+            inner.Leave += delegate { OnLeave(EventArgs.Empty); };
+            inner.KeyDown += delegate(object sender, KeyEventArgs e)
+            {
+                if (e.KeyCode == Keys.F4 || (e.Alt && e.KeyCode == Keys.Down))
+                {
+                    OpenDropDown();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                }
+            };
+            inner.SetBounds(S(9), Math.Max(1, (Height - inner.PreferredHeight) / 2), Math.Max(60, Width - S(40)), inner.PreferredHeight);
+        }
+
+        private int S(float value) { return (int)Math.Round(value * scale); }
+
+        public TextBox Box { get { return inner; } }
+        public List<string> Items { get { return items; } }
+
+        public override string Text
+        {
+            get { return inner.Text; }
+            set { inner.Text = value; }
+        }
+
+        public string SelectedItem
+        {
+            get { return inner.Text; }
+            set { inner.Text = value ?? String.Empty; }
+        }
+
+        public event EventHandler SelectedIndexChanged;
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (inner == null) return;
+            int inset = S(9);
+            inner.SetBounds(inset, Math.Max(1, (Height - inner.PreferredHeight) / 2), Math.Max(60, Width - inset - S(34)), inner.PreferredHeight);
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && e.X >= Width - S(34)) OpenDropDown();
+            else inner.Focus();
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(BackColor);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = ClientRectangle;
+            bounds.Width--;
+            bounds.Height--;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), S(5)))
+            {
+                using (var brush = new SolidBrush(palette.Input)) e.Graphics.FillPath(brush, path);
+                Color border = open || inner.Focused ? palette.Accent : (hover ? StudioChoice.Blend(palette.Border, palette.Accent, 0.55f) : palette.Border);
+                using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
+            }
+            int x = Width - S(18);
+            int y = Height / 2 - S(2);
+            using (var pen = new Pen(open || hover ? palette.Accent : palette.Muted, S(2)))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                e.Graphics.DrawLine(pen, x - S(4), y, x, y + S(4));
+                e.Graphics.DrawLine(pen, x, y + S(4), x + S(4), y);
+            }
+        }
+
+        private void OpenDropDown()
+        {
+            if (open) return;
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            var options = new List<ChoiceOption>();
+            foreach (string item in items)
+                if (!String.IsNullOrEmpty(item)) options.Add(new ChoiceOption(item, item));
+            string current = inner.Text;
+            if (!String.IsNullOrWhiteSpace(current) && options.FindIndex(option => String.Equals(option.Value, current, StringComparison.OrdinalIgnoreCase)) < 0)
+                options.Add(new ChoiceOption(current, current));
+            if (options.Count == 0) return;
+
+            int selected = options.FindIndex(option => String.Equals(option.Value, current, StringComparison.OrdinalIgnoreCase));
+            int itemHeight = S(30);
+            int width = Math.Max(Width, Math.Min(S(620), MeasureWidth(options) + S(54)));
+            int visible = Math.Min(options.Count, 12);
+            var list = new StudioChoiceList(options, selected, palette, Font, itemHeight, scale);
+            list.Chosen += delegate(int index)
+            {
+                CloseDropDown();
+                if (index < 0 || index >= options.Count) return;
+                inner.Text = options[index].Value;
+                if (SelectedIndexChanged != null) SelectedIndexChanged(this, EventArgs.Empty);
+            };
+            list.CloseRequested += delegate { CloseDropDown(); };
+            var host = new ToolStripControlHost(list) { Margin = Padding.Empty, Padding = Padding.Empty, AutoSize = false, Size = new Size(width, visible * itemHeight + S(2)) };
+            drop = new ToolStripDropDown { Padding = Padding.Empty, Margin = Padding.Empty, AutoSize = false, DropShadowEnabled = true, BackColor = palette.Panel, Size = new Size(width, visible * itemHeight + S(2)) };
+            drop.Items.Add(host);
+            drop.Closed += delegate { open = false; Invalidate(); };
+            open = true;
+            try
+            {
+                drop.Show(this, new Point(0, Height + S(2)));
+                list.Focus();
+                list.EnsureIndexVisible(selected);
+            }
+            catch (Exception ex)
+            {
+                StudioLog.Error(ex, "Editable combo dropdown could not be shown");
+                CloseDropDown();
+            }
+            Invalidate();
+        }
+
+        private int MeasureWidth(IEnumerable<ChoiceOption> options)
+        {
+            int width = S(120);
+            foreach (ChoiceOption option in options)
+                width = Math.Max(width, TextRenderer.MeasureText(option.Label ?? String.Empty, Font).Width);
+            return width;
+        }
+
+        private void CloseDropDown()
+        {
+            if (drop == null) return;
+            ToolStripDropDown closing = drop;
+            drop = null;
+            try { closing.Close(); } catch { }
+            try { closing.Dispose(); } catch { }
+            open = false;
+            Invalidate();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) CloseDropDown();
+            base.Dispose(disposing);
+        }
+    }
+
     /// <summary>Large owner drawn check box with hover, pressed and focus feedback.</summary>
     internal sealed class StudioCheck : CheckBox
     {
@@ -365,6 +541,12 @@ namespace MP1.ConfigurationStudio
         }
 
         private int S(float value) { return (int)Math.Round(value * scale); }
+
+        protected override void OnTextChanged(EventArgs e)
+        {
+            base.OnTextChanged(e);
+            if (String.IsNullOrEmpty(AccessibleName)) AccessibleName = Text;
+        }
 
         protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
         protected override void OnMouseLeave(EventArgs e) { hover = false; pressed = false; Invalidate(); base.OnMouseLeave(e); }
@@ -438,6 +620,7 @@ namespace MP1.ConfigurationStudio
             this.scale = scale;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             Height = S(32);
+            AccessibleRole = AccessibleRole.Text;
             inner = new TextBox { BorderStyle = BorderStyle.None, Font = font, BackColor = palette.Input, ForeColor = palette.Text };
             Controls.Add(inner);
             inner.GotFocus += delegate { Invalidate(); };
@@ -545,6 +728,49 @@ namespace MP1.ConfigurationStudio
         }
     }
 
+    /// <summary>Rounded dark button used by the structured editors.</summary>
+    internal sealed class StudioButton : Button
+    {
+        private bool hover;
+        public Func<Palette> Colors;
+        public bool Primary;
+
+        public StudioButton()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            UseVisualStyleBackColor = false;
+            Cursor = Cursors.Hand;
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(Parent != null ? Parent.BackColor : palette.Background);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle bounds = ClientRectangle;
+            bounds.Width--;
+            bounds.Height--;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            Color baseColor = Primary ? palette.Primary : (BackColor.A == 255 ? BackColor : palette.Panel);
+            Color fill = Enabled ? (hover ? StudioChoice.Blend(baseColor, Color.White, 0.10f) : baseColor) : StudioChoice.Blend(baseColor, palette.Background, 0.45f);
+            using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), 6))
+            {
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+                if (!Primary)
+                    using (var pen = new Pen(hover ? palette.Accent : palette.Border)) e.Graphics.DrawPath(pen, path);
+            }
+            Color ink = !Enabled ? palette.Muted : (Primary ? palette.PrimaryText : ForeColor);
+            TextRenderer.DrawText(e.Graphics, Text, Font, bounds, ink, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            if (Focused)
+                using (var pen = new Pen(Color.FromArgb(140, palette.Accent))) e.Graphics.DrawRectangle(pen, 1, 1, Width - 3, Height - 3);
+        }
+    }
+
     /// <summary>Rounded subsection tab, ported from the 1.9 interface.</summary>
     internal sealed class StudioSubTab : Button
     {
@@ -588,7 +814,7 @@ namespace MP1.ConfigurationStudio
                 Color border = Selected ? palette.Accent : (hover ? palette.Border : Color.FromArgb(70, palette.Border));
                 using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
             }
-            Color ink = Selected ? palette.Accent : (hover || Focused ? palette.Text : palette.Muted);
+            Color ink = Selected ? (Palette.HighContrastActive ? SystemColors.HighlightText : palette.Accent) : ((hover || Focused) ? (Palette.HighContrastActive ? SystemColors.HighlightText : palette.Text) : palette.Muted);
             TextRenderer.DrawText(e.Graphics, Text, Font, new Rectangle(S(6), 0, Math.Max(0, Width - S(12)), Height), ink,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
             if (Focused && !Selected)

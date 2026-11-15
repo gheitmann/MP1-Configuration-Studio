@@ -55,7 +55,7 @@ namespace MP1.ConfigurationStudio
             layout.Controls.Add(text, 0, 0);
 
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-            var close = new Button { Text = Localization.T("Verstanden"), Width = 130, Height = 32, DialogResult = DialogResult.OK, Tag = "studio-primary" };
+            var close = new StudioButton { Text = Localization.T("Verstanden"), Width = 130, Height = 32, DialogResult = DialogResult.OK, Tag = "studio-primary" };
             buttons.Controls.Add(close);
             layout.Controls.Add(buttons, 0, 1);
 

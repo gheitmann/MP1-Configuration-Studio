@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -23,7 +24,7 @@ namespace MP1.ConfigurationStudio
         private readonly float scale;
         private readonly Palette palette = Palette.For(true);
         private readonly Action classic;
-        private readonly ComboBox choice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+        private readonly StudioChoice choice;
         private readonly Label status = new Label();
         private readonly Button configure;
         private readonly List<PluginInfo> plugins = new List<PluginInfo>();
@@ -46,10 +47,7 @@ namespace MP1.ConfigurationStudio
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Plugin" : "Plugin", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            choice.Dock = DockStyle.Fill;
-            choice.Font = body;
-            choice.BackColor = palette.Input;
-            choice.ForeColor = palette.Text;
+            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Plugin" : "Plugin" };
             table.Controls.Add(choice, 1, 0);
 
             var actions = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = true, AutoSize = true, Dock = DockStyle.Fill, BackColor = palette.Background, Margin = new Padding(0) };
@@ -89,7 +87,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -99,7 +97,7 @@ namespace MP1.ConfigurationStudio
         {
             if (loading) return;
             loading = true;
-            choice.Items.Clear();
+            choice.SetOptions(new ChoiceOption[0], String.Empty);
             plugins.Clear();
             configure.Enabled = false;
             status.Text = Localization.IsEnglish ? "Reading plugin list …" : "Plugin-Liste wird gelesen …";
@@ -114,10 +112,10 @@ namespace MP1.ConfigurationStudio
                         {
                             plugins.Clear();
                             plugins.AddRange(found);
-                            choice.Items.Clear();
-                            foreach (PluginInfo plugin in plugins) choice.Items.Add(plugin);
-                            if (choice.Items.Count > 0) choice.SelectedIndex = 0;
-                            configure.Enabled = choice.Items.Count > 0;
+                            var options = new List<ChoiceOption>();
+                            for (int index = 0; index < plugins.Count; index++) options.Add(new ChoiceOption(index.ToString(CultureInfo.InvariantCulture), plugins[index].ToString()));
+                            choice.SetOptions(options, plugins.Count > 0 ? "0" : String.Empty);
+                            configure.Enabled = plugins.Count > 0;
                             status.Text = plugins.Count == 0
                                 ? (Localization.IsEnglish ? "No plugin with a configuration window found." : "Kein Plugin mit Konfigurationsfenster gefunden.")
                                 : plugins.Count + (Localization.IsEnglish ? " configurable plugins" : " konfigurierbare Plugins");
@@ -183,7 +181,8 @@ namespace MP1.ConfigurationStudio
 
         private void ConfigurePlugin()
         {
-            var plugin = choice.SelectedItem as PluginInfo;
+            int index;
+            PluginInfo plugin = Int32.TryParse(choice.SelectedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out index) && index >= 0 && index < plugins.Count ? plugins[index] : null;
             if (plugin == null) return;
             try
             {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.ServiceProcess;
 using System.Text;
@@ -111,7 +112,7 @@ namespace MP1.ConfigurationStudio
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
-            var button = new Button { Text = text, Font = font, Height = Px(30), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(10), 0, Px(10), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), Px(4)) };
+            var button = new StudioButton { Text = text, Font = font, Height = Px(30), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(10), 0, Px(10), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), Px(4)) };
             button.FlatAppearance.BorderColor = palette.Border;
             button.Click += click;
             return button;
@@ -351,7 +352,7 @@ namespace MP1.ConfigurationStudio
         private sealed class TvDetailsDialog : Form
         {
             private readonly float scale;
-            private readonly ComboBox category = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+            private readonly StudioChoice category;
             private readonly ListBox list = new ListBox();
             private readonly List<string[]> groups = new List<string[]>();
 
@@ -380,14 +381,12 @@ namespace MP1.ConfigurationStudio
                 top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
                 top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
                 top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Category" : "Kategorie", ForeColor = Palette.For(true).Muted, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-                category.Dock = DockStyle.Fill;
-                category.Font = Typography.Create(10f * scale, FontStyle.Regular);
-                category.BackColor = Palette.For(true).Input;
-                category.ForeColor = Palette.For(true).Text;
-                foreach (string[] group in groups) category.Items.Add(group[0] + " (" + group[1].Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Length + ")");
+                category = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = Typography.Create(10f * scale, FontStyle.Regular), Colors = () => Palette.For(true), AccessibleName = Localization.IsEnglish ? "Category" : "Kategorie" };
+                var options = new List<ChoiceOption>();
+                foreach (string[] group in groups) options.Add(new ChoiceOption(options.Count.ToString(CultureInfo.InvariantCulture), group[0] + " (" + group[1].Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Length + ")"));
+                category.SetOptions(options, "0");
                 category.SelectedIndexChanged += delegate { FillList(); };
                 top.Controls.Add(category, 1, 0);
-
                 list.Dock = DockStyle.Fill;
                 list.BackColor = Palette.For(true).Input;
                 list.ForeColor = Palette.For(true).Text;
@@ -397,14 +396,18 @@ namespace MP1.ConfigurationStudio
                 list.Margin = new Padding(Px(10), Px(4), Px(10), Px(10));
 
                 var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(48), FlowDirection = FlowDirection.RightToLeft, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(8), Px(10), Px(8)) };
-                var close = new Button { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var close = new StudioButton { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 close.FlatAppearance.BorderColor = Palette.For(true).Border;
                 bottom.Controls.Add(close);
                 Controls.Add(list);
                 Controls.Add(bottom);
                 Controls.Add(top);
                 CancelButton = close;
-                if (category.Items.Count > 0) category.SelectedIndex = 0;
+                if (category.Count > 0)
+                {
+                    category.SelectedIndex = 0;
+                    FillList();
+                }
             }
 
             private int Px(float value) { return (int)Math.Round(value * scale); }

@@ -43,6 +43,7 @@ namespace MP1.ConfigurationStudio
             {
                 int value = dark ? 1 : 0;
                 DwmSetWindowAttribute(handle, 20, ref value, 4);
+                DwmSetWindowAttribute(handle, 19, ref value, 4);
             }
             catch (DllNotFoundException) { }
             catch (EntryPointNotFoundException) { }
