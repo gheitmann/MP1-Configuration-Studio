@@ -614,6 +614,8 @@ namespace MP1.ConfigurationStudio
         private readonly TextBox inner;
         private bool hover;
         public Func<Palette> Colors;
+        public string IconName;
+        public string HintText;
 
         public StudioTextInput(float scale, Font font, Palette palette)
         {
@@ -628,12 +630,29 @@ namespace MP1.ConfigurationStudio
             inner.MouseEnter += delegate { hover = true; Invalidate(); };
             inner.MouseLeave += delegate { hover = false; Invalidate(); };
             inner.TextChanged += delegate { OnTextChanged(EventArgs.Empty); };
-            inner.SetBounds(S(9), Math.Max(1, (Height - inner.PreferredHeight) / 2), Math.Max(80, Width - S(18)), inner.PreferredHeight);
+            ApplyInnerBounds();
         }
 
         private int S(int value) { return (int)Math.Round(value * scale); }
 
         public TextBox Box { get { return inner; } }
+
+        public void ConfigureIcon(string icon, string hint)
+        {
+            IconName = icon;
+            HintText = hint;
+            ApplyInnerBounds();
+            Invalidate();
+        }
+
+        private void ApplyInnerBounds()
+        {
+            if (inner == null) return;
+            int left = String.IsNullOrEmpty(IconName) ? S(9) : S(30);
+            int right = String.IsNullOrEmpty(HintText) ? S(9) : S(58);
+            int height = inner.PreferredHeight;
+            inner.SetBounds(left, Math.Max(1, (Height - height) / 2), Math.Max(1, Width - left - right), height);
+        }
 
         public override string Text
         {
@@ -647,10 +666,7 @@ namespace MP1.ConfigurationStudio
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            if (inner == null) return;
-            int inset = S(9);
-            int height = inner.PreferredHeight;
-            inner.SetBounds(inset, Math.Max(1, (Height - height) / 2), Math.Max(1, Width - inset * 2), height);
+            ApplyInnerBounds();
         }
 
         protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
@@ -672,6 +688,11 @@ namespace MP1.ConfigurationStudio
                 Color border = inner.Focused ? palette.Accent : (hover ? StudioChoice.Blend(palette.Border, palette.Accent, 0.55f) : palette.Border);
                 using (var pen = new Pen(border)) e.Graphics.DrawPath(pen, path);
             }
+            if (!String.IsNullOrEmpty(IconName))
+                StudioIcons.Draw(e.Graphics, IconName, new Rectangle(S(8), (Height - S(16)) / 2, S(16), S(16)), inner.Focused ? palette.Accent : palette.Muted);
+            if (!String.IsNullOrEmpty(HintText) && String.IsNullOrEmpty(inner.Text))
+                TextRenderer.DrawText(e.Graphics, HintText, Font, new Rectangle(Math.Max(0, Width - S(56)), 0, S(48), Height), palette.Muted,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.Right | TextFormatFlags.NoPrefix);
         }
     }
 

@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.44")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.45")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -84,14 +84,21 @@ namespace MP1.ConfigurationStudio
                         return 0;
                     }
                     bool restartStudio = false;
+                    bool restartNative = true;
                     string restartPreferences = null;
+                    string restartSection = nativeSection;
                     try
                     {
-                        using(var form=new NativeStudioForm(runtime,preferences,nativeSection))
+                        while (restartNative)
                         {
-                            form.ShowDialog();
-                            restartStudio = form.StartStudioRequested;
-                            restartPreferences = form.PreferencesPath;
+                            using(var form=new NativeStudioForm(runtime,preferences,restartSection))
+                            {
+                                form.ShowDialog();
+                                restartStudio = form.StartStudioRequested;
+                                restartNative = form.RestartNativeRequested && !form.StartStudioRequested;
+                                if (!String.IsNullOrEmpty(form.RestartSection)) restartSection = form.RestartSection;
+                                restartPreferences = form.PreferencesPath;
+                            }
                         }
                         return 0;
                     }

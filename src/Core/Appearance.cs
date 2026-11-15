@@ -9,7 +9,7 @@ namespace MP1.ConfigurationStudio
 {
     public sealed class Appearance
     {
-        public const int CurrentSchema = 2;
+        public const int CurrentSchema = 3;
 
         public bool Dark = true;
         public bool ContextVisible = false;
@@ -17,7 +17,8 @@ namespace MP1.ConfigurationStudio
         public bool PreSaveBackup = true;
         public bool NativeOriginal = true;
         public bool Glass = true;
-        public string Language = "de";
+        public bool ExpertMode = true;
+        public string Language = "en";
         public string ThemeMode = "Dunkel";
         public int Width = 1360;
         public int Height = 900;
@@ -47,7 +48,8 @@ namespace MP1.ConfigurationStudio
             PreSaveBackup = true;
             NativeOriginal = true;
             Glass = true;
-            Language = Localization.DefaultCode;
+            ExpertMode = true;
+            Language = "en";
             ThemeMode = "Dunkel";
             Width = 1360;
             Height = 900;
@@ -82,10 +84,12 @@ namespace MP1.ConfigurationStudio
                 PreSaveBackup = root.GetAttribute("preSaveBackup") != "false";
                 NativeOriginal = root.GetAttribute("nativeOriginal") != "false";
                 Glass = root.GetAttribute("glass") != "false";
+                ExpertMode = root.GetAttribute("expert") != "false";
                 string language = root.GetAttribute("language");
-                Language = String.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en"
+                Language = SchemaVersion < 3 ? "en"
+                    : String.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en"
                     : String.Equals(language, "de", StringComparison.OrdinalIgnoreCase) ? "de"
-                    : Localization.DefaultCode;
+                    : "en";
 
                 int value;
                 if (Int32.TryParse(root.GetAttribute("textScale"), out value))
@@ -134,6 +138,7 @@ namespace MP1.ConfigurationStudio
                     writer.WriteAttributeString("preSaveBackup", PreSaveBackup ? "true" : "false");
                     writer.WriteAttributeString("nativeOriginal", NativeOriginal ? "true" : "false");
                     writer.WriteAttributeString("glass", Glass ? "true" : "false");
+                    writer.WriteAttributeString("expert", ExpertMode ? "true" : "false");
                     writer.WriteAttributeString("language", Language);
                     writer.WriteAttributeString("width", Width.ToString(CultureInfo.InvariantCulture));
                     writer.WriteAttributeString("height", Height.ToString(CultureInfo.InvariantCulture));
@@ -166,6 +171,7 @@ namespace MP1.ConfigurationStudio
     {
         public Color Background, Panel, Input, Border, Text, Muted, Accent, Selection, Hover, Primary, SelectionText, PrimaryText;
         internal static bool ForceHighContrast {get;set;}
+        public static bool UseLight { get; set; }
 
         internal static bool HighContrastActive
         {
@@ -174,6 +180,7 @@ namespace MP1.ConfigurationStudio
 
         public static Palette For(bool dark)
         {
+            if (UseLight) dark = false;
             if (HighContrastActive)
             {
                 return new Palette

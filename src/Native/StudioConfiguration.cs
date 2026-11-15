@@ -1,17 +1,34 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace MP1.ConfigurationStudio
 {
+    internal sealed class PendingChange
+    {
+        public string Section;
+        public string Entry;
+        public string OldValue;
+        public string NewValue;
+        public bool Removed;
+    }
+
     internal sealed class StudioConfiguration
     {
         private readonly XmlDocument document;
+        private readonly Dictionary<string, PendingChange> pending = new Dictionary<string, PendingChange>(StringComparer.OrdinalIgnoreCase);
         private bool changed;
 
         public string Path { get; private set; }
         public bool IsDirty { get { return changed; } }
+        public IEnumerable<PendingChange> PendingChanges
+        {
+            get { return pending.Values.OrderBy(change => change.Section, StringComparer.CurrentCultureIgnoreCase).ThenBy(change => change.Entry, StringComparer.CurrentCultureIgnoreCase); }
+        }
+        public int PendingCount { get { return pending.Count; } }
 
         private StudioConfiguration(string path, XmlDocument document)
         {
@@ -94,6 +111,7 @@ namespace MP1.ConfigurationStudio
         public void Set(string section, string entry, string value)
         {
             XmlNode node = FindEntry(section, entry);
+            string previousValue = node == null ? null : node.InnerText;
             if (node == null)
             {
                 XmlNode sectionNode = FindSection(section);
@@ -113,7 +131,29 @@ namespace MP1.ConfigurationStudio
             }
             if (node.InnerText == value) return;
             node.InnerText = value;
-            changed = true;
+            TrackChange(section, entry, previousValue, value, false);
+        }
+
+        private void TrackChange(string section, string entry, string previousValue, string newValue, bool removed)
+        {
+            string key = section + "\u0001" + entry;
+            PendingChange record;
+            if (!pending.TryGetValue(key, out record))
+            {
+                record = new PendingChange { Section = section, Entry = entry, OldValue = previousValue };
+                pending[key] = record;
+            }
+            if (removed && record.OldValue == null)
+            {
+                pending.Remove(key);
+                changed = pending.Count > 0;
+                return;
+            }
+            record.NewValue = newValue;
+            record.Removed = removed;
+            if (!removed && String.Equals(record.OldValue, newValue, StringComparison.Ordinal))
+                pending.Remove(key);
+            changed = pending.Count > 0;
         }
 
         public System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> Entries(string section)
@@ -134,8 +174,9 @@ namespace MP1.ConfigurationStudio
         {
             XmlNode node = FindEntry(section, entry);
             if (node == null) return;
+            string previousValue = node.InnerText;
             node.ParentNode.RemoveChild(node);
-            changed = true;
+            TrackChange(section, entry, previousValue, null, true);
         }
 
         public void SetBool(string section, string entry, bool value)
@@ -170,6 +211,7 @@ namespace MP1.ConfigurationStudio
                 if (File.Exists(temporary)) File.Delete(temporary);
             }
             changed = false;
+            pending.Clear();
             StudioLog.Info("Native configuration saved: " + Path + "; backup=" + backup);
             return backup;
         }

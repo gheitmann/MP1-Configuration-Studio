@@ -36,7 +36,7 @@ namespace MP1.ConfigurationStudio
                 Size size=required();bool v=size.Height>Height;bool h=horizontalAllowed&&size.Width>Width-(v?13:0);v=size.Height>Height-(h?13:0);h=horizontalAllowed&&size.Width>Width-(v?13:0);
                 viewport.SetBounds(0,0,Math.Max(1,Width-(v?13:0)),Math.Max(1,Height-(h?13:0)));
                 vertical.Visible=v;horizontal.Visible=h;vertical.SetBounds(viewport.Right+2,0,11,viewport.Height);horizontal.SetBounds(0,viewport.Bottom+2,viewport.Width,11);
-                content.SetBounds(0,0,viewport.Width+(v?SystemInformation.VerticalScrollBarWidth:0),viewport.Height+(h||!horizontalAllowed?SystemInformation.HorizontalScrollBarHeight:0));
+                content.SetBounds(0,0,viewport.Width+(v?SystemInformation.VerticalScrollBarWidth:0),viewport.Height+(h?SystemInformation.HorizontalScrollBarHeight:0));
                 vertical.Maximum=Math.Max(0,size.Height-viewport.Height);vertical.Viewport=viewport.Height;horizontal.Maximum=Math.Max(0,size.Width-viewport.Width);horizontal.Viewport=viewport.Width;Sync();
                 if(required()==size)break;
                 }

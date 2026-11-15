@@ -263,9 +263,9 @@ namespace MP1.ConfigurationStudio
             saved.Language="en";
             saved.PreSaveBackup=false;
             saved.Save();
-            Check(saved.SchemaVersion==2&&File.ReadAllText(versionTwoPath).Contains("schema=\"2\""),"appearance save writes schema version 2");
+            Check(saved.SchemaVersion==3&&File.ReadAllText(versionTwoPath).Contains("schema=\"3\""),"appearance save writes schema version 3");
             var reloaded=new Appearance(versionTwoPath);
-            Check(reloaded.SchemaVersion==2&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen&&reloaded.Language=="en"&&!reloaded.PreSaveBackup,"schema version 2 round trip preserves values and the pre-save backup setting");
+            Check(reloaded.SchemaVersion==3&&!reloaded.Dark&&!reloaded.ContextVisible&&reloaded.TextScale==115&&reloaded.Width==1280&&reloaded.Height==720&&reloaded.OnboardingSeen&&reloaded.Language=="en"&&!reloaded.PreSaveBackup,"schema version 2 round trip preserves values and the pre-save backup setting");
 
             string corruptPath=Path.Combine(directory,"appearance-corrupt.xml");
             File.WriteAllText(corruptPath,"<appearance theme=\"Hell\" textScale=\"oops\"><broken>");
@@ -370,6 +370,12 @@ namespace MP1.ConfigurationStudio
             }
             using(var button=new StudioButton{Text="OK"})
                 Check(button.FlatStyle==FlatStyle.Flat&&!button.UseVisualStyleBackColor,"editor buttons use the rounded Studio style");
+            Palette.UseLight=true;
+            Palette lightPalette=Palette.For(true);
+            Palette.UseLight=false;
+            Check(lightPalette.Background.R>200&&lightPalette.Text.R<100,"light theme palette exposes a light surface with dark text");
+            using(var dialog=new PendingChangesDialog(new[]{new PendingChange{Section="general",Entry="probe",OldValue="no",NewValue="yes"}},0,1f))
+                Check(dialog.Text.Length>0&&dialog.Controls.Count>0,"pending changes dialog constructs");
         }
         private static void RunCloseGuardChecks()
         {
@@ -428,7 +434,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.44"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.45"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -569,6 +575,10 @@ namespace MP1.ConfigurationStudio
    var entryConfiguration=StudioConfiguration.Load(entryPath);
    entryConfiguration.Set("general","newEntry","42");
    entryConfiguration.Save(Path.Combine(directory,"native-entry-backups"));
+   entryConfiguration.Set("general","newEntry","43");
+   Check(entryConfiguration.PendingCount==1&&entryConfiguration.PendingChanges.Any(change=>change.Entry=="newEntry"&&change.NewValue=="43"),"pending changes list tracks modified entries");
+   entryConfiguration.Set("general","newEntry","42");
+   Check(entryConfiguration.PendingCount==0,"pending changes list drops entries that were reverted");
    var entryReloaded=StudioConfiguration.Load(entryPath);
    Check(entryReloaded.Get("general","newEntry","")=="42","raw XML editor can add entries");
    entryReloaded.Remove("general","newEntry");
@@ -580,7 +590,7 @@ namespace MP1.ConfigurationStudio
             string nativePreferences=Path.Combine(directory,"native-preferences.xml");
             using(var nativeForm=new NativeStudioForm(runtime,nativePreferences))
             {
-                Check(nativeForm.Text.Contains("Neue Oberfläche")&&nativeForm.Controls.Count>0,"native Studio form constructs with the core sections");
+                Check((nativeForm.Text.Contains("New interface")||nativeForm.Text.Contains("Neue Oberfläche"))&&nativeForm.Controls.Count>0,"native Studio form constructs with the core sections");
                 var showSection=typeof(NativeStudioForm).GetMethod("ShowSection",BindingFlags.Instance|BindingFlags.NonPublic,null,new[]{typeof(NativeSection),typeof(StudioAction)},null);
                 int builtSections=0;
                 foreach(var section in NativeSettingsSchema.Sections())

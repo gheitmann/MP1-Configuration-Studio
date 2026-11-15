@@ -149,7 +149,7 @@ namespace MP1.ConfigurationStudio
 
         public static string DefaultCode
         {
-            get { return String.Equals(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "de", StringComparison.OrdinalIgnoreCase) ? "de" : "en"; }
+            get { return "en"; }
         }
 
         public static string T(string german)
