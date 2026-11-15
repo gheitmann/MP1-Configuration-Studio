@@ -397,8 +397,8 @@ namespace MP1.ConfigurationStudio
             main.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
             main.Controls.Add(Field(L("Feld", "Field"), Combo(FilterFieldOptions(), Read(filter, "whereClause"), delegate(string value) { Write(filter, "whereClause", value); })), 0, 0);
             main.Controls.Add(Field(L("Operator", "Operator"), Combo(new[] { "=", ">", "<", "group", "like", "<>" }, Read(filter, "sqloperator"), delegate(string value) { Write(filter, "sqloperator", value); })), 1, 0);
-            main.Controls.Add(Field(L("Wert", "Value"), Text(Read(filter, "whereValue"), delegate(string value) { Write(filter, "whereValue", value); })), 0, 1);
-            main.Controls.Add(Field(L("Limit", "Limit"), Text(Read(filter, "limit"), delegate(string value) { Write(filter, "limit", value); })), 1, 1);
+            main.Controls.Add(Field(L("Wert", "Value"), TextInput(Read(filter, "whereValue"), delegate(string value) { Write(filter, "whereValue", value); })), 0, 1);
+            main.Controls.Add(Field(L("Limit", "Limit"), TextInput(Read(filter, "limit"), delegate(string value) { Write(filter, "limit", value); })), 1, 1);
             card.Controls.Add(main, 0, 0);
 
             var display = new TableLayoutPanel { ColumnCount = 2, RowCount = 1, AutoSize = true, Dock = DockStyle.Fill, BackColor = palette.Panel, Margin = new Padding(0, Px(6), 0, 0) };
@@ -441,7 +441,7 @@ namespace MP1.ConfigurationStudio
             return combo;
         }
 
-        private TextBox Text(string value, Action<string> changed)
+        private TextBox TextInput(string value, Action<string> changed)
         {
             var box = new TextBox { Text = value ?? string.Empty, Font = Typography.Create(9.5f * scale, FontStyle.Regular), BackColor = palette.Input, ForeColor = palette.Text, BorderStyle = BorderStyle.FixedSingle };
             box.TextChanged += delegate { changed(box.Text); };
@@ -832,13 +832,13 @@ namespace MP1.ConfigurationStudio
         private sealed class FilterDialog : Form
         {
             private readonly float scale;
-            private readonly ComboBox field = new ComboBox();
+            private readonly ComboBox fieldChoice = new ComboBox();
             private readonly ComboBox sqlOperator = new ComboBox();
             private readonly TextBox value = new TextBox();
             private readonly ComboBox sort = new ComboBox();
             private readonly ComboBox view = new ComboBox();
             private readonly TextBox limit = new TextBox();
-            public string Field { get { return field.Text.Trim(); } }
+            public string Field { get { return fieldChoice.Text.Trim(); } }
             public string Operator { get { return sqlOperator.Text.Trim(); } }
             public string Value { get { return value.Text; } }
             public string Sort { get { return sort.Text.Trim(); } }
@@ -860,13 +860,13 @@ namespace MP1.ConfigurationStudio
                 var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 8, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                Fill(field, fields, null);
+                Fill(fieldChoice, fields, null);
                 Fill(sqlOperator, new[] { "=", ">", "<", "group", "like", "<>" }, "=");
                 value.Text = "*";
                 Fill(sort, sorts, null);
                 Fill(view, new[] { "List", "Icons", "Big Icons", "Cover Flow" }, "List");
                 limit.Text = "-1";
-                AddRow(table, 0, Localization.IsEnglish ? "Field" : "Feld", field);
+                AddRow(table, 0, Localization.IsEnglish ? "Field" : "Feld", fieldChoice);
                 AddRow(table, 1, "Operator", sqlOperator);
                 AddRow(table, 2, Localization.IsEnglish ? "Value" : "Wert", value);
                 AddRow(table, 3, Localization.IsEnglish ? "Sort" : "Sortierung", sort);
@@ -879,7 +879,7 @@ namespace MP1.ConfigurationStudio
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
                 ok.Click += delegate
                 {
-                    if (String.IsNullOrWhiteSpace(field.Text)) return;
+                    if (String.IsNullOrWhiteSpace(fieldChoice.Text)) return;
                     DialogResult = DialogResult.OK;
                     Close();
                 };
