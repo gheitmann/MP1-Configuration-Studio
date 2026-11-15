@@ -56,6 +56,12 @@ jobs:
         shell: powershell
         run: .\build.ps1
 
+      - name: Build MediaPortal plugin
+        shell: powershell
+        run: |
+          dotnet build 'plugin\MP1.ConfigurationStudio.Plugin.csproj' -c Release
+          if ($LASTEXITCODE -ne 0) { throw "Plugin build failed with exit code $LASTEXITCODE" }
+
       - name: Sign application
         shell: powershell
         env:
@@ -128,6 +134,24 @@ jobs:
       - name: Package portable ZIP
         shell: powershell
         run: .\tools\Package-Studio.ps1 -Version '${{ steps.version.outputs.value }}'
+
+      - name: Package MediaPortal plugin
+        shell: powershell
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $output = Join-Path (Get-Location) 'dist\package'
+          $stage = Join-Path $output "plugin-$version"
+          if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Copy-Item -LiteralPath 'plugin\bin\Release\MP1.ConfigurationStudio.Plugin.dll' -Destination $stage
+          Copy-Item -LiteralPath 'plugin\Skin\MP1StudioSettings.xml' -Destination $stage
+          Copy-Item -LiteralPath 'tools\Install-MPPlugin.ps1' -Destination $stage
+          Copy-Item -LiteralPath 'plugin\README.md' -Destination $stage
+          $notes = "docs\RELEASE-PLUGIN-$version.md"
+          if (Test-Path -LiteralPath $notes) { Copy-Item -LiteralPath $notes -Destination $stage }
+          $zip = Join-Path $output "MP1-Configuration-Studio-Plugin-$version.zip"
+          if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
 
       - name: Install Inno Setup
         shell: powershell
