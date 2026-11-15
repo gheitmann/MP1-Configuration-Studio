@@ -99,7 +99,6 @@ namespace MP1.ConfigurationStudio
             viewList.SelectedIndexChanged += delegate { BuildDetail(); };
             left.Controls.Add(viewList, 0, 1);
             split.Controls.Add(left, 0, 0);
-            split.Controls.Add(detail, 1, 0);
             detail.Controls.Add(detailFlow);
             detail.Resize += delegate
             {
@@ -110,6 +109,7 @@ namespace MP1.ConfigurationStudio
                 ResizeCards();
             };
 
+            split.Controls.Add(new StudioScrollHost(detail, delegate { return new Size(Math.Max(1, detailFlow.Width), Math.Max(1, detailFlow.Height)); }, () => palette, false, (Color?)palette.Background), 1, 0);
             Controls.Add(split);
             Controls.Add(top);
             LoadFile();

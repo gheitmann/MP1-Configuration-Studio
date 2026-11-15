@@ -728,6 +728,129 @@ namespace MP1.ConfigurationStudio
         }
     }
 
+    /// <summary>Compact dark slider used by the DSP editor.</summary>
+    internal sealed class StudioTrackBar : Control
+    {
+        private readonly float scale;
+        private bool hover;
+        private bool dragging;
+        private int minimum;
+        private int maximum = 10;
+        private int value;
+        private int tickFrequency = 1;
+        public Func<Palette> Colors;
+
+        public StudioTrackBar(float scale)
+        {
+            this.scale = scale;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
+            Height = S(30);
+            TabStop = true;
+            Cursor = Cursors.Hand;
+            AccessibleRole = AccessibleRole.Slider;
+        }
+
+        private int S(int value) { return (int)Math.Round(value * scale); }
+
+        public int Minimum { get { return minimum; } set { minimum = value; if (this.value < minimum) this.value = minimum; Invalidate(); } }
+        public int Maximum { get { return maximum; } set { maximum = Math.Max(value, minimum); if (this.value > maximum) this.value = maximum; Invalidate(); } }
+        public int TickFrequency { get { return tickFrequency; } set { tickFrequency = Math.Max(1, value); Invalidate(); } }
+        public int SmallChange { get; set; }
+        public int LargeChange { get; set; }
+
+        public int Value
+        {
+            get { return value; }
+            set
+            {
+                int next = Math.Max(minimum, Math.Min(maximum, value));
+                if (next == this.value) return;
+                this.value = next;
+                Invalidate();
+                if (ValueChanged != null) ValueChanged(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler ValueChanged;
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; dragging = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e) { if (e.Button == MouseButtons.Left) { Focus(); dragging = true; SetFromPoint(e.X); } base.OnMouseDown(e); }
+        protected override void OnMouseMove(MouseEventArgs e) { if (dragging) SetFromPoint(e.X); base.OnMouseMove(e); }
+        protected override void OnMouseUp(MouseEventArgs e) { dragging = false; Invalidate(); base.OnMouseUp(e); }
+        protected override void OnGotFocus(EventArgs e) { Invalidate(); base.OnGotFocus(e); }
+        protected override void OnLostFocus(EventArgs e) { Invalidate(); base.OnLostFocus(e); }
+
+        private void SetFromPoint(int x)
+        {
+            int radius = S(8);
+            int travel = Math.Max(1, Width - radius * 2);
+            int position = Math.Max(0, Math.Min(travel, x - radius));
+            Value = minimum + (int)Math.Round((double)position / travel * (maximum - minimum));
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            int step = e.Shift ? Math.Max(1, LargeChange) : Math.Max(1, SmallChange);
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.Down) { Value -= step; e.Handled = true; }
+            else if (e.KeyCode == Keys.Right || e.KeyCode == Keys.Up) { Value += step; e.Handled = true; }
+            else if (e.KeyCode == Keys.Home) { Value = minimum; e.Handled = true; }
+            else if (e.KeyCode == Keys.End) { Value = maximum; e.Handled = true; }
+            base.OnKeyDown(e);
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Left:
+                case Keys.Right:
+                case Keys.Up:
+                case Keys.Down:
+                case Keys.Home:
+                case Keys.End:
+                    return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(Parent != null ? Parent.BackColor : palette.Panel);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            int radius = S(8);
+            int mid = Height / 2;
+            int left = radius;
+            int right = Width - radius;
+            Color groove = Enabled ? palette.Border : StudioChoice.Blend(palette.Border, palette.Background, 0.5f);
+            using (var pen = new Pen(groove, S(4)))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                e.Graphics.DrawLine(pen, left, mid, right, mid);
+            }
+            if (tickFrequency > 0 && maximum > minimum)
+            {
+                using (var pen = new Pen(Color.FromArgb(120, palette.Muted), S(1)))
+                {
+                    for (int tick = minimum; tick <= maximum; tick += tickFrequency)
+                    {
+                        double ratio = (double)(tick - minimum) / (maximum - minimum);
+                        int x = left + (int)Math.Round(ratio * (right - left));
+                        e.Graphics.DrawLine(pen, x, mid + S(5), x, mid + S(8));
+                    }
+                }
+            }
+            double position = maximum == minimum ? 0 : (double)(value - minimum) / (maximum - minimum);
+            int thumbX = left + (int)Math.Round(position * (right - left));
+            Color fill = !Enabled ? palette.Muted : (dragging || hover ? StudioChoice.Blend(palette.Accent, Color.White, 0.18f) : palette.Accent);
+            using (var brush = new SolidBrush(fill)) e.Graphics.FillEllipse(brush, thumbX - radius, mid - radius, radius * 2, radius * 2);
+            if (Focused)
+                using (var pen = new Pen(Color.FromArgb(150, palette.Accent))) e.Graphics.DrawEllipse(pen, thumbX - radius - S(2), mid - radius - S(2), radius * 2 + S(4), radius * 2 + S(4));
+        }
+    }
+
     /// <summary>Rounded dark button used by the structured editors.</summary>
     internal sealed class StudioButton : Button
     {

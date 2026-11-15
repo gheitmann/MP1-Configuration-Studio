@@ -28,12 +28,12 @@ namespace MP1.ConfigurationStudio
         private bool loading;
         private bool building;
         private CheckBox gainCheck;
-        private TrackBar gainTrack;
+        private StudioTrackBar gainTrack;
         private Label gainLabel;
         private CheckBox dynCheck;
         private StudioChoice dynCombo;
         private CheckBox compCheck;
-        private TrackBar compTrack;
+        private StudioTrackBar compTrack;
         private Label compLabel;
 
         public NativeDspEditor(string configDirectory, string runtime, float scale)
@@ -80,7 +80,7 @@ namespace MP1.ConfigurationStudio
 
             scroll.Controls.Add(cards);
             scroll.Resize += delegate { ResizeCards(); };
-            Controls.Add(scroll);
+            Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, cards.Width), Math.Max(1, cards.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
             LoadFile();
@@ -219,7 +219,7 @@ namespace MP1.ConfigurationStudio
             XmlElement gainEffect = FindEffect("Gain");
             if (gainEffect != null)
                 double.TryParse(ReadParameter(gainEffect, "Gain_dbV"), NumberStyles.Float, CultureInfo.InvariantCulture, out gain);
-            gainTrack = new TrackBar { Minimum = -160, Maximum = 160, TickFrequency = 20, SmallChange = 1, LargeChange = 10, Value = Math.Max(-160, Math.Min(160, (int)Math.Round(gain * 10))), Dock = DockStyle.Fill, BackColor = palette.Panel, Height = Px(30), Margin = new Padding(0) };
+            gainTrack = new StudioTrackBar(scale) { Minimum = -160, Maximum = 160, TickFrequency = 20, SmallChange = 1, LargeChange = 10, Value = Math.Max(-160, Math.Min(160, (int)Math.Round(gain * 10))), Dock = DockStyle.Fill, Colors = () => palette, Height = Px(30), Margin = new Padding(0) };
             gainLabel = new Label { Text = gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB", ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
             gainCheck = new StudioCheck(scale) { Text = "Gain", Checked = gainEffect != null, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), Font = Typography.Create(9.5f * scale, FontStyle.Regular), Colors = () => palette, Margin = new Padding(0) };
             card.Controls.Add(KnownRow(gainCheck, gainTrack, gainLabel), 0, 1);
@@ -270,7 +270,7 @@ namespace MP1.ConfigurationStudio
             int threshold = -60;
             XmlElement compEffect = FindEffect("Compressor");
             if (compEffect != null) Int32.TryParse(ReadParameter(compEffect, "Threshold"), out threshold);
-            compTrack = new TrackBar { Minimum = -250, Maximum = 0, TickFrequency = 25, SmallChange = 1, LargeChange = 10, Value = Math.Max(-250, Math.Min(0, threshold)), Dock = DockStyle.Fill, BackColor = palette.Panel, Height = Px(30), Margin = new Padding(0) };
+            compTrack = new StudioTrackBar(scale) { Minimum = -250, Maximum = 0, TickFrequency = 25, SmallChange = 1, LargeChange = 10, Value = Math.Max(-250, Math.Min(0, threshold)), Dock = DockStyle.Fill, Colors = () => palette, Height = Px(30), Margin = new Padding(0) };
             compLabel = new Label { Text = (threshold / 10.0).ToString("0.0", CultureInfo.InvariantCulture) + " dB", ForeColor = palette.Text, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight };
             compCheck = new StudioCheck(scale) { Text = L("Kompressor", "Compressor"), Checked = compEffect != null, AutoSize = false, Dock = DockStyle.Fill, Height = Px(30), Font = Typography.Create(9.5f * scale, FontStyle.Regular), Colors = () => palette, Margin = new Padding(0) };
             card.Controls.Add(KnownRow(compCheck, compTrack, compLabel), 0, 3);

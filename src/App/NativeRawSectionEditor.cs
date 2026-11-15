@@ -53,7 +53,7 @@ namespace MP1.ConfigurationStudio
             scroll.Resize += delegate { LayoutTable(); };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(36), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(3), 0, 0) };
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen", delegate { AddEntry(); }, body));
-            Controls.Add(scroll);
+            Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, table.Width), Math.Max(1, table.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
             Build();

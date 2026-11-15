@@ -83,7 +83,7 @@ namespace MP1.ConfigurationStudio
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 14));
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
-            Controls.Add(scroll);
+            Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, table.Width), Math.Max(1, table.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
             LoadFile();

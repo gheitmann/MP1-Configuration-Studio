@@ -299,12 +299,7 @@ namespace MP1.ConfigurationStudio
             if (current != null && !Object.ReferenceEquals(current, section) && !ConfirmDiscardEditors())
             {
                 StudioAction currentItem = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, current));
-                foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
-                {
-                    item.Selected = Object.ReferenceEquals(item, currentItem);
-                    item.ClearHover();
-                }
-                navigation.Invalidate();
+                SelectNavigationItem(currentItem);
                 return;
             }
             if (Object.ReferenceEquals(current, section) && requestedTab >= 0 && !ConfirmDiscardEditors()) return;
@@ -367,12 +362,7 @@ namespace MP1.ConfigurationStudio
             }
             finally { table.ResumeLayout(true); }
             StudioAction targetItem = selected ?? navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => Object.ReferenceEquals(item.Tag, section));
-            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
-            {
-                item.Selected = Object.ReferenceEquals(item, targetItem);
-                item.ClearHover();
-            }
-            navigation.Invalidate();
+            SelectNavigationItem(targetItem);
             if (targetItem != null && (targetItem.Bounds.Top < 0 || targetItem.Bounds.Bottom > navigation.ClientSize.Height))
                 navigation.AutoScrollPosition = new Point(0, Math.Max(0, targetItem.Bounds.Top));
             LayoutTable();
@@ -1177,6 +1167,21 @@ namespace MP1.ConfigurationStudio
         private void ClearNavigationHover()
         {
             foreach (StudioAction item in navigation.Controls.OfType<StudioAction>()) item.ClearHover();
+        }
+
+        private void SelectNavigationItem(StudioAction target)
+        {
+            foreach (StudioAction item in navigation.Controls.OfType<StudioAction>())
+            {
+                bool selected = Object.ReferenceEquals(item, target);
+                if (item.Selected != selected)
+                {
+                    item.Selected = selected;
+                    item.Invalidate();
+                }
+                item.ClearHover();
+            }
+            navigation.Invalidate();
         }
 
         private void ApplySearch()
