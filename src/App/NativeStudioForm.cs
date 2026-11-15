@@ -49,7 +49,7 @@ namespace MP1.ConfigurationStudio
         private readonly Dictionary<string, int> tabSelection = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private NativeSection current;
         private float scale;
-        private Font body, heading, small;
+        private Font body, heading, small, smallUnderline;
         private bool dirty;
         private bool suppressClosePrompt;
         public bool StartStudioRequested { get; private set; }
@@ -76,6 +76,7 @@ namespace MP1.ConfigurationStudio
             body = Typography.Create(10f * scale, FontStyle.Regular);
             heading = Typography.Create(18f * scale, FontStyle.Regular);
             small = Typography.Create(9f * scale, FontStyle.Regular);
+            smallUnderline = new Font(small, small.Style | FontStyle.Underline);
             Font = body;
             palette = Palette.For(true);
             BackColor = palette.Background;
@@ -86,6 +87,7 @@ namespace MP1.ConfigurationStudio
             ChoiceCatalog.Configure(Path.GetDirectoryName(configuration.Path), runtime);
             BuildChrome();
             ShowSection(FindSection(initialSection) ?? sections[0]);
+            ApplySearch();
             Shown += delegate { scroll.AutoScrollPosition = Point.Empty; };
             FormClosing += OnClosing;
             Application.AddMessageFilter(this);
@@ -173,7 +175,7 @@ namespace MP1.ConfigurationStudio
             }, appearance.ThemeMode);
             themeChoice.SelectedIndexChanged += delegate { ChangeTheme(themeChoice.SelectedValue); };
 
-            helpButton = new StudioAction { Colors = () => palette, IconName = "help", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(Px(4), Px(1), Px(4), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Keyboard shortcuts" : "Tastenkürzel" };
+            helpButton = new StudioAction { Colors = () => palette, IconName = "keyboard", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(Px(4), Px(1), Px(4), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Keyboard shortcuts" : "Tastenkürzel" };
             helpButton.Click += delegate { using (var dialog = new KeyboardHelpDialog()) dialog.ShowDialog(this); };
             toolsButton = new StudioAction { Colors = () => palette, IconName = "system", Text = Localization.IsEnglish ? "Tools" : "Werkzeuge", Navigation = false, Font = body, Height = Px(30), Width = Px(124), Margin = new Padding(0, Px(1), 0, Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Tools" : "Werkzeuge" };
             toolsButton.Click += delegate { ShowToolsMenu(); };
@@ -252,6 +254,13 @@ namespace MP1.ConfigurationStudio
             status.BackColor = Color.Transparent;
             status.Cursor = Cursors.Hand;
             status.Click += delegate { ShowPendingChanges(); };
+            status.MouseEnter += delegate
+            {
+                if (!dirty) return;
+                status.Font = smallUnderline;
+                status.ForeColor = palette.Primary;
+            };
+            status.MouseLeave += delegate { if (dirty) RestoreStatus(); };
             footer.Controls.Add(status);
             footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(520) };
             closeButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
@@ -493,7 +502,7 @@ namespace MP1.ConfigurationStudio
             foreach (NativeGroup group in section.Groups)
                 tabs.Add(new SectionTab { TitleDe = group.TitleDe, TitleEn = group.TitleEn, Group = group });
             List<KeyValuePair<string, List<KeyValuePair<string, string>>>> remaining = ComputeRemaining(section);
-            if (remaining.Count > 0)
+            if (appearance.ExpertMode && remaining.Count > 0)
                 tabs.Add(new SectionTab { TitleDe = "Weitere Einstellungen", TitleEn = "More settings", Remaining = remaining });
             return tabs;
         }
@@ -1031,6 +1040,8 @@ namespace MP1.ConfigurationStudio
             if (statusTimer != null) statusTimer.Stop();
             status.Text = Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen";
             status.ForeColor = palette.Accent;
+            status.Font = smallUnderline;
+            status.Cursor = Cursors.Hand;
         }
 
         private void SaveConfiguration()
@@ -1127,6 +1138,8 @@ namespace MP1.ConfigurationStudio
         {
             status.Text = text;
             status.ForeColor = color;
+            status.Font = small;
+            status.Cursor = dirty ? Cursors.Hand : Cursors.Default;
             if (statusTimer == null)
             {
                 statusTimer = new System.Windows.Forms.Timer();
@@ -1146,11 +1159,15 @@ namespace MP1.ConfigurationStudio
             {
                 status.Text = Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen";
                 status.ForeColor = palette.Accent;
+                status.Font = smallUnderline;
+                status.Cursor = Cursors.Hand;
             }
             else
             {
                 status.Text = Localization.IsEnglish ? "Ready" : "Bereit";
                 status.ForeColor = palette.Muted;
+                status.Font = small;
+                status.Cursor = Cursors.Default;
             }
         }
 
@@ -1212,18 +1229,12 @@ namespace MP1.ConfigurationStudio
 
         private void ShowAbout()
         {
-            MessageBox.Show(this,
-                "MP1 Configuration Studio " + UpdateChecker.CurrentVersion + "\r\n\r\n" +
-                (Localization.IsEnglish ? "Configuration interface for MediaPortal 1.39.\r\nGPL-3.0-or-later." : "Konfigurationsoberfläche für MediaPortal 1.39.\r\nGPL-3.0-or-later."),
-                "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (var dialog = new AboutDialog(scale)) dialog.ShowDialog(this);
         }
 
         private bool ConfirmPreferenceRestart()
         {
-            if (!dirty) return true;
-            return MessageBox.Show(this,
-                Localization.IsEnglish ? "Discard unsaved changes and restart the interface?" : "Ungespeicherte Änderungen verwerfen und die Oberfläche neu starten?",
-                "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            return SaveOrDiscardChanges();
         }
 
         private void SwitchLanguage(string code)
@@ -1295,6 +1306,7 @@ namespace MP1.ConfigurationStudio
             body = Typography.Create(10f * scale, FontStyle.Regular);
             heading = Typography.Create(18f * scale, FontStyle.Regular);
             small = Typography.Create(9f * scale, FontStyle.Regular);
+            smallUnderline = new Font(small, small.Style | FontStyle.Underline);
             Font = body;
             ApplyMetrics();
             ShowSection(current);
@@ -1302,10 +1314,7 @@ namespace MP1.ConfigurationStudio
 
         private void StartStudioShell()
         {
-            if (dirty)
-            {
-                if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes and open the 1.9 interface?" : "Ungespeicherte Änderungen verwerfen und die 1.9-Oberfläche öffnen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-            }
+            if (!SaveOrDiscardChanges()) return;
             suppressClosePrompt = true;
             Palette.UseLight = false;
             StartStudioRequested = true;
@@ -1314,12 +1323,7 @@ namespace MP1.ConfigurationStudio
 
         private void StartClassic()
         {
-            NativeXmlFileEditor xmlEditor = table.Controls.OfType<NativeXmlFileEditor>().FirstOrDefault();
-            if (xmlEditor != null && xmlEditor.HasUnsavedChanges && !xmlEditor.ConfirmDiscardChanges()) return;
-            if (dirty)
-            {
-                if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes and open the classic interface?" : "Ungespeicherte Änderungen verwerfen und die klassische Oberfläche öffnen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-            }
+            if (!SaveOrDiscardChanges()) return;
             suppressClosePrompt = true;
             Palette.UseLight = false;
             string executable = Path.Combine(runtime, "Configuration.exe");
@@ -1330,17 +1334,30 @@ namespace MP1.ConfigurationStudio
         private void OnClosing(object sender, FormClosingEventArgs e)
         {
             if (suppressClosePrompt) return;
-            IStudioFileEditor xmlEditor = table.Controls.OfType<IStudioFileEditor>().FirstOrDefault();
-            if (xmlEditor != null && xmlEditor.HasUnsavedChanges)
+            if (!SaveOrDiscardChanges()) e.Cancel = true;
+        }
+
+        private bool HasUnsavedWork()
+        {
+            if (dirty) return true;
+            return table.Controls.OfType<IStudioFileEditor>().Any(editor => editor.HasUnsavedChanges);
+        }
+
+        private bool SaveOrDiscardChanges()
+        {
+            if (!HasUnsavedWork()) return true;
+            int files = table.Controls.OfType<IStudioFileEditor>().Count(editor => editor.HasUnsavedChanges);
+            using (var dialog = new PendingChangesDialog(configuration.PendingChanges, files, scale, true))
             {
-                if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved XML file changes?" : "Ungespeicherte XML-Dateiänderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                if (dialog.ShowDialog(this) != DialogResult.OK) return false;
+                if (dialog.DiscardRequested) return true;
+                if (dialog.SaveRequested)
                 {
-                    e.Cancel = true;
-                    return;
+                    SaveConfiguration();
+                    return !HasUnsavedWork();
                 }
             }
-            if (!dirty) return;
-            if (MessageBox.Show(this, Localization.IsEnglish ? "Discard unsaved changes?" : "Ungespeicherte Änderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) e.Cancel = true;
+            return false;
         }
 
         private int Px(float value)
@@ -1374,6 +1391,7 @@ namespace MP1.ConfigurationStudio
             if (Inside(target, navigation))
             {
                 ScrollBy(navigation, delta, Px(42));
+                if (sidebarScroll != null) sidebarScroll.SyncNow();
                 ClearNavigationHover();
                 return true;
             }
@@ -1434,6 +1452,8 @@ namespace MP1.ConfigurationStudio
             NativeDarkMode.Apply(navigation.Handle);
             NativeDarkMode.Apply(scroll.Handle);
             EnsureNavigationVisible();
+            StudioAction focused = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => item.Selected);
+            if (focused != null) focused.Focus();
             ApplyCueBanner();
         }
 
@@ -1451,6 +1471,7 @@ namespace MP1.ConfigurationStudio
             if (selected == null) return;
             if (selected.Bounds.Top < 0 || selected.Bounds.Bottom > navigation.ClientSize.Height)
                 navigation.AutoScrollPosition = new Point(0, Math.Max(0, selected.Bounds.Top));
+            if (sidebarScroll != null) sidebarScroll.SyncNow();
         }
 
         private void ClearNavigationHover()
@@ -1470,6 +1491,7 @@ namespace MP1.ConfigurationStudio
                 }
                 item.ClearHover();
             }
+            if (target != null && target.CanFocus) target.Focus();
             navigation.Invalidate();
         }
 
@@ -1491,6 +1513,7 @@ namespace MP1.ConfigurationStudio
             }
             ClearNavigationHover();
             navigation.AutoScrollPosition = Point.Empty;
+            if (sidebarScroll != null) sidebarScroll.SyncNow();
             if (active)
             {
                 status.Text = matches == 0
@@ -1508,14 +1531,20 @@ namespace MP1.ConfigurationStudio
         {
             switch ((section.Id ?? String.Empty).ToLowerInvariant())
             {
-                case "rawxml":
+                case "system":
+                case "moviedatabase":
+                case "videoviews":
+                case "musicfiles":
+                case "musicviews":
+                case "musicdsp":
+                case "keymap":
+                case "codecs":
+                case "plugins":
                 case "plugindata":
                 case "more":
                 case "files":
-                case "keymap":
-                case "videoviews":
-                case "musicviews":
-                case "musicdsp":
+                case "rawxml":
+                case "remote":
                     return true;
             }
             return false;
@@ -1545,9 +1574,35 @@ namespace MP1.ConfigurationStudio
             catch (EntryPointNotFoundException) { }
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (e.Control && e.KeyCode == Keys.S)
+            if ((keyData == Keys.Up || keyData == Keys.Down) && navigation.ContainsFocus)
+            {
+                if (MoveNavigationFocus(keyData == Keys.Down ? 1 : -1)) return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private bool MoveNavigationFocus(int delta)
+        {
+            var items = navigation.Controls.OfType<StudioAction>().Where(item => item.Visible).ToList();
+            if (items.Count == 0) return false;
+            int index = items.FindIndex(item => item.Focused);
+            if (index < 0) index = delta > 0 ? -1 : items.Count;
+            int next = Math.Max(0, Math.Min(items.Count - 1, index + delta));
+            items[next].Focus();
+            int position = -navigation.AutoScrollPosition.Y;
+            int top = items[next].Top + position;
+            int height = items[next].Height;
+            int viewport = navigation.ClientSize.Height;
+            if (top < position) navigation.AutoScrollPosition = new Point(0, Math.Max(0, top));
+            else if (top + height > position + viewport) navigation.AutoScrollPosition = new Point(0, Math.Max(0, top + height - viewport));
+            if (sidebarScroll != null) sidebarScroll.SyncNow();
+            return true;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {            if (e.Control && e.KeyCode == Keys.S)
             {
                 SaveConfiguration();
                 e.Handled = true;

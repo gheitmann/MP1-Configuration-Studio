@@ -43,6 +43,7 @@ namespace MP1.ConfigurationStudio
             }
             finally{arranging=false;}
         }
+        public void SyncNow(){Sync();}
         private void Sync(){vertical.Value=-content.AutoScrollPosition.Y;horizontal.Value=-content.AutoScrollPosition.X;vertical.Invalidate();horizontal.Invalidate();}
     }
     internal sealed class StudioScrollThumb : Control

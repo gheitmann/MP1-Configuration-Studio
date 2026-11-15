@@ -16,6 +16,7 @@ namespace MP1.ConfigurationStudio
         private readonly Panel scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         private readonly TableLayoutPanel table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 3 };
         private readonly List<string> sections;
+        private readonly ToolTip tips = new ToolTip();
         private bool updating;
 
         public event EventHandler Changed;
@@ -53,6 +54,7 @@ namespace MP1.ConfigurationStudio
             scroll.Resize += delegate { LayoutTable(); };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(36), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(3), 0, 0) };
             actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen", delegate { AddEntry(); }, body));
+            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "  × removes an entry after confirmation; saving creates a ZIP backup." : "  × entfernt einen Eintrag nach Bestätigung; Speichern legt eine ZIP-Sicherung an.", ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
             Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, table.Width), Math.Max(1, table.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
@@ -147,9 +149,13 @@ namespace MP1.ConfigurationStudio
         {
             var button = new StudioButton { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), Px(2), 0, Px(2)) };
             button.FlatAppearance.BorderColor = palette.Border;
+            tips.SetToolTip(button, Localization.IsEnglish ? "Remove this entry from MediaPortal.xml" : "Diesen Eintrag aus MediaPortal.xml entfernen");
             button.Click += delegate
             {
-                if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "Delete entry “" : "Eintrag „") + key + (Localization.IsEnglish ? "”?" : "“ löschen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                string message = Localization.IsEnglish
+                    ? "Remove entry \"" + key + "\" from section \"" + section + "\"?\r\n\r\nThe entry is deleted when you save; a ZIP backup is created first."
+                    : "Eintrag \"" + key + "\" aus dem Bereich \"" + section + "\" entfernen?\r\n\r\nDer Eintrag wird beim Speichern gelöscht; vorher wird eine ZIP-Sicherung erstellt.";
+                if (MessageBox.Show(FindForm(), message, "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
                 configuration.Remove(section, key);
                 RaiseChanged();
                 Build();

@@ -6,33 +6,43 @@ using System.Windows.Forms;
 
 namespace MP1.ConfigurationStudio
 {
-    /// <summary>Lists the configuration entries that are still waiting to be saved.</summary>
+    /// <summary>Lists pending configuration entries and offers Save/Discard when closing.</summary>
     internal sealed class PendingChangesDialog : Form
     {
         private readonly Palette palette = Palette.For(true);
         private readonly ListBox list = new ListBox();
         private readonly float scale;
 
-        public PendingChangesDialog(IEnumerable<PendingChange> changes, int fileEditors, float scale)
+        public bool SaveRequested { get; private set; }
+        public bool DiscardRequested { get; private set; }
+
+        public PendingChangesDialog(IEnumerable<PendingChange> changes, int fileEditors, float scale) : this(changes, fileEditors, scale, false) { }
+
+        public PendingChangesDialog(IEnumerable<PendingChange> changes, int fileEditors, float scale, bool confirmClose)
         {
             this.scale = scale;
             List<PendingChange> items = changes == null ? new List<PendingChange>() : changes.ToList();
-            Text = Localization.IsEnglish ? "Pending changes" : "Ungespeicherte Änderungen";
+            Text = confirmClose
+                ? (Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen")
+                : (Localization.IsEnglish ? "Pending changes" : "Ungespeicherte Änderungen");
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.Sizable;
             MinimizeBox = false;
             ShowInTaskbar = false;
             BackColor = palette.Panel;
             ForeColor = palette.Text;
-            ClientSize = new Size(Px(820), Px(520));
-            MinimumSize = new Size(Px(560), Px(320));
+            ClientSize = new Size(Px(820), Px(confirmClose ? 560 : 520));
+            MinimumSize = new Size(Px(560), Px(360));
             Font = Typography.Create(10f * scale, FontStyle.Regular);
 
+            string title = confirmClose
+                ? (Localization.IsEnglish ? "Save your changes before leaving?" : "Änderungen vor dem Verlassen speichern?")
+                : (Localization.IsEnglish ? "Pending configuration changes" : "Ausstehende Konfigurationsänderungen");
             var header = new Label
             {
-                Text = (Localization.IsEnglish ? "Pending configuration changes" : "Ausstehende Konfigurationsänderungen") + " · " + items.Count + (fileEditors > 0 ? (Localization.IsEnglish ? " · " + fileEditors + " XML editor(s)" : " · " + fileEditors + " XML-Editor(en)") : String.Empty),
+                Text = title + " · " + items.Count + (fileEditors > 0 ? (Localization.IsEnglish ? " · " + fileEditors + " XML editor(s)" : " · " + fileEditors + " XML-Editor(en)") : String.Empty),
                 Dock = DockStyle.Top,
-                Height = Px(38),
+                Height = Px(confirmClose ? 62 : 38),
                 Padding = new Padding(Px(16), Px(12), Px(16), 0),
                 Font = Typography.Create(11f * scale, FontStyle.Bold),
                 ForeColor = palette.Text,
@@ -58,10 +68,32 @@ namespace MP1.ConfigurationStudio
             var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(Px(16), 0, Px(16), Px(8)), BackColor = palette.Panel };
             body.Controls.Add(list);
 
-            var footer = new Panel { Dock = DockStyle.Bottom, Height = Px(52), Padding = new Padding(Px(16), Px(8), Px(16), Px(8)), BackColor = palette.Panel };
-            var close = new StudioButton { Text = Localization.IsEnglish ? "Close" : "Schließen", Dock = DockStyle.Right, Width = Px(110), Height = Px(32), Colors = () => palette, BackColor = palette.Panel, ForeColor = palette.Text, DialogResult = DialogResult.Cancel };
+            var footer = new Panel { Dock = DockStyle.Bottom, Height = Px(56), Padding = new Padding(Px(16), Px(10), Px(16), Px(10)), BackColor = palette.Panel };
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, AutoSize = true, BackColor = palette.Panel, Width = Px(confirmClose ? 390 : 140) };
+            var close = new StudioButton
+            {
+                Text = confirmClose ? (Localization.IsEnglish ? "Cancel" : "Abbrechen") : (Localization.IsEnglish ? "Close" : "Schließen"),
+                Colors = () => palette,
+                BackColor = palette.Panel,
+                ForeColor = palette.Text,
+                Width = Px(110),
+                Height = Px(32),
+                DialogResult = confirmClose ? DialogResult.Cancel : DialogResult.Cancel,
+                Margin = new Padding(Px(8), 0, 0, 0)
+            };
             close.FlatAppearance.BorderColor = palette.Border;
-            footer.Controls.Add(close);
+            actions.Controls.Add(close);
+            if (confirmClose)
+            {
+                var save = new StudioButton { Text = Localization.IsEnglish ? "Save" : "Speichern", Primary = true, Colors = () => palette, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Width = Px(120), Height = Px(32), Margin = new Padding(Px(8), 0, 0, 0) };
+                save.Click += delegate { SaveRequested = true; DialogResult = DialogResult.OK; Close(); };
+                actions.Controls.Add(save);
+                var discard = new StudioButton { Text = Localization.IsEnglish ? "Don't save" : "Nicht speichern", Colors = () => palette, BackColor = palette.Panel, ForeColor = palette.Text, Width = Px(130), Height = Px(32), Margin = new Padding(Px(8), 0, 0, 0) };
+                discard.FlatAppearance.BorderColor = palette.Border;
+                discard.Click += delegate { DiscardRequested = true; DialogResult = DialogResult.OK; Close(); };
+                actions.Controls.Add(discard);
+            }
+            footer.Controls.Add(actions);
 
             Controls.Add(body);
             Controls.Add(footer);
