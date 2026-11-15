@@ -63,7 +63,7 @@ namespace MP1.ConfigurationStudio
 
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = palette.Background, Margin = new Padding(0), Padding = new Padding(0) };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(30)));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(44)));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             status.Font = Typography.Create(9f * scale, FontStyle.Regular);
@@ -76,7 +76,8 @@ namespace MP1.ConfigurationStudio
             grid.Resize += delegate { SizeHeaders(); };
             root.Controls.Add(grid, 0, 2);
 
-            actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
+            actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
+            actions.SizeChanged += delegate { UpdateHeight(); };
             configure = ActionButton(Localization.IsEnglish ? "Configure" : "Konfigurieren", delegate { ConfigureSelected(); }, body);
             toggle = ActionButton(Localization.IsEnglish ? "Enable / disable" : "Aktivieren / deaktivieren", delegate { ToggleEnabled(); }, body);
             home = ActionButton(Localization.IsEnglish ? "In Home" : "Im Home-Menü", delegate { ToggleHome(); }, body);
@@ -307,7 +308,8 @@ namespace MP1.ConfigurationStudio
         private void UpdateHeight()
         {
             if (heightChanged == null) return;
-            int height = Px(30) + Px(44) + Math.Max(Px(120), flow.PreferredSize.Height) + Px(10);
+            int actionHeight = actions == null ? Px(44) : Math.Max(Px(40), actions.PreferredSize.Height);
+            int height = Px(30) + actionHeight + Math.Max(Px(120), flow.PreferredSize.Height) + Px(10);
             if (Math.Abs(height - lastHeight) < Px(4)) return;
             lastHeight = height;
             heightChanged(height);

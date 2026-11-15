@@ -811,7 +811,7 @@ namespace MP1.ConfigurationStudio
                 var panel = new NativeProjectPanel(scale) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
                 table.Controls.Add(panel, 0, table.RowCount);
                 table.SetColumnSpan(panel, 2);
-                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(520)));
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(640)));
                 table.RowCount++;
                 return;
             }
@@ -912,15 +912,11 @@ namespace MP1.ConfigurationStudio
             }
             if (field.Kind == NativeFieldKind.PluginOverview)
             {
-                int overviewRow = table.RowCount;
-                var panel = new NativePluginOverviewPanel(configuration, runtime, scale, delegate { StartClassic(); }, delegate { MarkDirty(); }, delegate(int height)
-                {
-                    if (overviewRow >= 0 && overviewRow < table.RowStyles.Count)
-                        table.RowStyles[overviewRow].Height = Math.Max(Px(420), height);
-                }) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
-                table.Controls.Add(panel, 0, overviewRow);
+                int overviewHeight = (int)Math.Round(Px(1600) * Math.Max(1f, scale));
+                var panel = new NativePluginOverviewPanel(configuration, runtime, scale, delegate { StartClassic(); }, delegate { MarkDirty(); }, delegate { }) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(panel, 0, table.RowCount);
                 table.SetColumnSpan(panel, 2);
-                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(620)));
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, overviewHeight));
                 table.RowCount++;
                 return;
             }
@@ -1502,6 +1498,7 @@ namespace MP1.ConfigurationStudio
             if (Inside(target, scroll))
             {
                 ScrollBy(scroll, delta, Px(48));
+                if (contentScroll != null) contentScroll.SyncNow();
                 return true;
             }
             return false;
