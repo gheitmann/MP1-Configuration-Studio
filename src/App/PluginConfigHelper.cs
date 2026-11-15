@@ -222,6 +222,13 @@ namespace MP1.ConfigurationStudio
             catch { return null; }
         }
 
+        internal static string QuoteArgument(string value)
+        {
+            value = value ?? String.Empty;
+            // A trailing backslash would escape the closing quote in a Windows command line.
+            return "\"" + value.TrimEnd('\\') + "\"";
+        }
+
         private static string Clean(string value)
         {
             return (value ?? string.Empty).Replace("|", " ").Replace("\r", " ").Replace("\n", " ");

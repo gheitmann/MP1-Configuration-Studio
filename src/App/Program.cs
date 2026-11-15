@@ -14,7 +14,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.53")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.54")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -267,7 +267,7 @@ namespace MP1.ConfigurationStudio
             {
                 requested = Environment.ExpandEnvironmentVariables(requested.Trim().Trim('"'));
                 if (requested.IndexOf('"') >= 0) requested = requested.Replace("\"", string.Empty);
-                string full = Path.GetFullPath(requested);
+                string full = Path.GetFullPath(requested).TrimEnd('\\');
                 if (!File.Exists(Path.Combine(full, "Configuration.exe"))) throw new FileNotFoundException("Configuration.exe fehlt in " + full);
                 return full;
             }
@@ -286,7 +286,7 @@ namespace MP1.ConfigurationStudio
             candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Team MediaPortal\MediaPortal"));
             candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Team MediaPortal\MediaPortal"));
             foreach (string path in candidates)
-                if (!String.IsNullOrWhiteSpace(path) && File.Exists(Path.Combine(path, "Configuration.exe"))) return Path.GetFullPath(path);
+                if (!String.IsNullOrWhiteSpace(path) && File.Exists(Path.Combine(path, "Configuration.exe"))) return Path.GetFullPath(path).TrimEnd('\\');
             using (var picker = new FolderBrowserDialog { Description = "Installationsordner von MediaPortal 1.39 auswählen", ShowNewFolderButton = false })
                 if (picker.ShowDialog() == DialogResult.OK && File.Exists(Path.Combine(picker.SelectedPath, "Configuration.exe"))) return picker.SelectedPath;
             throw new DirectoryNotFoundException("Keine MediaPortal-1.39-Installation ausgewählt.");

@@ -147,7 +147,7 @@ namespace MP1.ConfigurationStudio
                 var info = new ProcessStartInfo
                 {
                     FileName = Application.ExecutablePath,
-                    Arguments = "--plugin-overview \"" + runtime + "\"" + (refresh ? " --refresh" : String.Empty),
+                    Arguments = "--plugin-overview " + PluginConfigHelper.QuoteArgument(runtime) + (refresh ? " --refresh" : String.Empty),
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
@@ -387,7 +387,7 @@ namespace MP1.ConfigurationStudio
                 var info = new ProcessStartInfo
                 {
                     FileName = Application.ExecutablePath,
-                    Arguments = "--plugin-config \"" + runtime + "\" \"" + selected.Dll + "\" \"" + selected.Type + "\"",
+                    Arguments = "--plugin-config " + PluginConfigHelper.QuoteArgument(runtime) + " " + PluginConfigHelper.QuoteArgument(selected.Dll) + " " + PluginConfigHelper.QuoteArgument(selected.Type),
                     UseShellExecute = true,
                     WorkingDirectory = runtime
                 };
