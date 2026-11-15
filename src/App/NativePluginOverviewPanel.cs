@@ -35,9 +35,11 @@ namespace MP1.ConfigurationStudio
         private readonly float scale;
         private readonly Action classic;
         private readonly Action changed;
+        private readonly Action<int> heightChanged;
+        private readonly FlowLayoutPanel actions;
         private readonly Palette palette = Palette.For(true);
         private readonly FlowLayoutPanel flow = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, BackColor = Palette.For(true).Background, Padding = new Padding(0) };
-        private readonly Panel grid = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Palette.For(true).Background };
+        private readonly Panel grid = new Panel { Dock = DockStyle.Fill, AutoScroll = false, BackColor = Palette.For(true).Background };
         private readonly Label status = new Label { AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
         private readonly List<PluginEntry> entries = new List<PluginEntry>();
         private readonly List<Label> headers = new List<Label>();
@@ -45,14 +47,16 @@ namespace MP1.ConfigurationStudio
         private PluginEntry selected;
         private bool loading;
         private string loadError;
+        private int lastHeight;
 
-        public NativePluginOverviewPanel(StudioConfiguration configuration, string runtime, float scale, Action classic, Action changed)
+        public NativePluginOverviewPanel(StudioConfiguration configuration, string runtime, float scale, Action classic, Action changed, Action<int> heightChanged)
         {
             this.configuration = configuration;
             this.runtime = runtime;
             this.scale = scale;
             this.classic = classic;
             this.changed = changed;
+            this.heightChanged = heightChanged;
             BackColor = palette.Background;
             ForeColor = palette.Text;
             var body = Typography.Create(10f * scale, FontStyle.Regular);
@@ -72,7 +76,7 @@ namespace MP1.ConfigurationStudio
             grid.Resize += delegate { SizeHeaders(); };
             root.Controls.Add(grid, 0, 2);
 
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
+            actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
             configure = ActionButton(Localization.IsEnglish ? "Configure" : "Konfigurieren", delegate { ConfigureSelected(); }, body);
             toggle = ActionButton(Localization.IsEnglish ? "Enable / disable" : "Aktivieren / deaktivieren", delegate { ToggleEnabled(); }, body);
             home = ActionButton(Localization.IsEnglish ? "In Home" : "Im Home-Menü", delegate { ToggleHome(); }, body);
@@ -294,9 +298,19 @@ namespace MP1.ConfigurationStudio
         {
             int width = Math.Max(Px(240), grid.ClientSize.Width - Px(24));
             foreach (Label header in headers) header.Width = width;
-            flow.Width = Math.Max(Px(240), grid.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Px(4));
+            flow.Width = Math.Max(Px(240), grid.ClientSize.Width - Px(4));
             flow.SuspendLayout();
             flow.ResumeLayout(true);
+            UpdateHeight();
+        }
+
+        private void UpdateHeight()
+        {
+            if (heightChanged == null) return;
+            int height = Px(30) + Px(44) + Math.Max(Px(120), flow.PreferredSize.Height) + Px(10);
+            if (Math.Abs(height - lastHeight) < Px(4)) return;
+            lastHeight = height;
+            heightChanged(height);
         }
 
         private string CategoryTitle(string category)
@@ -312,31 +326,53 @@ namespace MP1.ConfigurationStudio
 
         private void Select(PluginEntry entry)
         {
+            PluginEntry previous = selected;
             selected = entry;
-            foreach (PluginEntry item in entries)
-                if (item.Tile != null) item.Tile.Selected = Object.ReferenceEquals(item, entry);
+            if (previous != null && previous.Tile != null)
+            {
+                previous.Tile.Selected = false;
+                previous.Tile.Invalidate();
+            }
+            if (entry != null && entry.Tile != null)
+            {
+                entry.Tile.Selected = true;
+                entry.Tile.Invalidate();
+            }
             UpdateActions();
         }
 
         private void UpdateActions()
         {
             bool has = selected != null;
-            configure.Enabled = has && selected.HasSetup;
-            toggle.Enabled = has;
-            home.Enabled = has && selected.Category == "Window";
-            myPlugins.Enabled = has && selected.Category == "Window";
-            if (!has)
+            if (actions != null) actions.SuspendLayout();
+            try
             {
-                toggle.Text = Localization.IsEnglish ? "Enable / disable" : "Aktivieren / deaktivieren";
-                return;
+                configure.Enabled = has && selected.HasSetup;
+                toggle.Enabled = has;
+                home.Enabled = has && selected.Category == "Window";
+                myPlugins.Enabled = has && selected.Category == "Window";
+                if (!has)
+                {
+                    SetText(toggle, Localization.IsEnglish ? "Enable / disable" : "Aktivieren / deaktivieren");
+                    return;
+                }
+                SetText(toggle, selected.Enabled
+                    ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
+                    : (Localization.IsEnglish ? "Enable" : "Aktivieren"));
+                SetText(home, selected.Home ? (Localization.IsEnglish ? "Remove from Home" : "Aus Home entfernen") : (Localization.IsEnglish ? "In Home" : "Im Home-Menü"));
+                SetText(myPlugins, selected.Plugins ? (Localization.IsEnglish ? "Remove from Plugins" : "Aus My Plugins entfernen") : (Localization.IsEnglish ? "In Plugins" : "In My Plugins"));
+                status.Text = selected.Name + "  ·  " + CategoryTitle(selected.Category) + (selected.HasSetup ? "  ·  " + (Localization.IsEnglish ? "configurable" : "konfigurierbar") : String.Empty);
+                status.ForeColor = palette.Text;
             }
-            toggle.Text = selected.Enabled
-                ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
-                : (Localization.IsEnglish ? "Enable" : "Aktivieren");
-            home.Text = selected.Home ? (Localization.IsEnglish ? "Remove from Home" : "Aus Home entfernen") : (Localization.IsEnglish ? "In Home" : "Im Home-Menü");
-            myPlugins.Text = selected.Plugins ? (Localization.IsEnglish ? "Remove from Plugins" : "Aus My Plugins entfernen") : (Localization.IsEnglish ? "In Plugins" : "In My Plugins");
-            status.Text = selected.Name + "  ·  " + CategoryTitle(selected.Category) + (selected.HasSetup ? "  ·  " + (Localization.IsEnglish ? "configurable" : "konfigurierbar") : String.Empty);
-            status.ForeColor = palette.Text;
+            finally
+            {
+                if (actions != null) actions.ResumeLayout(true);
+            }
+        }
+
+        private static void SetText(Control control, string text)
+        {
+            if (control != null && !String.Equals(control.Text, text, StringComparison.Ordinal)) control.Text = text;
         }
 
         private void ToggleEnabled()
@@ -436,9 +472,9 @@ namespace MP1.ConfigurationStudio
         public StudioPluginTile(float scale)
         {
             this.scale = scale;
-            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             Cursor = Cursors.Hand;
-            TabStop = true;
+            TabStop = false;
         }
 
         private int S(int value) { return (int)Math.Round(value * scale); }

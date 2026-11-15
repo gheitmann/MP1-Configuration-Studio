@@ -805,8 +805,6 @@ namespace MP1.ConfigurationStudio
                         .Add(new NativeField("plugins", "overview", "Plugin-Übersicht", "Plugin overview", NativeFieldKind.PluginOverview, "Alle Fenster-, externe und Prozess-Plugins mit Symbol, Status und direktem Zugriff auf Konfiguration.", "All window, external and process plugins with icon, status and direct access to configuration.")))
                     .Group(new NativeGroup("Plugin-Konfiguration", "Plugin configuration")
                         .Add(new NativeField("plugins", "native", "Plugin-Konfiguration", "Plugin configuration", NativeFieldKind.PluginConfig, "Erkennt Plugins mit eigenem Konfigurationsfenster und öffnet es direkt. Die Fenster selbst bleiben im Plugin-Stil.", "Detects plugins with their own configuration window and opens it directly. The windows keep the plugin's own style.")))
-                    .Group(new NativeGroup("Klassische Konfiguration", "Classic configuration")
-                        .Add(new NativeField("plugins", "plugin", "Plugins", "Plugins", NativeFieldKind.Info, "Fallback: Die klassische MediaPortal-Konfiguration öffnet weiterhin alle Plugin-Fenster.", "Fallback: the classic MediaPortal configuration still opens every plugin window.")))
                     .Group(new NativeGroup("Aktiviert", "Enabled")
                         .Add(new NativeField("plugins", "windows", "Aktivierte Plugins", "Enabled plugins", NativeFieldKind.DynamicBools, "Entspricht „Enabled“ im klassischen Plugin-Menü. Änderungen werden nach einem Neustart wirksam.", "Matches “Enabled” in the classic plugin menu. Changes take effect after a restart.")))
                     .Group(new NativeGroup("Im Home-Menü", "Listed in Home")

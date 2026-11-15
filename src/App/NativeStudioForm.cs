@@ -912,8 +912,13 @@ namespace MP1.ConfigurationStudio
             }
             if (field.Kind == NativeFieldKind.PluginOverview)
             {
-                var panel = new NativePluginOverviewPanel(configuration, runtime, scale, delegate { StartClassic(); }, delegate { MarkDirty(); }) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
-                table.Controls.Add(panel, 0, table.RowCount);
+                int overviewRow = table.RowCount;
+                var panel = new NativePluginOverviewPanel(configuration, runtime, scale, delegate { StartClassic(); }, delegate { MarkDirty(); }, delegate(int height)
+                {
+                    if (overviewRow >= 0 && overviewRow < table.RowStyles.Count)
+                        table.RowStyles[overviewRow].Height = Math.Max(Px(420), height);
+                }) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, Px(8)) };
+                table.Controls.Add(panel, 0, overviewRow);
                 table.SetColumnSpan(panel, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(620)));
                 table.RowCount++;
