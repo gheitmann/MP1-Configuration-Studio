@@ -297,7 +297,7 @@ namespace MP1.ConfigurationStudio
             closeButton.FlatAppearance.BorderColor = palette.Border;
             closeButton.Click += delegate { Close(); };
             footerActions.Controls.Add(closeButton);
-            saveButton = new GlassButton { Primary = true, Colors = () => palette, Text = Localization.IsEnglish ? "Save" : "Speichern", Width = Px(120), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Font = body, Margin = new Padding(0) };
+            saveButton = new GlassButton { Primary = true, Colors = () => palette, Text = Localization.IsEnglish ? "Save" : "Speichern", Width = Px(120), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             saveButton.FlatAppearance.BorderSize = 0;
             saveButton.Click += delegate { SaveConfiguration(); };
             footerActions.Controls.Add(saveButton);

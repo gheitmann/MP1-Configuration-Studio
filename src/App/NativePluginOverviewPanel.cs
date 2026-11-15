@@ -44,6 +44,7 @@ namespace MP1.ConfigurationStudio
         private readonly Button configure, toggle, home, myPlugins, browse;
         private PluginEntry selected;
         private bool loading;
+        private string loadError;
 
         public NativePluginOverviewPanel(StudioConfiguration configuration, string runtime, float scale, Action classic, Action changed)
         {
@@ -118,6 +119,7 @@ namespace MP1.ConfigurationStudio
             if (loading) return;
             loading = true;
             selected = null;
+            loadError = null;
             foreach (PluginEntry entry in entries) if (entry.Icon != null) entry.Icon.Dispose();
             entries.Clear();
             flow.Controls.Clear();
@@ -157,13 +159,23 @@ namespace MP1.ConfigurationStudio
                 {
                     var outputTask = process.StandardOutput.ReadToEndAsync();
                     var errorTask = process.StandardError.ReadToEndAsync();
-                    if (!process.WaitForExit(60000))
+                    if (!process.WaitForExit(180000))
                     {
                         try { process.Kill(); } catch { }
+                        loadError = Localization.IsEnglish
+                            ? "The plugin scan timed out. Click Refresh to try again."
+                            : "Die Plugin-Erfassung hat zu lange gedauert. Klicke auf Aktualisieren.";
+                        StudioLog.Warn("Plugin overview timed out for " + runtime);
                         return result;
                     }
                     string output = outputTask.Result;
-                    errorTask.Result.ToString();
+                    string error = errorTask.Result;
+                    StudioLog.Info("Plugin overview: exit=" + process.ExitCode + " lines=" + ((output ?? String.Empty).Split('\n').Count(line => line.StartsWith("plugin=", StringComparison.OrdinalIgnoreCase))) + " runtime=" + runtime);
+                    if (process.ExitCode != 0)
+                    {
+                        loadError = (Localization.IsEnglish ? "Plugin scan failed: " : "Plugin-Erfassung fehlgeschlagen: ") + FirstLine(error);
+                        return result;
+                    }
                     foreach (string line in (output ?? String.Empty).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (!line.StartsWith("plugin=", StringComparison.OrdinalIgnoreCase)) continue;
@@ -193,15 +205,18 @@ namespace MP1.ConfigurationStudio
             }
             catch (Exception ex)
             {
-                try
-                {
-                    if (IsHandleCreated)
-                        BeginInvoke(new Action(delegate { status.Text = ex.Message; status.ForeColor = palette.Muted; }));
-                }
-                catch { }
+                loadError = ex.Message;
+                StudioLog.Warn("Plugin overview failed for " + runtime + ": " + ex.Message);
             }
             return result.OrderBy(entry => entry.Category == "Window" ? 0 : entry.Category == "External" ? 1 : 2)
                 .ThenBy(entry => entry.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        }
+
+        private static string FirstLine(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return String.Empty;
+            string line = value.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            return String.IsNullOrWhiteSpace(line) ? String.Empty : line.Trim();
         }
 
         private static Image Decode(string base64)
@@ -261,9 +276,16 @@ namespace MP1.ConfigurationStudio
                 }
                 SizeHeaders();
             }
-            status.Text = entries.Count == 0
-                ? (Localization.IsEnglish ? "No plugins found." : "Keine Plugins gefunden.")
-                : entries.Count + (Localization.IsEnglish ? " plugins · " : " Plugins · ") + entries.Count(entry => entry.Enabled) + (Localization.IsEnglish ? " enabled" : " aktiviert");
+            if (entries.Count == 0)
+            {
+                status.Text = String.IsNullOrWhiteSpace(loadError)
+                    ? (Localization.IsEnglish ? "No plugins found in " : "Keine Plugins gefunden in ") + Path.Combine(runtime, "plugins")
+                    : loadError;
+            }
+            else
+            {
+                status.Text = entries.Count + (Localization.IsEnglish ? " plugins · " : " Plugins · ") + entries.Count(entry => entry.Enabled) + (Localization.IsEnglish ? " enabled" : " aktiviert");
+            }
             status.ForeColor = entries.Count == 0 ? palette.Muted : palette.Text;
             UpdateActions();
         }
