@@ -438,7 +438,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.48"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.49"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
@@ -569,6 +569,9 @@ namespace MP1.ConfigurationStudio
    Check(ChoiceCatalog.Resolve("musicfiles","selectOption").Any(option=>option.Value=="play")&&ChoiceCatalog.Resolve("musicfiles","dateadded").Count==3,"choice catalog exposes music selection and date choices");
    Check(ChoiceCatalog.Resolve("audioplayer","playerId").Count==4&&ChoiceCatalog.Resolve("audioplayer","upMixFiveDotOne").Count==2,"choice catalog exposes audio player and upmix choices");
    Check(ChoiceCatalog.Resolve("subtitles","engine").Count==5&&ChoiceCatalog.Resolve("moviedatabase","actorslistsize").Count==2,"choice catalog exposes subtitle engine and actor list choices");
+            Check(schemaSections.Take(3).Select(section=>section.Id).SequenceEqual(new[]{"general","volume","gui"}),"native sections follow the classic configuration order");
+            var volumeSection=schemaSections.First(section=>section.Id=="volume");
+            Check(volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="handler")&&volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="startupstyle")&&volumeSection.Groups.SelectMany(group=>group.Fields).Any(field=>field.Entry=="table"),"volume page exposes classic control, startup and table settings");
             Check(schemaSections.SelectMany(section=>section.Groups).All(group=>!String.IsNullOrEmpty(group.TitleDe)&&!String.IsNullOrEmpty(group.TitleEn)),"native schema groups have German and English titles");
             Check(fields.All(field=>!String.IsNullOrEmpty(field.LabelDe)&&!String.IsNullOrEmpty(field.LabelEn)),"native schema fields have German and English labels");
             Check(fields.Where(field=>field.Kind==NativeFieldKind.Combo).All(field=>field.Options.Count>0),"native combo fields define their options");

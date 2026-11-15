@@ -18,6 +18,7 @@ namespace MP1.ConfigurationStudio
         public bool NativeOriginal = true;
         public bool Glass = true;
         public bool ExpertMode = true;
+        public bool ExpertHintSeen = false;
         public string Language = "en";
         public string ThemeMode = "Dunkel";
         public int Width = 1360;
@@ -49,6 +50,7 @@ namespace MP1.ConfigurationStudio
             NativeOriginal = true;
             Glass = true;
             ExpertMode = true;
+            ExpertHintSeen = false;
             Language = "en";
             ThemeMode = "Dunkel";
             Width = 1360;
@@ -85,6 +87,7 @@ namespace MP1.ConfigurationStudio
                 NativeOriginal = root.GetAttribute("nativeOriginal") != "false";
                 Glass = root.GetAttribute("glass") != "false";
                 ExpertMode = root.GetAttribute("expert") != "false";
+                ExpertHintSeen = root.GetAttribute("expertHint") == "true";
                 string language = root.GetAttribute("language");
                 Language = SchemaVersion < 3 ? "en"
                     : String.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en"
@@ -139,6 +142,7 @@ namespace MP1.ConfigurationStudio
                     writer.WriteAttributeString("nativeOriginal", NativeOriginal ? "true" : "false");
                     writer.WriteAttributeString("glass", Glass ? "true" : "false");
                     writer.WriteAttributeString("expert", ExpertMode ? "true" : "false");
+                    writer.WriteAttributeString("expertHint", ExpertHintSeen ? "true" : "false");
                     writer.WriteAttributeString("language", Language);
                     writer.WriteAttributeString("width", Width.ToString(CultureInfo.InvariantCulture));
                     writer.WriteAttributeString("height", Height.ToString(CultureInfo.InvariantCulture));

@@ -66,6 +66,7 @@ namespace MP1.ConfigurationStudio
             Controls.Add(layout);
             AcceptButton = close;
             CancelButton = close;
+            StudioDialog.Apply(this);
             Shown += delegate { text.Select(0, 0); close.Focus(); };
         }
     }

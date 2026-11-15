@@ -78,6 +78,7 @@ namespace MP1.ConfigurationStudio
             Controls.Add(layout);
             AcceptButton = restore;
             CancelButton = close;
+            StudioDialog.Apply(this);
             Reload();
         }
 

@@ -916,6 +916,49 @@ namespace MP1.ConfigurationStudio
         }
     }
 
+    /// <summary>Applies the Studio palette and dark title bar to custom dialogs.</summary>
+    internal static class StudioDialog
+    {
+        public static void Apply(Form form)
+        {
+            if (form == null) return;
+            Palette palette = Palette.For(true);
+            if (form.Icon == null) form.Icon = StudioIcon.Value;
+            form.BackColor = palette.Panel;
+            form.ForeColor = palette.Text;
+            form.HandleCreated += delegate { NativeDarkMode.ApplyWindow(form.Handle, !Palette.UseLight); };
+            Style(form, palette);
+        }
+
+        private static void Style(Control parent, Palette palette)
+        {
+            foreach (Control child in parent.Controls)
+            {
+                var text = child as TextBox;
+                if (text != null)
+                {
+                    text.BackColor = palette.Input;
+                    text.ForeColor = palette.Text;
+                    if (!text.Multiline) text.BorderStyle = BorderStyle.None;
+                }
+                var list = child as ListBox;
+                if (list != null)
+                {
+                    list.BackColor = palette.Input;
+                    list.ForeColor = palette.Text;
+                }
+                var button = child as StudioButton;
+                if (button != null)
+                {
+                    button.Colors = () => palette;
+                    button.BackColor = palette.Panel;
+                    button.ForeColor = palette.Text;
+                }
+                Style(child, palette);
+            }
+        }
+    }
+
     /// <summary>Rounded subsection tab, ported from the 1.9 interface.</summary>
     internal sealed class StudioSubTab : Button
     {

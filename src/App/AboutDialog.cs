@@ -77,6 +77,7 @@ namespace MP1.ConfigurationStudio
             Controls.Add(close);
             AcceptButton = close;
             CancelButton = close;
+            StudioDialog.Apply(this);
         }
 
         private int Px(float value) { return (int)Math.Round(value * scale); }

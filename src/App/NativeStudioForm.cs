@@ -67,6 +67,8 @@ namespace MP1.ConfigurationStudio
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(1180, 780);
             MinimumSize = new Size(940, 600);
+            BackColor = Color.FromArgb(21, 26, 35);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             appearance = new Appearance(preferences ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MP1 Configuration Studio", "appearance.xml"));
             appearance.NativeOriginal = true;
             Localization.Set(appearance.Language);
@@ -1198,7 +1200,7 @@ namespace MP1.ConfigurationStudio
             add("Deutsch", delegate { SwitchLanguage("de"); });
             add(Localization.IsEnglish ? "Classic interface" : "Klassische Oberfläche", StartClassic);
             add(Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", StartStudioShell);
-            add(Localization.IsEnglish ? "Keyboard shortcuts" : "Tastenkürzel", delegate { using (var dialog = new KeyboardHelpDialog()) dialog.ShowDialog(this); });
+
             add(Localization.IsEnglish ? "Support bundle…" : "Support-Bundle…", ShowSupportBundle);
             add(Localization.IsEnglish ? "About" : "Über", ShowAbout);
             menu.Items.Add(new ToolStripControlHost(panel) { Margin = Padding.Empty, Padding = Padding.Empty, AutoSize = true });
@@ -1339,7 +1341,7 @@ namespace MP1.ConfigurationStudio
 
         private bool HasUnsavedWork()
         {
-            if (dirty) return true;
+            if (configuration.PendingCount > 0) return true;
             return table.Controls.OfType<IStudioFileEditor>().Any(editor => editor.HasUnsavedChanges);
         }
 
@@ -1455,6 +1457,24 @@ namespace MP1.ConfigurationStudio
             StudioAction focused = navigation.Controls.OfType<StudioAction>().FirstOrDefault(item => item.Selected);
             if (focused != null) focused.Focus();
             ApplyCueBanner();
+            if (!appearance.ExpertHintSeen)
+            {
+                appearance.ExpertHintSeen = true;
+                appearance.Save();
+                BeginInvoke(new Action(delegate
+                {
+                    using (var hint = new ExpertHintDialog(scale))
+                    {
+                        if (hint.ShowDialog(this) == DialogResult.OK && hint.EnableExpert)
+                        {
+                            appearance.ExpertMode = true;
+                            appearance.Save();
+                            if (modeChoice != null) modeChoice.SelectValue("expert");
+                            ApplySearch();
+                        }
+                    }
+                }));
+            }
         }
 
         private void ApplyChromeStyle()

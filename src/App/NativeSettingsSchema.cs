@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MP1.ConfigurationStudio
 {
@@ -153,7 +155,7 @@ namespace MP1.ConfigurationStudio
     {
         public static List<NativeSection> Sections()
         {
-            return new List<NativeSection>
+            var sections = new List<NativeSection>
             {
                 new NativeSection("general", "Allgemein", "General", "Start, Stabilität und Grundverhalten von MediaPortal.", "Startup, stability, and basic MediaPortal behavior.", "settings")
                     .Group(new NativeGroup("Protokollierung & Stabilität", "Logging & stability")
@@ -229,13 +231,16 @@ namespace MP1.ConfigurationStudio
                     .Group(new NativeGroup("Systemprüfungen", "System checks")
                         .Add(new NativeField("system", "checks", "Systemprüfungen", "System checks", NativeFieldKind.SystemChecks, "Media-Center-Dienste, MPTray-Autostart und Zugriff auf die klassischen Prüfungen.", "Media Center services, MPTray autostart, and access to the classic checks."))),
                 new NativeSection("volume", "Lautstärke", "Volume", "Lautstärkeverhalten und Bildschirmanzeige.", "Volume behavior and on-screen display.", "play")
-                    .Group(new NativeGroup("Wiedergabe", "Playback")
-                        .Add(new NativeField("volume", "digital", "Digitale Lautstärke", "Digital volume", NativeFieldKind.Bool, "Digitale Lautstärkeregelung verwenden, sofern verfügbar.", "Use digital volume control when available."))
+                    .Group(new NativeGroup("Regelung", "Control")
+                        .Add(new NativeField("volume", "digital", "Wave-Lautstärke", "Wave volume", NativeFieldKind.Bool, "Aus = Master-Lautstärke, Ein = Wave-Kanal.", "Off = master volume, on = wave channel."))
+                        .Add(new NativeField("volume", "handler", "Skalierung", "Scale", NativeFieldKind.Combo, "Reaktion der Lautstärkeregelung.", "Volume control response.").Option("5", "Windows 10", "Windows 10").Option("1", "Windows XP (Registry)", "Windows XP (registry)").Option("0", "Classic (linear)", "Classic (linear)").Option("2", "Logarithmisch", "Logarithmic").Option("4", "Windows Vista / 7", "Windows Vista / 7").Option("3", "Benutzerdefiniert", "Custom"))
+                        .Add(new NativeField("volume", "table", "Benutzerdefinierte Tabelle", "Custom table", NativeFieldKind.Text, "Werte 0–65535, durch Komma getrennt, für die benutzerdefinierte Skalierung.", "Values 0–65535, comma separated, for the custom scale.")))
+                    .Group(new NativeGroup("Start", "Startup")
+                        .Add(new NativeField("volume", "startupstyle", "Startlautstärke", "Startup volume", NativeFieldKind.Combo).Option("0", "Zuletzt bekannte Lautstärke", "Last known volume").Option("1", "Aktuelle Systemlautstärke", "Current system volume").Option("2", "Benutzerdefiniert", "Custom"))
+                        .Add(new NativeField("volume", "startuplevel", "Startwert", "Start value", NativeFieldKind.Integer, "Wert zwischen 0 und 65535.", "Value between 0 and 65535.").Range(0, 65535)))
+                    .Group(new NativeGroup("Bildschirmanzeige", "On-screen display")
                         .Add(new NativeField("volume", "defaultVolumeOSD", "Lautstärke-OSD anzeigen", "Show volume OSD", NativeFieldKind.Bool))
-                        .Add(new NativeField("volume", "hideWindowsOSD", "Windows-OSD ausblenden", "Hide Windows OSD", NativeFieldKind.Bool))
-                        .Add(new NativeField("volume", "startuplevel", "Startlautstärke", "Startup volume", NativeFieldKind.Integer, "Wert zwischen 0 und 65535.", "Value between 0 and 65535.").Range(0, 65535)))
-                    .Group(new NativeGroup("Hinweis", "Note")
-                        .Add(new NativeField("volume", "handler", "Lautstärke-Handler", "Volume handler", NativeFieldKind.Info, "Die erweiterten Lautstärke-Handler und die Skalierungstabelle bleiben der klassischen Seite vorbehalten.", "Advanced volume handlers and the response table remain on the classic page."))),
+                        .Add(new NativeField("volume", "hideWindowsOSD", "Windows-OSD ausblenden", "Hide Windows OSD", NativeFieldKind.Bool))),
                 new NativeSection("pictures", "Bilder", "Pictures", "Diashow, Wiedergabe und Bildquellen.", "Slideshow, playback, and picture sources.", "surface")
                     .Group(new NativeGroup("Diashow", "Slideshow")
                         .Add(new NativeField("pictures", "speed", "Geschwindigkeit", "Speed", NativeFieldKind.Integer).Range(1, 10))
@@ -794,6 +799,22 @@ namespace MP1.ConfigurationStudio
                     .Group(new NativeGroup("Bereich", "Section")
                         .Add(new NativeField("raw", "entries", "Bereich", "Section", NativeFieldKind.RawSections, "Alle Einträge des gewählten XML-Bereichs. Unbekannte Werte bleiben erhalten.", "All entries of the selected XML section. Unknown values are preserved."))),
             };
+            return OrderSections(sections);
+        }
+
+        private static List<NativeSection> OrderSections(List<NativeSection> sections)
+        {
+            string[] order =
+            {
+                "general", "volume", "gui", "home", "movies", "moviedatabase", "videoviews", "subtitles",
+                "discs", "tv", "radio", "recordings", "music", "musicfiles", "musicviews", "musicdsp",
+                "pictures", "folders", "remote", "keymap", "codecs", "plugins", "plugindata", "system",
+                "more", "files", "rawxml"
+            };
+            return sections
+                .OrderBy(section => { int index = Array.IndexOf(order, section.Id); return index < 0 ? Int32.MaxValue : index; })
+                .ThenBy(section => section.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
     }
 }
