@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -327,7 +327,9 @@ namespace MP1.ConfigurationStudio
             }
             Check(Appearance.DefaultTextScaleForDpi(96)==125&&Appearance.DefaultTextScaleForDpi(144)==100,"high-DPI default scale avoids double scaling");
             Localization.Set(UiLanguage.English);
-            Check(Localization.T("Allgemein")=="General"&&Localization.T("&OK – Speichern")=="&OK – Save","English main-shell strings are available");
+            Check(Localization.T("Allgemein")=="General","English general label");
+            Check(Localization.T("&OK – Speichern")=="&OK – Save","English OK label");
+            Check(Localization.T("MediaPortal starten")=="Start MediaPortal","English start MediaPortal label");
             Localization.Set(UiLanguage.German);
             Check(Localization.T("Allgemein")=="Allgemein","German strings fall back to the literal");
             Palette.ForceHighContrast=true;
@@ -397,12 +399,12 @@ namespace MP1.ConfigurationStudio
             Localization.Set(UiLanguage.English);
             Check(Localization.T("Studio neu starten")=="Restart Studio"&&Localization.T("Ungespeicherte Änderungen")=="Unsaved changes"&&Localization.T("Vor dem Speichern automatisch sichern")=="Back up automatically before saving","restart, close, and backup labels are localized");
             Localization.Set(UiLanguage.French);
-            Check(Localization.T("Allgemein")=="Général"&&Localization.T("Deaktivieren")=="Désactiver","French core UI strings resolve");
+            Check(Localization.T("Allgemein")=="Général"&&Localization.T("Deaktivieren")=="Désactiver"&&Localization.T("MediaPortal starten")=="Lancer MediaPortal","French core UI strings resolve");
             NativeField frenchField=null;
             foreach(NativeSection section in NativeSettingsSchema.Sections()) foreach(NativeGroup group in section.Groups) foreach(NativeField candidate in group.Fields) if(candidate.Section=="general"&&candidate.Entry=="startfullscreen") frenchField=candidate;
             Check(frenchField!=null&&frenchField.Label=="Démarrer en plein écran","French schema labels resolve");
             Localization.Set(UiLanguage.Dutch);
-            Check(Localization.T("Allgemein")=="Algemeen"&&Localization.T("Deaktivieren")=="Uitschakelen","Dutch core UI strings resolve");
+            Check(Localization.T("Allgemein")=="Algemeen"&&Localization.T("Deaktivieren")=="Uitschakelen"&&Localization.T("MediaPortal starten")=="MediaPortal starten","Dutch core UI strings resolve");
             Check(frenchField!=null&&frenchField.Label=="Op volledig scherm starten","Dutch schema labels resolve");
             Check(SchemaTranslations.GroupTitle("fr","general","Renderer & Bild","Renderer & picture")=="Rendu & image","French group titles resolve");
             Check(SchemaTranslations.SectionSubtitle("fr","general","Start, Stabilität und Grundverhalten von MediaPortal.","Startup, stability, and basic MediaPortal behavior.")=="Démarrage, stabilité et comportement de base de MediaPortal.","French section subtitles resolve");
@@ -451,7 +453,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.62"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.63"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }

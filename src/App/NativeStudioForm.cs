@@ -1337,6 +1337,7 @@ namespace MP1.ConfigurationStudio
             add("Deutsch", delegate { SwitchLanguage("de"); });
             add("Français", delegate { SwitchLanguage("fr"); });
             add("Nederlands", delegate { SwitchLanguage("nl"); });
+            add(Localization.T("MediaPortal starten"), StartMediaPortal);
             add(Localization.T("Klassische Oberfläche"), StartClassic);
             add(Localization.T("Studio 1.9-Oberfläche"), StartStudioShell);
 
@@ -1486,6 +1487,32 @@ namespace MP1.ConfigurationStudio
             Palette.UseLight = false;
             string executable = Path.Combine(runtime, "Configuration.exe");
             Program.StartNative(executable, runtime);
+            Close();
+        }
+
+        private void StartMediaPortal()
+        {
+            if (!SaveOrDiscardChanges()) return;
+            suppressClosePrompt = true;
+            string executable = Path.Combine(runtime, "MediaPortal.exe");
+            if (!File.Exists(executable))
+            {
+                suppressClosePrompt = false;
+                MessageBox.Show(this, Localization.T("MediaPortal.exe wurde nicht gefunden:\r\n") + executable, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                StudioLog.Info("Starting MediaPortal");
+                Process.Start(new ProcessStartInfo { FileName = executable, WorkingDirectory = runtime, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                suppressClosePrompt = false;
+                StudioLog.Error(ex, "MediaPortal start failed");
+                MessageBox.Show(this, Localization.T("MediaPortal konnte nicht gestartet werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             Close();
         }
 
