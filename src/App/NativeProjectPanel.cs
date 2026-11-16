@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
@@ -53,22 +53,20 @@ namespace MP1.ConfigurationStudio
             });
             root.Controls.Add(brand);
 
-            root.Controls.Add(Paragraph(Localization.IsEnglish
-                ? "MediaPortal is a free open source project that turns your computer into a full media center (HTPC). Watch and record TV, play videos, DVDs and Blu-rays, listen to music and radio, view pictures, and extend everything with plugins and skins."
-                : "MediaPortal ist ein freies Open-Source-Projekt und verwandelt deinen PC in ein vollwertiges Media Center (HTPC). Sieh und nimm Fernsehen auf, spiele Videos, DVDs und Blu-rays ab, höre Musik und Radio, betrachte Bilder und erweitere alles mit Plugins und Skins.", body));
+            root.Controls.Add(Paragraph(Localization.T("MediaPortal ist ein freies Open-Source-Projekt und verwandelt deinen PC in ein vollwertiges Media Center (HTPC). Sieh und nimm Fernsehen auf, spiele Videos, DVDs und Blu-rays ab, höre Musik und Radio, betrachte Bilder und erweitere alles mit Plugins und Skins."), body));
 
-            root.Controls.Add(SectionTitle(Localization.IsEnglish ? "Project links" : "Projekt-Links", heading));
+            root.Controls.Add(SectionTitle(Localization.T("Projekt-Links"), heading));
             var links = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 2, BackColor = palette.Background, Margin = new Padding(0, 0, 0, Px(8)) };
             links.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(190)));
             links.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            AddLink(links, Localization.IsEnglish ? "Homepage" : "Homepage", Homepage, small);
-            AddLink(links, Localization.IsEnglish ? "Forum" : "Forum", Forum, small);
-            AddLink(links, Localization.IsEnglish ? "Online documentation" : "Online-Dokumentation", Wiki, small);
-            AddLink(links, Localization.IsEnglish ? "MediaPortal on GitHub" : "MediaPortal auf GitHub", MediaPortalGitHub, small);
-            AddLink(links, Localization.IsEnglish ? "Studio on GitHub" : "Studio auf GitHub", StudioGitHub, small);
+            AddLink(links, Localization.T("Homepage"), Homepage, small);
+            AddLink(links, Localization.T("Forum"), Forum, small);
+            AddLink(links, Localization.T("Online-Dokumentation"), Wiki, small);
+            AddLink(links, Localization.T("MediaPortal auf GitHub"), MediaPortalGitHub, small);
+            AddLink(links, Localization.T("Studio auf GitHub"), StudioGitHub, small);
             root.Controls.Add(links);
 
-            root.Controls.Add(Paragraph((Localization.IsEnglish ? "About: " : "Über: ") + "Version " + UpdateChecker.CurrentVersion + "  ·  MediaPortal 1.39  ·  x64  ·  Endurance", small));
+            root.Controls.Add(Paragraph((Localization.T("Über: ")) + "Version " + UpdateChecker.CurrentVersion + "  ·  MediaPortal 1.39  ·  x64  ·  Endurance", small));
 
             var donate = new Panel { Dock = DockStyle.Fill, Height = Px(118), BackColor = palette.Panel, Margin = new Padding(0, Px(6), 0, 0) };
             donate.Paint += delegate(object sender, PaintEventArgs e)
@@ -82,9 +80,7 @@ namespace MP1.ConfigurationStudio
             donateLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(38)));
             donateLayout.Controls.Add(new Label
             {
-                Text = Localization.IsEnglish
-                    ? "Support MediaPortal\r\nDonations help the MediaPortal project with hosting, development and infrastructure. The official donation page is hosted in the MediaPortal forum."
-                    : "MediaPortal unterstützen\r\nSpenden helfen dem MediaPortal-Projekt bei Hosting, Entwicklung und Infrastruktur. Die offizielle Spendenseite liegt im MediaPortal-Forum.",
+                Text = Localization.T("MediaPortal unterstützen\r\nSpenden helfen dem MediaPortal-Projekt bei Hosting, Entwicklung und Infrastruktur. Die offizielle Spendenseite liegt im MediaPortal-Forum."),
                 Font = small,
                 ForeColor = palette.Text,
                 BackColor = Color.Transparent,
@@ -112,7 +108,7 @@ namespace MP1.ConfigurationStudio
             donateActions.Controls.Add(donateLink, 0, 0);
             var donateButton = new StudioButton
             {
-                Text = Localization.IsEnglish ? "Donate via PayPal" : "Über PayPal spenden",
+                Text = Localization.T("Über PayPal spenden"),
                 Primary = true,
                 Colors = () => palette,
                 BackColor = palette.Primary,

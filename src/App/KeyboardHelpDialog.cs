@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -34,8 +34,7 @@ namespace MP1.ConfigurationStudio
                 ScrollBars = ScrollBars.Vertical,
                 BorderStyle = BorderStyle.None,
                 Font = Typography.Create(Typography.DialogBody, FontStyle.Regular),
-                Text = Localization.IsEnglish
-                    ? "Ctrl+F — Open search\r\n\r\n"
+                Text = Localization.Pair( "Ctrl+F — Open search\r\n\r\n"
                         + "Enter — Open the first result\r\n\r\n"
                         + "Esc — Clear search or close dialog\r\n\r\n"
                         + "Alt+Left — Go back one step\r\n\r\n"
@@ -47,8 +46,7 @@ namespace MP1.ConfigurationStudio
                         + "Ctrl+S  ·  Save configuration\r\n\r\n"
                         + "Ctrl+W  ·  Close the Studio\r\n\r\n"
                         + "Ctrl+Page Down  ·  Next section\r\n\r\n"
-                        + "Ctrl+Page Up  ·  Previous section\r\n"
-                    : "Strg+F — Suche öffnen\r\n\r\n"
+                        + "Ctrl+Page Up  ·  Previous section\r\n","Strg+F — Suche öffnen\r\n\r\n"
                         + "Enter — ersten Treffer öffnen\r\n\r\n"
                         + "Esc — Suche leeren oder Dialog schließen\r\n\r\n"
                         + "Alt+Links — einen Schritt zurück\r\n\r\n"
@@ -60,7 +58,7 @@ namespace MP1.ConfigurationStudio
                         + "Strg+S  ·  Konfiguration speichern\r\n\r\n"
                         + "Strg+W  ·  Studio schlieÃen\r\n\r\n"
                         + "Strg+Bild ab  ·  nÃ¤chster Bereich\r\n\r\n"
-                        + "Strg+Bild auf  ·  vorheriger Bereich\r\n"
+                        + "Strg+Bild auf  ·  vorheriger Bereich\r\n")
             };
             text.SelectionStart = 0;
             text.SelectionLength = 0;

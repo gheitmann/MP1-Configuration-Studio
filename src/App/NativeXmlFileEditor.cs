@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -52,16 +52,16 @@ namespace MP1.ConfigurationStudio
             var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(38), ColumnCount = 2, BackColor = palette.Background, Padding = new Padding(0) };
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(180)));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            top.Controls.Add(new Label { Text = Localization.IsEnglish ? "XML file" : "XML-Datei", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "XML file" : "XML-Datei" };
+            top.Controls.Add(new Label { Text = Localization.T("XML-Datei"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.T("XML-Datei") };
             choice.SetOptions(files.Keys.Select(name => new ChoiceOption(name, name)), files.Keys.FirstOrDefault() ?? String.Empty);
             choice.SelectedIndexChanged += delegate { SelectionChanged(); };
             top.Controls.Add(choice, 1, 0);
 
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(38), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
-            var reload = ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { LoadFile(); }, body);
-            var save = ButtonFor(Localization.IsEnglish ? "Save file" : "Datei sichern", delegate { SaveFile(); }, body);
-            var browse = ButtonFor(Localization.IsEnglish ? "Other file …" : "Andere Datei …", delegate { BrowseFile(); }, body);
+            var reload = ButtonFor(Localization.T("Neu laden"), delegate { LoadFile(); }, body);
+            var save = ButtonFor(Localization.T("Datei sichern"), delegate { SaveFile(); }, body);
+            var browse = ButtonFor(Localization.T("Andere Datei …"), delegate { BrowseFile(); }, body);
             actions.Controls.Add(reload);
             actions.Controls.Add(save);
             actions.Controls.Add(browse);
@@ -154,13 +154,13 @@ namespace MP1.ConfigurationStudio
         private bool ConfirmDiscard()
         {
             if (!dirty) return true;
-            return MessageBox.Show(FindForm(), Localization.IsEnglish ? "Discard unsaved XML changes?" : "Ungespeicherte XML-Änderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            return MessageBox.Show(FindForm(), Localization.T("Ungespeicherte XML-Änderungen verwerfen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
         private void BrowseFile()
         {
             if (!ConfirmDiscard()) return;
-            using (var dialog = new OpenFileDialog { Title = Localization.IsEnglish ? "Open XML or configuration file" : "XML- oder Konfigurationsdatei öffnen", InitialDirectory = configDirectory, Filter = "XML / Konfiguration (*.xml;*.config)|*.xml;*.config|Alle Dateien (*.*)|*.*", CheckFileExists = true })
+            using (var dialog = new OpenFileDialog { Title = Localization.T("XML- oder Konfigurationsdatei öffnen"), InitialDirectory = configDirectory, Filter = "XML / Konfiguration (*.xml;*.config)|*.xml;*.config|Alle Dateien (*.*)|*.*", CheckFileExists = true })
             {
                 if (dialog.ShowDialog(FindForm()) != DialogResult.OK) return;
                 currentPath = dialog.FileName;
@@ -201,7 +201,7 @@ namespace MP1.ConfigurationStudio
                 {
                     fileEncoding = new UTF8Encoding(false);
                     editor.Text = string.Empty;
-                    status.Text = (currentPath ?? string.Empty) + (Localization.IsEnglish ? "  ·  new file" : "  ·  neue Datei");
+                    status.Text = (currentPath ?? string.Empty) + (Localization.T("  ·  neue Datei"));
                 }
                 dirty = false;
             }
@@ -219,12 +219,12 @@ namespace MP1.ConfigurationStudio
             {
                 string backup = NativeXmlFileStore.SaveText(currentPath, editor.Text, fileEncoding);
                 dirty = false;
-                status.Text = (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + Path.GetFileName(backup);
+                status.Text = (Localization.T("Gespeichert · Sicherung: ")) + Path.GetFileName(backup);
             }
             catch (Exception ex)
             {
                 status.Text = ex.Message;
-                MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The XML file could not be saved.\r\n\r\n" : "Die XML-Datei konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(FindForm(), (Localization.T("Die XML-Datei konnte nicht gespeichert werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }

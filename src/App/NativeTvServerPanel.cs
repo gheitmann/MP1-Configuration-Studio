@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -75,9 +75,9 @@ namespace MP1.ConfigurationStudio
             table.Controls.Add(overview, 0, 2);
 
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
-            var setup = ButtonFor(Localization.IsEnglish ? "Open TV Server configuration" : "TV-Server-Konfiguration öffnen", delegate { OpenSetup(); }, body);
-            var folder = ButtonFor(Localization.IsEnglish ? "Open TV Server folder" : "TV-Server-Ordner öffnen", delegate { OpenFolder(); }, body);
-            details = ButtonFor(Localization.IsEnglish ? "Show details" : "Details anzeigen", delegate { ShowDetails(); }, body);
+            var setup = ButtonFor(Localization.T("TV-Server-Konfiguration öffnen"), delegate { OpenSetup(); }, body);
+            var folder = ButtonFor(Localization.T("TV-Server-Ordner öffnen"), delegate { OpenFolder(); }, body);
+            details = ButtonFor(Localization.T("Details anzeigen"), delegate { ShowDetails(); }, body);
             details.Enabled = false;
             actions.Controls.Add(setup);
             actions.Controls.Add(folder);
@@ -86,9 +86,7 @@ namespace MP1.ConfigurationStudio
 
             var note = new Label
             {
-                Text = Localization.IsEnglish
-                    ? "The counts above are read-only and come from the TV Server business layer. Channels, EPG, cards, schedules, and the TV database are managed by the TV Server service and its own SetupTv configuration; this page does not replace channel scanning or TV Server administration."
-                    : "Die Zähler oben sind schreibgeschützt und kommen aus der TV-Server-Business-Layer. Kanäle, EPG, Karten, Aufnahmen und die TV-Datenbank werden vom TV-Server-Dienst und der eigenen SetupTv-Konfiguration verwaltet; Kanalsuche und TV-Server-Verwaltung werden nicht ersetzt.",
+                Text = Localization.T("Die Zähler oben sind schreibgeschützt und kommen aus der TV-Server-Business-Layer. Kanäle, EPG, Karten, Aufnahmen und die TV-Datenbank werden vom TV-Server-Dienst und der eigenen SetupTv-Konfiguration verwaltet; Kanalsuche und TV-Server-Verwaltung werden nicht ersetzt."),
                 Font = Typography.Create(9f * scale, FontStyle.Regular),
                 ForeColor = palette.Muted,
                 AutoSize = true,
@@ -122,7 +120,7 @@ namespace MP1.ConfigurationStudio
         {
             bool installed = setupPath != null && File.Exists(setupPath);
             string service = ServiceState();
-            status.Text = (installed ? (Localization.IsEnglish ? "TV Server found" : "TV-Server gefunden") : (Localization.IsEnglish ? "TV Server not found" : "TV-Server nicht gefunden"))
+            status.Text = (installed ? (Localization.T("TV-Server gefunden")) : (Localization.T("TV-Server nicht gefunden")))
                 + (String.IsNullOrEmpty(service) ? string.Empty : "  ·  " + service);
             status.ForeColor = installed ? palette.Text : palette.Muted;
             database.Text = DatabaseSummary();
@@ -135,7 +133,7 @@ namespace MP1.ConfigurationStudio
                 using (var controller = new ServiceController("TVService"))
                 {
                     string state = controller.Status.ToString();
-                    if (!Localization.IsEnglish)
+                    if (Localization.Code == "de")
                     {
                         switch (controller.Status)
                         {
@@ -156,7 +154,7 @@ namespace MP1.ConfigurationStudio
         private string DatabaseSummary()
         {
             string config = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Team MediaPortal", "MediaPortal TV Server", "Gentle.config");
-            if (!File.Exists(config)) return Localization.IsEnglish ? "No TV Server Gentle.config found." : "Keine TV-Server-Gentle.config gefunden.";
+            if (!File.Exists(config)) return Localization.T("Keine TV-Server-Gentle.config gefunden.");
             try
             {
                 var document = new XmlDocument { XmlResolver = null };
@@ -169,13 +167,13 @@ namespace MP1.ConfigurationStudio
                     string connection = element.GetAttribute("connectionString");
                     if (!String.IsNullOrEmpty(connection)) { active = element; break; }
                 }
-                if (active == null) return Localization.IsEnglish ? "No database provider configured." : "Kein Datenbank-Provider konfiguriert.";
+                if (active == null) return Localization.T("Kein Datenbank-Provider konfiguriert.");
                 string provider = active.GetAttribute("name");
                 string text = active.GetAttribute("connectionString");
                 string server = ConnectionValue(text, "Server", "Data Source", "data source");
                 string name = ConnectionValue(text, "Database", "Initial Catalog", "initial catalog");
                 string summary = provider + (String.IsNullOrEmpty(name) ? string.Empty : "  ·  " + name) + (String.IsNullOrEmpty(server) ? string.Empty : "  ·  " + server);
-                return (Localization.IsEnglish ? "Database: " : "Datenbank: ") + summary;
+                return (Localization.T("Datenbank: ")) + summary;
             }
             catch (Exception ex)
             {
@@ -201,11 +199,11 @@ namespace MP1.ConfigurationStudio
         {
             if (String.IsNullOrEmpty(tvServerDirectory) || !File.Exists(Path.Combine(tvServerDirectory, "TvBusinessLayer.dll")))
             {
-                overview.Text = Localization.IsEnglish ? "No TV Server business layer found." : "Keine TV-Server-Business-Layer gefunden.";
+                overview.Text = Localization.T("Keine TV-Server-Business-Layer gefunden.");
                 overview.ForeColor = palette.Muted;
                 return;
             }
-            overview.Text = Localization.IsEnglish ? "Reading TV Server overview …" : "TV-Server-Übersicht wird gelesen …";
+            overview.Text = Localization.T("TV-Server-Übersicht wird gelesen …");
             overview.ForeColor = palette.Muted;
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -249,7 +247,7 @@ namespace MP1.ConfigurationStudio
                     if (!process.WaitForExit(30000))
                     {
                         try { process.Kill(); } catch { }
-                        result.Text = Localization.IsEnglish ? "TV Server overview timed out." : "Zeitüberschreitung bei der TV-Server-Übersicht.";
+                        result.Text = Localization.T("Zeitüberschreitung bei der TV-Server-Übersicht.");
                         return result;
                     }
                     string output = outputTask.Result;
@@ -285,19 +283,17 @@ namespace MP1.ConfigurationStudio
                     if (!values.ContainsKey("ok") || values["ok"] != "1")
                     {
                         string message = values.ContainsKey("error") ? values["error"] : (String.IsNullOrWhiteSpace(error) ? "unknown error" : error.Trim());
-                        result.Text = (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + message;
+                        result.Text = (Localization.T("TV-Server-Übersicht nicht verfügbar: ")) + message;
                         return result;
                     }
                     string Number(string key) { string value; return values.TryGetValue(key, out value) ? value : "0"; }
-                    result.Text = (Localization.IsEnglish
-                        ? "TV: " + Number("tvChannels") + " channels  ·  Radio: " + Number("radioChannels") + "  ·  " + Number("groups") + " groups  ·  " + Number("recordings") + " recordings  ·  " + Number("schedules") + " schedules  ·  " + Number("cards") + " cards"
-                        : "TV: " + Number("tvChannels") + " Kanäle  ·  Radio: " + Number("radioChannels") + "  ·  " + Number("groups") + " Gruppen  ·  " + Number("recordings") + " Aufnahmen  ·  " + Number("schedules") + " Timer  ·  " + Number("cards") + " Karten");
+                    result.Text = Localization.T2("TV: {0} Kanäle  ·  Radio: {1}  ·  {2} Gruppen  ·  {3} Aufnahmen  ·  {4} Timer  ·  {5} Karten", "TV: {0} channels  ·  Radio: {1}  ·  {2} groups  ·  {3} recordings  ·  {4} schedules  ·  {5} cards").Replace("{0}", Number("tvChannels")).Replace("{1}", Number("radioChannels")).Replace("{2}", Number("groups")).Replace("{3}", Number("recordings")).Replace("{4}", Number("schedules")).Replace("{5}", Number("cards"));
                     return result;
                 }
             }
             catch (Exception ex)
             {
-                result.Text = (Localization.IsEnglish ? "TV Server overview unavailable: " : "TV-Server-Übersicht nicht verfügbar: ") + ex.Message;
+                result.Text = (Localization.T("TV-Server-Übersicht nicht verfügbar: ")) + ex.Message;
                 return result;
             }
         }
@@ -312,7 +308,7 @@ namespace MP1.ConfigurationStudio
         {
             if (setupPath == null || !File.Exists(setupPath))
             {
-                MessageBox.Show(FindForm(), Localization.IsEnglish ? "SetupTv.exe was not found." : "SetupTv.exe wurde nicht gefunden.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(FindForm(), Localization.T("SetupTv.exe wurde nicht gefunden."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             try { Process.Start(new ProcessStartInfo(setupPath) { UseShellExecute = true, WorkingDirectory = tvServerDirectory }); }
@@ -323,7 +319,7 @@ namespace MP1.ConfigurationStudio
         {
             if (tvServerDirectory == null || !Directory.Exists(tvServerDirectory))
             {
-                MessageBox.Show(FindForm(), Localization.IsEnglish ? "The TV Server folder was not found." : "Der TV-Server-Ordner wurde nicht gefunden.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(FindForm(), Localization.T("Der TV-Server-Ordner wurde nicht gefunden."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             try { Process.Start("explorer.exe", "\"" + tvServerDirectory + "\""); }
@@ -337,9 +333,9 @@ namespace MP1.ConfigurationStudio
             string current = DescribeEpg(parts[2], parts[3], parts[4]);
             string next = DescribeEpg(parts[5], parts[6], parts[7]);
             if (current == null && next == null)
-                return parts[1] + " — " + (Localization.IsEnglish ? "no EPG data" : "keine EPG-Daten");
-            return parts[1] + " — " + (Localization.IsEnglish ? "now: " : "jetzt: ") + (current ?? "—")
-                + (Localization.IsEnglish ? "  ·  next: " : "  ·  danach: ") + (next ?? "—");
+                return parts[1] + " — " + (Localization.T("keine EPG-Daten"));
+            return parts[1] + " — " + (Localization.T("jetzt: ")) + (current ?? "—")
+                + (Localization.T("  ·  danach: ")) + (next ?? "—");
         }
 
         private static string DescribeEpg(string start, string end, string title)
@@ -359,7 +355,7 @@ namespace MP1.ConfigurationStudio
             public TvDetailsDialog(float scale, OverviewResult data)
             {
                 this.scale = scale;
-                Text = Localization.IsEnglish ? "TV Server details" : "TV-Server-Details";
+                Text = Localization.T("TV-Server-Details");
                 FormBorderStyle = FormBorderStyle.Sizable;
                 StartPosition = FormStartPosition.CenterParent;
                 MinimizeBox = false;
@@ -368,20 +364,20 @@ namespace MP1.ConfigurationStudio
                 ForeColor = Palette.For(true).Text;
                 ClientSize = new Size(Px(660), Px(520));
                 MinimumSize = new Size(Px(460), Px(320));
-                Add(data.TvChannels, Localization.IsEnglish ? "TV channels" : "TV-Kanäle");
-                Add(data.TvEpg, Localization.IsEnglish ? "TV EPG 12 h" : "TV-EPG 12 h");
-                Add(data.RadioChannels, Localization.IsEnglish ? "Radio channels" : "Radio-Kanäle");
-                Add(data.RadioEpg, Localization.IsEnglish ? "Radio EPG 12 h" : "Radio-EPG 12 h");
-                Add(data.Groups, Localization.IsEnglish ? "TV groups" : "TV-Gruppen");
-                Add(data.RadioGroups, Localization.IsEnglish ? "Radio groups" : "Radio-Gruppen");
-                Add(data.Recordings, Localization.IsEnglish ? "Recordings" : "Aufnahmen");
-                Add(data.Schedules, Localization.IsEnglish ? "Schedules" : "Timer");
+                Add(data.TvChannels, Localization.T("TV-Kanäle"));
+                Add(data.TvEpg, Localization.T("TV-EPG 12 h"));
+                Add(data.RadioChannels, Localization.T("Radio-Kanäle"));
+                Add(data.RadioEpg, Localization.T("Radio-EPG 12 h"));
+                Add(data.Groups, Localization.T("TV-Gruppen"));
+                Add(data.RadioGroups, Localization.T("Radio-Gruppen"));
+                Add(data.Recordings, Localization.T("Aufnahmen"));
+                Add(data.Schedules, Localization.T("Timer"));
 
                 var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = Px(40), ColumnCount = 2, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(6), Px(10), 0) };
                 top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
                 top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Category" : "Kategorie", ForeColor = Palette.For(true).Muted, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-                category = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = Typography.Create(10f * scale, FontStyle.Regular), Colors = () => Palette.For(true), AccessibleName = Localization.IsEnglish ? "Category" : "Kategorie" };
+                top.Controls.Add(new Label { Text = Localization.T("Kategorie"), ForeColor = Palette.For(true).Muted, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+                category = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = Typography.Create(10f * scale, FontStyle.Regular), Colors = () => Palette.For(true), AccessibleName = Localization.T("Kategorie") };
                 var options = new List<ChoiceOption>();
                 foreach (string[] group in groups) options.Add(new ChoiceOption(options.Count.ToString(CultureInfo.InvariantCulture), group[0] + " (" + group[1].Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Length + ")"));
                 category.SetOptions(options, "0");
@@ -396,7 +392,7 @@ namespace MP1.ConfigurationStudio
                 list.Margin = new Padding(Px(10), Px(4), Px(10), Px(10));
 
                 var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(48), FlowDirection = FlowDirection.RightToLeft, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(8), Px(10), Px(8)) };
-                var close = new StudioButton { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var close = new StudioButton { Text = Localization.T("Schließen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 close.FlatAppearance.BorderColor = Palette.For(true).Border;
                 bottom.Controls.Add(close);
                 Controls.Add(list);
@@ -427,7 +423,7 @@ namespace MP1.ConfigurationStudio
                     if (category.SelectedIndex < 0 || category.SelectedIndex >= groups.Count) return;
                     string[] lines = groups[category.SelectedIndex][1].Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (string line in lines) list.Items.Add(line);
-                    if (list.Items.Count == 0) list.Items.Add(Localization.IsEnglish ? "(empty)" : "(leer)");
+                    if (list.Items.Count == 0) list.Items.Add(Localization.T("(leer)"));
                 }
                 finally { list.EndUpdate(); }
             }

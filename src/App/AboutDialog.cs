@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -13,7 +13,7 @@ namespace MP1.ConfigurationStudio
         public AboutDialog(float scale)
         {
             this.scale = scale;
-            Text = Localization.IsEnglish ? "About MP1 Configuration Studio" : "Über MP1 Configuration Studio";
+            Text = Localization.T("Über MP1 Configuration Studio");
             Icon = StudioIcon.Value;
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -46,9 +46,7 @@ namespace MP1.ConfigurationStudio
             };
             var body = new Label
             {
-                Text = Localization.IsEnglish
-                    ? "Native configuration interface for MediaPortal 1.39.\r\n\r\nReads and writes MediaPortal.xml directly, preserves unknown sections and entries, and creates a ZIP backup before saving.\r\n\r\nLicense: GPL-3.0-or-later\r\nMediaPortal is a separate project and is not bundled with this application."
-                    : "Native Konfigurationsoberfläche für MediaPortal 1.39.\r\n\r\nLiest und schreibt MediaPortal.xml direkt, erhält unbekannte Bereiche und Einträge und erstellt vor dem Speichern eine ZIP-Sicherung.\r\n\r\nLizenz: GPL-3.0-or-later\r\nMediaPortal ist ein separates Projekt und nicht Teil dieser Anwendung.",
+                Text = Localization.T("Native Konfigurationsoberfläche für MediaPortal 1.39.\r\n\r\nLiest und schreibt MediaPortal.xml direkt, erhält unbekannte Bereiche und Einträge und erstellt vor dem Speichern eine ZIP-Sicherung.\r\n\r\nLizenz: GPL-3.0-or-later\r\nMediaPortal ist ein separates Projekt und nicht Teil dieser Anwendung."),
                 Font = Typography.Create(9.5f * scale, FontStyle.Regular),
                 ForeColor = palette.Text,
                 BackColor = Color.Transparent,
@@ -57,7 +55,7 @@ namespace MP1.ConfigurationStudio
             };
             var close = new StudioButton
             {
-                Text = Localization.IsEnglish ? "Close" : "Schließen",
+                Text = Localization.T("Schließen"),
                 Colors = () => palette,
                 BackColor = palette.Panel,
                 ForeColor = palette.Text,

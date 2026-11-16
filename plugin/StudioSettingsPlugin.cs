@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Text;
@@ -328,7 +328,7 @@ namespace MP1.ConfigurationStudio.Plugin
                 choices.RemoveAt(selected);
                 choices.Insert(0, active);
             }
-            dialog.SetHeading(LocalizationEnglish ? field.LabelEn : field.LabelDe);
+            dialog.SetHeading(field.Label);
             foreach (Choice choice in choices) dialog.Add(choice.Label);
             dialog.SelectedLabel = 0;
             dialog.DoModal(GetID);
@@ -358,7 +358,7 @@ namespace MP1.ConfigurationStudio.Plugin
             {
                 var options = new List<Choice>();
                 foreach (NativeOption option in field.Options)
-                    options.Add(new Choice { Value = option.Value, Label = LocalizationEnglish ? option.LabelEn : option.LabelDe });
+                    options.Add(new Choice { Value = option.Value, Label = option.Label });
                 return options;
             }
             string key = (field.Section ?? string.Empty) + "/" + (field.Entry ?? string.Empty);
@@ -506,7 +506,7 @@ namespace MP1.ConfigurationStudio.Plugin
             if (field.Kind == NativeFieldKind.Combo)
             {
                 NativeOption option = field.Options.FirstOrDefault(candidate => String.Equals(candidate.Value, value, StringComparison.OrdinalIgnoreCase));
-                if (option != null) value = LocalizationEnglish ? option.LabelEn : option.LabelDe;
+                if (option != null) value = option.Label;
             }
             if (field.Kind == NativeFieldKind.Bool) value = String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ? LocalizationText("Ja", "Yes") : LocalizationText("Nein", "No");
             if (String.IsNullOrEmpty(value)) value = LocalizationText("(leer)", "(empty)");
@@ -515,14 +515,26 @@ namespace MP1.ConfigurationStudio.Plugin
             return value;
         }
 
+        private static string LanguageCode
+        {
+            get
+            {
+                string code = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+                return code == "de" || code == "en" || code == "fr" || code == "nl" ? code : "en";
+            }
+        }
+
         private static bool LocalizationEnglish
         {
-            get { return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en"; }
+            get { return LanguageCode == "en"; }
         }
 
         private static string LocalizationText(string german, string english)
         {
-            return LocalizationEnglish ? english : german;
+            if (LocalizationEnglish) return english;
+            if (LanguageCode == "de") return german;
+            string translated = UiTranslations.Lookup(LanguageCode, german);
+            return translated ?? english;
         }
 
         private void ShowSections()
@@ -533,7 +545,7 @@ namespace MP1.ConfigurationStudio.Plugin
             {
                 if (candidate.Id == "files" || candidate.Id == "rawxml" || candidate.Id == "keymap"
                     || candidate.Id == "musicviews" || candidate.Id == "videoviews" || candidate.Id == "musicdsp") continue;
-                rows.Add(new Row { Section = candidate, Text = LocalizationEnglish ? candidate.TitleEn : candidate.TitleDe });
+                rows.Add(new Row { Section = candidate, Text = candidate.Title });
             }
             page = 0;
         }
@@ -543,7 +555,7 @@ namespace MP1.ConfigurationStudio.Plugin
             rows.Clear();
             foreach (NativeGroup group in value.Groups)
             {
-                string groupTitle = LocalizationEnglish ? group.TitleEn : group.TitleDe;
+                string groupTitle = group.Title;
                 foreach (NativeField field in group.Fields)
                 {
                     rows.Add(new Row { Field = field, Group = groupTitle, Text = RowText(field, groupTitle) });
@@ -553,14 +565,14 @@ namespace MP1.ConfigurationStudio.Plugin
 
         private string RowText(NativeField field, string groupTitle)
         {
-            string label = LocalizationEnglish ? field.LabelEn : field.LabelDe;
+            string label = field.Label;
             return groupTitle + " · " + label + ": " + DisplayValue(field);
         }
 
         private void RefreshControls()
         {
             GUILabelControl title = GetControl(TitleId) as GUILabelControl;
-            if (title != null) title.Label = section == null ? "MP1 Configuration Studio" : (LocalizationEnglish ? section.TitleEn : section.TitleDe);
+            if (title != null) title.Label = section == null ? "MP1 Configuration Studio" : (section.Title);
             GUILabelControl statusLabel = GetControl(StatusId) as GUILabelControl;
             int pages = Math.Max(1, (rows.Count + VisibleRows - 1) / VisibleRows);
             bool hasPreviousPage = page > 0;

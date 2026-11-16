@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -41,7 +41,7 @@ namespace MP1.ConfigurationStudio
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-            enabled.Text = Localization.IsEnglish ? "Enable virtual drive" : "Virtuelles Laufwerk aktivieren";
+            enabled.Text = Localization.T("Virtuelles Laufwerk aktivieren");
             enabled.AutoSize = true;
             enabled.Font = body;
             enabled.ForeColor = palette.Text;
@@ -52,7 +52,7 @@ namespace MP1.ConfigurationStudio
             table.Controls.Add(enabled, 0, 0);
             table.SetColumnSpan(enabled, 2);
 
-            AddLabel(table, 1, Localization.IsEnglish ? "Program path" : "Programmpfad");
+            AddLabel(table, 1, Localization.T("Programmpfad"));
             var pathRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = palette.Background, Margin = new Padding(0) };
             pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(96)));
@@ -64,11 +64,11 @@ namespace MP1.ConfigurationStudio
             path.Margin = new Padding(0, Px(3), Px(6), Px(3));
             path.TextChanged += delegate { if (!loading) { configuration.Set("daemon", "path", path.Text); RaiseChanged(); } };
             pathRow.Controls.Add(path, 0, 0);
-            var browse = new StudioButton { Text = Localization.IsEnglish ? "Browse …" : "Durchsuchen …", Font = body, Height = Px(28), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(3), 0, Px(3)) };
+            var browse = new StudioButton { Text = Localization.T("Durchsuchen …"), Font = body, Height = Px(28), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(3), 0, Px(3)) };
             browse.FlatAppearance.BorderColor = palette.Border;
             browse.Click += delegate
             {
-                using (var dialog = new OpenFileDialog { Title = Localization.IsEnglish ? "Select virtual drive program" : "Programm für virtuelles Laufwerk wählen", Filter = Localization.IsEnglish ? "Programs (*.exe)|*.exe|All files (*.*)|*.*" : "Programme (*.exe)|*.exe|Alle Dateien (*.*)|*.*", CheckFileExists = true })
+                using (var dialog = new OpenFileDialog { Title = Localization.T("Programm für virtuelles Laufwerk wählen"), Filter = Localization.T("Programme (*.exe)|*.exe|Alle Dateien (*.*)|*.*"), CheckFileExists = true })
                 {
                     if (File.Exists(path.Text)) dialog.InitialDirectory = Path.GetDirectoryName(path.Text);
                     if (dialog.ShowDialog(this) == DialogResult.OK) path.Text = dialog.FileName;
@@ -77,7 +77,7 @@ namespace MP1.ConfigurationStudio
             pathRow.Controls.Add(browse, 1, 0);
             table.Controls.Add(pathRow, 1, 1);
 
-            AddLabel(table, 2, Localization.IsEnglish ? "Supported extensions" : "Unterstützte Endungen");
+            AddLabel(table, 2, Localization.T("Unterstützte Endungen"));
             extensions.Dock = DockStyle.Fill;
             extensions.Font = body;
             extensions.BackColor = palette.Input;
@@ -87,7 +87,7 @@ namespace MP1.ConfigurationStudio
             extensions.TextChanged += delegate { if (!loading) { configuration.Set("daemon", "extensions", extensions.Text); RaiseChanged(); } };
             table.Controls.Add(extensions, 1, 2);
 
-            AddLabel(table, 3, Localization.IsEnglish ? "Drive number" : "Laufwerksnummer");
+            AddLabel(table, 3, Localization.T("Laufwerksnummer"));
             drive.Dock = DockStyle.Fill;
             drive.Font = body;
             drive.Minimum = 0;
@@ -99,7 +99,7 @@ namespace MP1.ConfigurationStudio
             drive.ValueChanged += delegate { if (!loading) { configuration.SetInt("daemon", "driveNo", (int)drive.Value); RaiseChanged(); } };
             table.Controls.Add(drive, 1, 3);
 
-            ask.Text = Localization.IsEnglish ? "Ask before playing" : "Vor Wiedergabe fragen";
+            ask.Text = Localization.T("Vor Wiedergabe fragen");
             ask.AutoSize = true;
             ask.Font = body;
             ask.ForeColor = palette.Text;
@@ -111,17 +111,17 @@ namespace MP1.ConfigurationStudio
             table.SetColumnSpan(ask, 2);
 
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0, Px(2), 0, Px(2)) };
-            var check = new StudioButton { Text = Localization.IsEnglish ? "Check path" : "Pfad prüfen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var check = new StudioButton { Text = Localization.T("Pfad prüfen"), Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             check.FlatAppearance.BorderColor = palette.Border;
             check.Click += delegate { CheckPath(); };
-            applyDetected = new StudioButton { Text = Localization.IsEnglish ? "Apply detected path" : "Erkannten Pfad übernehmen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0), Enabled = false };
+            applyDetected = new StudioButton { Text = Localization.T("Erkannten Pfad übernehmen"), Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0), Enabled = false };
             applyDetected.FlatAppearance.BorderColor = palette.Border;
             applyDetected.Click += delegate
             {
                 string detected = Detect();
                 if (detected == null) return;
                 path.Text = detected;
-                status.Text = (Localization.IsEnglish ? "Detected path applied: " : "Erkannter Pfad übernommen: ") + detected;
+                status.Text = (Localization.T("Erkannter Pfad übernommen: ")) + detected;
                 status.ForeColor = palette.Text;
             };
             actions.Controls.Add(check);
@@ -178,8 +178,8 @@ namespace MP1.ConfigurationStudio
             string detected = Detect();
             applyDetected.Enabled = detected != null && !String.Equals(detected, path.Text, StringComparison.OrdinalIgnoreCase);
             detection.Text = detected == null
-                ? (Localization.IsEnglish ? "Daemon Tools was not detected on this system. Select the program manually." : "Daemon Tools wurde auf diesem System nicht erkannt. Programm manuell auswählen.")
-                : (Localization.IsEnglish ? "Detected: " : "Erkannt: ") + detected;
+                ? (Localization.T("Daemon Tools wurde auf diesem System nicht erkannt. Programm manuell auswählen."))
+                : (Localization.T("Erkannt: ")) + detected;
             detection.ForeColor = detected == null ? palette.Muted : palette.Text;
         }
 
@@ -188,18 +188,18 @@ namespace MP1.ConfigurationStudio
             string value = path.Text.Trim();
             if (value.Length == 0)
             {
-                status.Text = Localization.IsEnglish ? "No path configured." : "Kein Pfad konfiguriert.";
+                status.Text = Localization.T("Kein Pfad konfiguriert.");
                 status.ForeColor = palette.Muted;
                 return;
             }
             if (!File.Exists(value))
             {
-                status.Text = (Localization.IsEnglish ? "File not found: " : "Datei nicht gefunden: ") + value;
+                status.Text = (Localization.T("Datei nicht gefunden: ")) + value;
                 status.ForeColor = palette.Muted;
                 return;
             }
             var info = new FileInfo(value);
-            status.Text = (Localization.IsEnglish ? "Path is valid · " : "Pfad ist gültig · ") + info.Length.ToString("N0") + (Localization.IsEnglish ? " bytes" : " Bytes");
+            status.Text = (Localization.T("Pfad ist gültig · ")) + info.Length.ToString("N0") + (Localization.T(" Bytes"));
             status.ForeColor = palette.Text;
             RefreshDetection();
         }

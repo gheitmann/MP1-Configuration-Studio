@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -13,7 +13,7 @@ namespace MP1.ConfigurationStudio
         public ExpertHintDialog(float scale)
         {
             Icon = StudioIcon.Value;
-            Text = Localization.IsEnglish ? "Standard and Expert mode" : "Standard- und Expertenmodus";
+            Text = Localization.T("Standard- und Expertenmodus");
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -26,7 +26,7 @@ namespace MP1.ConfigurationStudio
 
             var title = new Label
             {
-                Text = Localization.IsEnglish ? "Standard mode keeps the everyday pages" : "Der Standard-Modus zeigt die alltäglichen Seiten",
+                Text = Localization.T("Der Standard-Modus zeigt die alltäglichen Seiten"),
                 Font = Typography.Create(14f * scale, FontStyle.Bold),
                 ForeColor = palette.Text,
                 BackColor = Color.Transparent,
@@ -35,9 +35,7 @@ namespace MP1.ConfigurationStudio
             };
             var body = new Label
             {
-                Text = Localization.IsEnglish
-                    ? "The sidebar starts in Standard mode with Project, general, playback, media, TV, subtitle and disc settings.\r\n\r\nSwitch the mode selector in the toolbar to Expert to show video/music databases, views, DSP, keyboard, codecs, plugins, remote and raw XML editors.\r\n\r\nYou can change the mode at any time; this hint appears only once."
-                    : "Die Seitenleiste startet im Standard-Modus mit Projekt, Allgemein, Wiedergabe, Medien, TV, Untertiteln und Discs.\r\n\r\nStelle den Modus in der Werkzeugleiste auf Experte, um Video-/Musikdatenbanken, Ansichten, DSP, Tastatur, Codecs, Plugins, Fernbedienung und XML-Rohdaten zu sehen.\r\n\r\nDer Modus lässt sich jederzeit wechseln; dieser Hinweis erscheint nur einmal.",
+                Text = Localization.T("Die Seitenleiste startet im Standard-Modus mit Projekt, Allgemein, Wiedergabe, Medien, TV, Untertiteln und Discs.\r\n\r\nStelle den Modus in der Werkzeugleiste auf Experte, um Video-/Musikdatenbanken, Ansichten, DSP, Tastatur, Codecs, Plugins, Fernbedienung und XML-Rohdaten zu sehen.\r\n\r\nDer Modus lässt sich jederzeit wechseln; dieser Hinweis erscheint nur einmal."),
                 Font = Typography.Create(9.5f * scale, FontStyle.Regular),
                 ForeColor = palette.Text,
                 BackColor = Color.Transparent,
@@ -48,7 +46,7 @@ namespace MP1.ConfigurationStudio
             var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(56, scale), FlowDirection = FlowDirection.RightToLeft, WrapContents = false, BackColor = palette.Panel, Padding = new Padding(Px(16, scale), Px(10, scale), Px(16, scale), Px(10, scale)) };
             var close = new StudioButton
             {
-                Text = Localization.IsEnglish ? "Got it" : "Verstanden",
+                Text = Localization.T2("Verstanden", "Got it"),
                 Colors = () => palette,
                 BackColor = palette.Panel,
                 ForeColor = palette.Text,
@@ -60,7 +58,7 @@ namespace MP1.ConfigurationStudio
             actions.Controls.Add(close);
             var expert = new StudioButton
             {
-                Text = Localization.IsEnglish ? "Show Expert mode" : "Expertenmodus zeigen",
+                Text = Localization.T("Expertenmodus zeigen"),
                 Primary = true,
                 Colors = () => palette,
                 BackColor = palette.Primary,

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -23,8 +23,8 @@ namespace MP1.ConfigurationStudio
             this.scale = scale;
             List<PendingChange> items = changes == null ? new List<PendingChange>() : changes.ToList();
             Text = confirmClose
-                ? (Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen")
-                : (Localization.IsEnglish ? "Pending changes" : "Ungespeicherte Änderungen");
+                ? (Localization.T("Ungespeicherte Änderungen"))
+                : (Localization.T2("Ungespeicherte Änderungen", "Pending changes"));
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.Sizable;
             MinimizeBox = false;
@@ -36,11 +36,11 @@ namespace MP1.ConfigurationStudio
             Font = Typography.Create(10f * scale, FontStyle.Regular);
 
             string title = confirmClose
-                ? (Localization.IsEnglish ? "Save your changes before leaving?" : "Änderungen vor dem Verlassen speichern?")
-                : (Localization.IsEnglish ? "Pending configuration changes" : "Ausstehende Konfigurationsänderungen");
+                ? (Localization.T("Änderungen vor dem Verlassen speichern?"))
+                : (Localization.T("Ausstehende Konfigurationsänderungen"));
             var header = new Label
             {
-                Text = title + " · " + items.Count + (fileEditors > 0 ? (Localization.IsEnglish ? " · " + fileEditors + " XML editor(s)" : " · " + fileEditors + " XML-Editor(en)") : String.Empty),
+                Text = title + " · " + items.Count + (fileEditors > 0 ? " · " + fileEditors + Localization.T2(" XML-Editor(en)", " XML editor(s)") : String.Empty),
                 Dock = DockStyle.Top,
                 Height = Px(confirmClose ? 62 : 38),
                 Padding = new Padding(Px(16), Px(12), Px(16), 0),
@@ -61,7 +61,7 @@ namespace MP1.ConfigurationStudio
             list.DrawItem += DrawItem;
             list.HandleCreated += delegate { NativeDarkMode.Apply(list.Handle); };
             if (items.Count == 0)
-                list.Items.Add(Localization.IsEnglish ? "No pending configuration entries. XML file editors may still contain unsaved text." : "Keine ausstehenden Konfigurationseinträge. XML-Editoren können weiterhin ungespeicherten Text enthalten.");
+                list.Items.Add(Localization.T("Keine ausstehenden Konfigurationseinträge. XML-Editoren können weiterhin ungespeicherten Text enthalten."));
             else
                 foreach (PendingChange change in items) list.Items.Add(change);
 
@@ -72,7 +72,7 @@ namespace MP1.ConfigurationStudio
             var actions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, AutoSize = true, BackColor = palette.Panel, Width = Px(confirmClose ? 390 : 140) };
             var close = new StudioButton
             {
-                Text = confirmClose ? (Localization.IsEnglish ? "Cancel" : "Abbrechen") : (Localization.IsEnglish ? "Close" : "Schließen"),
+                Text = confirmClose ? (Localization.T("Abbrechen")) : (Localization.T("Schließen")),
                 Colors = () => palette,
                 BackColor = palette.Panel,
                 ForeColor = palette.Text,
@@ -85,10 +85,10 @@ namespace MP1.ConfigurationStudio
             actions.Controls.Add(close);
             if (confirmClose)
             {
-                var save = new StudioButton { Text = Localization.IsEnglish ? "Save" : "Speichern", Primary = true, Colors = () => palette, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Width = Px(120), Height = Px(32), Margin = new Padding(Px(8), 0, 0, 0) };
+                var save = new StudioButton { Text = Localization.T("Speichern"), Primary = true, Colors = () => palette, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Width = Px(120), Height = Px(32), Margin = new Padding(Px(8), 0, 0, 0) };
                 save.Click += delegate { SaveRequested = true; DialogResult = DialogResult.OK; Close(); };
                 actions.Controls.Add(save);
-                var discard = new StudioButton { Text = Localization.IsEnglish ? "Don't save" : "Nicht speichern", Colors = () => palette, BackColor = palette.Panel, ForeColor = palette.Text, Width = Px(130), Height = Px(32), Margin = new Padding(Px(8), 0, 0, 0) };
+                var discard = new StudioButton { Text = Localization.T("Nicht speichern"), Colors = () => palette, BackColor = palette.Panel, ForeColor = palette.Text, Width = Px(130), Height = Px(32), Margin = new Padding(Px(8), 0, 0, 0) };
                 discard.FlatAppearance.BorderColor = palette.Border;
                 discard.Click += delegate { DiscardRequested = true; DialogResult = DialogResult.OK; Close(); };
                 actions.Controls.Add(discard);
@@ -117,8 +117,8 @@ namespace MP1.ConfigurationStudio
             }
             string key = change.Section + "  /  " + change.Entry;
             string value = change.Removed
-                ? (change.OldValue == null ? "(new) → (removed)" : (change.OldValue ?? String.Empty) + "  →  (" + (Localization.IsEnglish ? "removed" : "entfernt") + ")")
-                : (change.OldValue == null ? "(" + (Localization.IsEnglish ? "new" : "neu") + ")  →  " + (change.NewValue ?? String.Empty) : (change.OldValue ?? String.Empty) + "  →  " + (change.NewValue ?? String.Empty));
+                ? (change.OldValue == null ? "(new) → (removed)" : (change.OldValue ?? String.Empty) + "  →  (" + (Localization.T("entfernt")) + ")")
+                : (change.OldValue == null ? "(" + (Localization.T("neu")) + ")  →  " + (change.NewValue ?? String.Empty) : (change.OldValue ?? String.Empty) + "  →  " + (change.NewValue ?? String.Empty));
             int left = e.Bounds.Left + Px(10);
             int width = Math.Max(0, e.Bounds.Width - Px(20));
             TextRenderer.DrawText(e.Graphics, key, list.Font, new Rectangle(left, e.Bounds.Top + Px(5), width, Px(20)), palette.Text, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);

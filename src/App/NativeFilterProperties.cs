@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -36,14 +36,14 @@ namespace MP1.ConfigurationStudio
                 StudioLog.Info("Filter properties: kind=" + kind + " name=" + (filterName ?? "(null)") + " found=" + (device != null) + " available=" + NativeFilterCatalog.Names(kind).Count);
                 if (device == null)
                 {
-                    MessageBox.Show(owner, Localization.IsEnglish ? "This filter is not registered on this system." : "Dieser Filter ist auf diesem System nicht registriert.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(owner, Localization.T("Dieser Filter ist auf diesem System nicht registriert."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 PropertyInfo monikerProperty = device.GetType().GetProperty("Mon");
                 IMoniker moniker = monikerProperty == null ? null : monikerProperty.GetValue(device, null) as IMoniker;
                 if (moniker == null)
                 {
-                    MessageBox.Show(owner, Localization.IsEnglish ? "No property page is available for this filter." : "Für diesen Filter ist keine Eigenschaftsseite verfügbar.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(owner, Localization.T("Für diesen Filter ist keine Eigenschaftsseite verfügbar."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 object filter;
@@ -52,14 +52,14 @@ namespace MP1.ConfigurationStudio
                 ISpecifyPropertyPages pages = filter as ISpecifyPropertyPages;
                 if (pages == null)
                 {
-                    MessageBox.Show(owner, Localization.IsEnglish ? "No property page is available for this filter." : "Für diesen Filter ist keine Eigenschaftsseite verfügbar.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(owner, Localization.T("Für diesen Filter ist keine Eigenschaftsseite verfügbar."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 DsCAUUID guids;
                 int result = pages.GetPages(out guids);
                 if (result != 0 || guids.cElems == 0)
                 {
-                    MessageBox.Show(owner, Localization.IsEnglish ? "No property page is available for this filter." : "Für diesen Filter ist keine Eigenschaftsseite verfügbar.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(owner, Localization.T("Für diesen Filter ist keine Eigenschaftsseite verfügbar."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
                 try
@@ -73,7 +73,7 @@ namespace MP1.ConfigurationStudio
             }
             catch (Exception ex)
             {
-                MessageBox.Show(owner, (Localization.IsEnglish ? "The filter configuration could not be opened.\r\n\r\n" : "Die Filterkonfiguration konnte nicht geöffnet werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(owner, (Localization.T("Die Filterkonfiguration konnte nicht geöffnet werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }

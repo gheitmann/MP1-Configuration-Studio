@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -46,16 +46,16 @@ namespace MP1.ConfigurationStudio
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Plugin" : "Plugin", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Plugin" : "Plugin" };
+            table.Controls.Add(new Label { Text = Localization.T("Plugin"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.T("Plugin") };
             table.Controls.Add(choice, 1, 0);
 
             var actions = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = true, AutoSize = true, Dock = DockStyle.Fill, BackColor = palette.Background, Margin = new Padding(0) };
-            configure = ButtonFor(Localization.IsEnglish ? "Configure" : "Konfigurieren", delegate { ConfigurePlugin(); }, body);
+            configure = ButtonFor(Localization.T("Konfigurieren"), delegate { ConfigurePlugin(); }, body);
             configure.Enabled = false;
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Refresh" : "Aktualisieren", delegate { LoadPlugins(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Aktualisieren"), delegate { LoadPlugins(); }, body));
             actions.Controls.Add(configure);
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Classic configuration" : "Klassische Konfiguration", delegate { if (classic != null) classic(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Klassische Konfiguration"), delegate { if (classic != null) classic(); }, body));
             table.Controls.Add(actions, 0, 1);
             table.SetColumnSpan(actions, 2);
 
@@ -68,9 +68,7 @@ namespace MP1.ConfigurationStudio
 
             var note = new Label
             {
-                Text = Localization.IsEnglish
-                    ? "Plugin windows use the plugin's own UI. Loading a plugin can take a moment; failures are isolated and can be retried or opened through the classic configuration."
-                    : "Plugin-Fenster behalten ihre eigene Oberfläche. Das Laden kann einen Moment dauern; Fehler bleiben isoliert und können erneut versucht oder über die klassische Konfiguration geöffnet werden.",
+                Text = Localization.T("Plugin-Fenster behalten ihre eigene Oberfläche. Das Laden kann einen Moment dauern; Fehler bleiben isoliert und können erneut versucht oder über die klassische Konfiguration geöffnet werden."),
                 Font = Typography.Create(9f * scale, FontStyle.Regular),
                 ForeColor = palette.Muted,
                 AutoSize = true,
@@ -100,7 +98,7 @@ namespace MP1.ConfigurationStudio
             choice.SetOptions(new ChoiceOption[0], String.Empty);
             plugins.Clear();
             configure.Enabled = false;
-            status.Text = Localization.IsEnglish ? "Reading plugin list …" : "Plugin-Liste wird gelesen …";
+            status.Text = Localization.T("Plugin-Liste wird gelesen …");
             status.ForeColor = palette.Muted;
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -117,8 +115,8 @@ namespace MP1.ConfigurationStudio
                             choice.SetOptions(options, plugins.Count > 0 ? "0" : String.Empty);
                             configure.Enabled = plugins.Count > 0;
                             status.Text = plugins.Count == 0
-                                ? (Localization.IsEnglish ? "No plugin with a configuration window found." : "Kein Plugin mit Konfigurationsfenster gefunden.")
-                                : plugins.Count + (Localization.IsEnglish ? " configurable plugins" : " konfigurierbare Plugins");
+                                ? (Localization.T("Kein Plugin mit Konfigurationsfenster gefunden."))
+                                : plugins.Count + (Localization.T(" konfigurierbare Plugins"));
                             status.ForeColor = plugins.Count == 0 ? palette.Muted : palette.Text;
                             loading = false;
                         }));
@@ -194,7 +192,7 @@ namespace MP1.ConfigurationStudio
                     WorkingDirectory = runtime
                 };
                 Process.Start(info);
-                status.Text = (Localization.IsEnglish ? "Opened: " : "Geöffnet: ") + plugin.Name;
+                status.Text = (Localization.T("Geöffnet: ")) + plugin.Name;
                 status.ForeColor = palette.Text;
             }
             catch (Exception ex)

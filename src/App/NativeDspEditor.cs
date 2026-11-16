@@ -50,25 +50,25 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 14));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
-            top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Music folder" : "Musikordner", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            musicDirectory = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Music folder" : "Musikordner" };
+            top.Controls.Add(new Label { Text = Localization.T("Musikordner"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+            musicDirectory = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.T("Musikordner") };
             musicDirectory.Box.TextChanged += delegate { if (!loading && document != null) { SetRootAttribute("MusicDirectory", musicDirectory.Text); MarkDirty(); } };
             top.Controls.Add(musicDirectory, 1, 0);
-            var browse = ButtonFor(Localization.IsEnglish ? "Browse …" : "Ordner …", delegate { BrowseMusicDirectory(); }, body);
+            var browse = ButtonFor(Localization.T("Ordner …"), delegate { BrowseMusicDirectory(); }, body);
             browse.Dock = DockStyle.Fill;
             top.Controls.Add(browse, 2, 0);
-            var save = ButtonFor(Localization.IsEnglish ? "Save" : "Speichern", delegate { SaveFile(); }, body);
+            var save = ButtonFor(Localization.T("Speichern"), delegate { SaveFile(); }, body);
             save.Dock = DockStyle.Fill;
             top.Controls.Add(save, 3, 0);
 
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { Reload(); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add BASS effect" : "BASS-Effekt hinzufügen", delegate { AddElement("BASS", "EffectName"); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add VST plugin" : "VST-Plugin hinzufügen", delegate { AddElement("VST", "PluginDll"); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Scan VST" : "VST suchen", delegate { ScanPlugins("VST"); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Scan Winamp" : "Winamp suchen", delegate { ScanPlugins("Winamp"); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add Winamp plugin" : "Winamp-Plugin hinzufügen", delegate { AddElement("Winamp", "PluginDll"); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Test playback" : "Testwiedergabe", delegate { TestPlayback(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Neu laden"), delegate { Reload(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("BASS-Effekt hinzufügen"), delegate { AddElement("BASS", "EffectName"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("VST-Plugin hinzufügen"), delegate { AddElement("VST", "PluginDll"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("VST suchen"), delegate { ScanPlugins("VST"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Winamp suchen"), delegate { ScanPlugins("Winamp"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Winamp-Plugin hinzufügen"), delegate { AddElement("Winamp", "PluginDll"); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Testwiedergabe"), delegate { TestPlayback(); }, body));
             status.AutoSize = false;
             status.Width = Px(160);
             status.Height = Px(28);
@@ -91,7 +91,7 @@ namespace MP1.ConfigurationStudio
         public bool ConfirmDiscardChanges()
         {
             if (!dirty) return true;
-            return MessageBox.Show(FindForm(), Localization.IsEnglish ? "Discard unsaved music DSP changes?" : "Ungespeicherte Musik-DSP-Änderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            return MessageBox.Show(FindForm(), Localization.T("Ungespeicherte Musik-DSP-Änderungen verwerfen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
         public bool SaveChanges()
@@ -102,7 +102,7 @@ namespace MP1.ConfigurationStudio
 
         private int Px(float value) { return (int)Math.Round(value * scale); }
 
-        private static string L(string de, string en) { return Localization.IsEnglish ? en : de; }
+        private static string L(string de, string en) { return Localization.T2(de, en); }
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
@@ -370,7 +370,7 @@ namespace MP1.ConfigurationStudio
             string root = Path.Combine(runtime, "musicplayer", "plugins", "dsp");
             if (!Directory.Exists(root))
             {
-                MessageBox.Show(FindForm(), (Localization.IsEnglish ? "DSP plugin folder not found:\r\n" : "DSP-Plugin-Ordner nicht gefunden:\r\n") + root, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(FindForm(), (Localization.T("DSP-Plugin-Ordner nicht gefunden:\r\n")) + root, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             string[] files = Directory.GetFiles(root, "*.dll", SearchOption.AllDirectories)
@@ -556,7 +556,7 @@ namespace MP1.ConfigurationStudio
 
         private void RemoveElement(XmlElement element, string kind)
         {
-            if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "Remove this entry?" : "Diesen Eintrag entfernen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            if (MessageBox.Show(FindForm(), (Localization.T("Diesen Eintrag entfernen?")), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             document.DocumentElement.RemoveChild(element);
             MarkDirty();
             BuildCards();
@@ -575,12 +575,12 @@ namespace MP1.ConfigurationStudio
             {
                 string backup = NativeXmlFileStore.SaveDocument(path, document, encoding);
                 dirty = false;
-                status.Text = (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + Path.GetFileName(backup);
+                status.Text = (Localization.T("Gespeichert · Sicherung: ")) + Path.GetFileName(backup);
             }
             catch (Exception ex)
             {
                 status.Text = ex.Message;
-                MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The music DSP settings could not be saved.\r\n\r\n" : "Die Musik-DSP-Einstellungen konnten nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(FindForm(), (Localization.T("Die Musik-DSP-Einstellungen konnten nicht gespeichert werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -593,7 +593,7 @@ namespace MP1.ConfigurationStudio
             public PluginPickerDialog(float scale, string kind, string[] files)
             {
                 this.scale = scale;
-                Text = (Localization.IsEnglish ? "Select " : "Auswählen: ") + kind;
+                Text = (Localization.T("Auswählen: ")) + kind;
                 FormBorderStyle = FormBorderStyle.Sizable;
                 StartPosition = FormStartPosition.CenterParent;
                 MinimizeBox = false;
@@ -609,7 +609,7 @@ namespace MP1.ConfigurationStudio
                 foreach (string file in files) list.Items.Add(file);
                 if (list.Items.Count > 0) list.SelectedIndex = 0;
                 var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = Px(48), FlowDirection = FlowDirection.RightToLeft, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(10), Px(8), Px(10), Px(8)) };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
@@ -703,7 +703,7 @@ namespace MP1.ConfigurationStudio
                 this.compressor = compressor;
                 this.compressorThreshold = compressorThreshold;
                 this.vstPlugins = vstPlugins ?? new List<string>();
-                Text = Localization.IsEnglish ? "DSP test playback" : "DSP-Testwiedergabe";
+                Text = Localization.T("DSP-Testwiedergabe");
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
                 MaximizeBox = false;
@@ -721,11 +721,11 @@ namespace MP1.ConfigurationStudio
                 file.ForeColor = Palette.For(true).Text;
                 file.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
                 top.Controls.Add(file, 0, 0);
-                var browse = new StudioButton { Text = Localization.IsEnglish ? "Browse …" : "Datei …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
+                var browse = new StudioButton { Text = Localization.T("Datei …"), FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
                 browse.FlatAppearance.BorderColor = Palette.For(true).Border;
                 browse.Click += delegate
                 {
-                    using (var dialog = new OpenFileDialog { Title = Localization.IsEnglish ? "Select test file" : "Testdatei wählen", Filter = "Audio (*.mp3;*.wav;*.flac;*.ogg;*.m4a)|*.mp3;*.wav;*.flac;*.ogg;*.m4a|All files (*.*)|*.*", CheckFileExists = true })
+                    using (var dialog = new OpenFileDialog { Title = Localization.T("Testdatei wählen"), Filter = "Audio (*.mp3;*.wav;*.flac;*.ogg;*.m4a)|*.mp3;*.wav;*.flac;*.ogg;*.m4a|All files (*.*)|*.*", CheckFileExists = true })
                     {
                         if (Directory.Exists(Path.GetDirectoryName(file.Text))) dialog.InitialDirectory = Path.GetDirectoryName(file.Text);
                         if (dialog.ShowDialog(this) == DialogResult.OK) file.Text = dialog.FileName;
@@ -734,21 +734,21 @@ namespace MP1.ConfigurationStudio
                 top.Controls.Add(browse, 1, 0);
 
                 var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(48), FlowDirection = FlowDirection.LeftToRight, BackColor = Palette.For(true).Panel, Padding = new Padding(Px(14), 0, Px(14), 0) };
-                play = new StudioButton { Text = Localization.IsEnglish ? "Play" : "Wiedergabe", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(130), Height = Px(30) };
+                play = new StudioButton { Text = Localization.T2("Wiedergabe", "Play"), FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(130), Height = Px(30) };
                 play.FlatAppearance.BorderColor = Palette.For(true).Border;
                 play.Click += delegate { StartPlayback(); };
-                stop = new StudioButton { Text = Localization.IsEnglish ? "Stop" : "Stopp", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30), Enabled = false };
+                stop = new StudioButton { Text = Localization.T("Stopp"), FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30), Enabled = false };
                 stop.FlatAppearance.BorderColor = Palette.For(true).Border;
                 stop.Click += delegate { StopPlayback(); };
                 actions.Controls.Add(play);
                 actions.Controls.Add(stop);
-                var close = new StudioButton { Text = Localization.IsEnglish ? "Close" : "Schließen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var close = new StudioButton { Text = Localization.T("Schließen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 close.FlatAppearance.BorderColor = Palette.For(true).Border;
                 actions.Controls.Add(close);
                 status.AutoSize = true;
                 status.ForeColor = Palette.For(true).Muted;
                 status.Font = Typography.Create(9f * scale, FontStyle.Regular);
-                status.Text = (Localization.IsEnglish ? "Gain: " : "Gain: ") + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (damp ? "DynAmp " : "") + (compressor ? "Compressor " : "") + (this.vstPlugins.Count > 0 ? this.vstPlugins.Count + " VST " : "") + (Localization.IsEnglish ? "applied in this test" : "in dieser Vorschau aktiv");
+                status.Text = (Localization.T("Gain: ")) + gain.ToString("0.0", CultureInfo.InvariantCulture) + " dB  ·  " + (damp ? "DynAmp " : "") + (compressor ? "Compressor " : "") + (this.vstPlugins.Count > 0 ? this.vstPlugins.Count + " VST " : "") + (Localization.T("in dieser Vorschau aktiv"));
                 actions.Controls.Add(status);
                 Controls.Add(actions);
                 Controls.Add(top);
@@ -851,7 +851,7 @@ namespace MP1.ConfigurationStudio
                 StopPlayback();
                 if (!File.Exists(file.Text))
                 {
-                    status.Text = Localization.IsEnglish ? "File not found." : "Datei nicht gefunden.";
+                    status.Text = Localization.T("Datei nicht gefunden.");
                     return;
                 }
                 try
@@ -861,7 +861,7 @@ namespace MP1.ConfigurationStudio
                     {
                         if (!BASS_Init(-1, 44100, 0, IntPtr.Zero, IntPtr.Zero))
                         {
-                            status.Text = (Localization.IsEnglish ? "BASS could not initialise (error " : "BASS konnte nicht initialisieren (Fehler ") + BASS_ErrorGetCode() + ").";
+                            status.Text = (Localization.T("BASS konnte nicht initialisieren (Fehler ")) + BASS_ErrorGetCode() + ").";
                             return;
                         }
                         initialized = true;
@@ -874,7 +874,7 @@ namespace MP1.ConfigurationStudio
                     stream = BASS_StreamCreateFile(false, file.Text, 0, 0, 0x100 | 0x40000 | 0x4 | 0x80000000);
                     if (stream == 0)
                     {
-                        status.Text = (Localization.IsEnglish ? "Cannot open audio file (BASS error " : "Audiodatei kann nicht geöffnet werden (BASS-Fehler ") + BASS_ErrorGetCode() + ").";
+                        status.Text = (Localization.T("Audiodatei kann nicht geöffnet werden (BASS-Fehler ")) + BASS_ErrorGetCode() + ").";
                         return;
                     }
                     BASS_ChannelSetAttribute(stream, 2, (float)Math.Pow(10, gain / 20.0));
@@ -942,7 +942,7 @@ namespace MP1.ConfigurationStudio
                     BASS_ChannelPlay(stream, false);
                     play.Enabled = false;
                     stop.Enabled = true;
-                    status.Text = (Localization.IsEnglish ? "Playing with " : "Wiedergabe mit ") + applied + " …";
+                    status.Text = (Localization.T("Wiedergabe mit ")) + applied + " …";
                 }
                 catch (Exception ex)
                 {

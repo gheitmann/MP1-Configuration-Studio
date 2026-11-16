@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -159,9 +160,7 @@ namespace MP1.ConfigurationStudio
             if(dpiNoticeShown)return;
             dpiNoticeShown=true;
             StudioLog.Warn(reason+"; offering restart");
-            DialogResult answer=MessageBox.Show(form,Localization.IsEnglish
-                    ?"Display scaling changed. Restart Studio now so the layout is recalculated?\r\n\r\nUnsaved changes will be lost."
-                    :"Die Bildschirmskalierung hat sich geändert. Studio jetzt neu starten, damit das Layout neu berechnet wird?\r\n\r\nNicht gespeicherte Änderungen gehen verloren.",
+            DialogResult answer=MessageBox.Show(form,Localization.T("Die Bildschirmskalierung hat sich geändert. Studio jetzt neu starten, damit das Layout neu berechnet wird?\r\n\r\nNicht gespeicherte Änderungen gehen verloren."),
                 "MP1 Configuration Studio",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button1);
             if(answer!=DialogResult.Yes)return;
             form.BeginInvoke((Action)delegate{
@@ -183,7 +182,7 @@ namespace MP1.ConfigurationStudio
             catch(Exception ex)
             {
                 StudioLog.Error(ex,"Native Studio start failed");
-                MessageBox.Show(form,(Localization.IsEnglish?"The new interface could not be started.\r\n\r\n":"Die neue Oberfläche konnte nicht gestartet werden.\r\n\r\n")+ex.Message,"MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                MessageBox.Show(form,(Localization.T("Die neue Oberfläche konnte nicht gestartet werden.\r\n\r\n"))+ex.Message,"MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
         }
         private void StartStudioProcess()
@@ -198,9 +197,7 @@ namespace MP1.ConfigurationStudio
             catch(Exception ex)
             {
                 StudioLog.Error(ex,"Studio restart after DPI change failed");
-                MessageBox.Show(Localization.IsEnglish
-                        ?"Studio could not be restarted. Please start it manually.\r\n\r\n"+ex.Message
-                        :"Studio konnte nicht neu gestartet werden. Bitte manuell starten.\r\n\r\n"+ex.Message,
+                MessageBox.Show(String.Format(CultureInfo.CurrentCulture,Localization.Pair("Studio could not be restarted. Please start it manually.\r\n\r\n{0}","Studio konnte nicht neu gestartet werden. Bitte manuell starten.\r\n\r\n{0}"),ex.Message),
                     "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
         }
@@ -288,7 +285,7 @@ namespace MP1.ConfigurationStudio
             form.FormClosing+=delegate(object sender,FormClosingEventArgs e){
                 if(SaveRequested)return;
                 if(!CloseGuard.ShouldPrompt(e.CloseReason,edits.Count,restartClassic||restartStudio,SuppressCloseGuard))return;
-                if(MessageBox.Show(form,CloseGuard.Prompt(edits.Count,Localization.IsEnglish),Localization.T("Ungespeicherte Änderungen"),
+                if(MessageBox.Show(form,CloseGuard.Prompt(edits.Count),Localization.T("Ungespeicherte Änderungen"),
                     MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)e.Cancel=true;
             };
             holder.SizeChanged+=delegate{LayoutNativePage();};
@@ -507,27 +504,16 @@ namespace MP1.ConfigurationStudio
         private static string SectionHelp(TreeNode node)
         {
             string root=node.FullPath.ToLowerInvariant();
-            if(Localization.IsEnglish)
-            {
-                if(root.Contains("codec")||root.Contains("renderer"))return "Choose the installed decoders and the video and audio output. F1 opens the documentation for this section.";
-                if(root.Contains("plugin"))return "Select an extension to enable it or open its configuration. Some plugins save directly in their own dialog.";
-                if(root.Contains("gui")||root.Contains("skin"))return "Choose the MediaPortal interface and behavior. Light/dark changes only this configuration window, not the media interface.";
-                if(root.Contains("tv")||root.Contains("radio"))return "The TV/radio client settings remain available here. The separate TV Server configuration still belongs to TV Server.";
-                if(root.Contains("keyboard")||root.Contains("remote")||root.Contains("keys"))return "Set up keyboard shortcuts and the remote control. Search finds key bindings and individual options faster.";
-                if(root.Contains("folder")||root.Contains("picture"))return "Manage media sources and pictures. Folder and library changes apply to the selected media type.";
-                if(root.Contains("general"))return "The tabs cover volume, keyboard shortcuts, refresh rate, and startup behavior. Ctrl+F searches individual settings.";
-                return "Select a subsection or use Ctrl+F to search for a setting. F1 opens the matching documentation.";
-            }
-            if(root.Contains("codec")||root.Contains("renderer"))return "Wähle die installierten Decoder und die Bild- und Tonausgabe. F1 öffnet die Dokumentation für den gewählten Bereich.";
-            if(root.Contains("plugin"))return "Wähle eine Erweiterung aus, um sie zu aktivieren oder ihre Konfiguration zu öffnen. Einzelne Plugins speichern direkt in ihrem eigenen Dialog.";
-            if(root.Contains("gui")||root.Contains("skin"))return "Wähle die Oberfläche und das Verhalten von MediaPortal. Hell/Dunkel oben rechts ändert nur dieses Konfigurationsfenster. Die Medienoberfläche wird davon nicht umgestellt.";
-            if(root.Contains("tv")||root.Contains("radio"))return "Hier bleiben die Einstellungen des TV-/Radio-Clients erreichbar. Die separate TV-Server-Konfiguration gehört weiterhin zum TV-Server.";
-            if(root.Contains("keyboard")||root.Contains("remote")||root.Contains("keys"))return "Richte Tastaturkürzel und Fernbedienung ein. Über die Suche findest du Tastenbelegungen und einzelne Optionen schneller.";
-            if(root.Contains("folder")||root.Contains("picture"))return "Verwalte deine Medienquellen und Bilder. Änderungen an Ordnern und Bibliotheken nimmst du hier für den jeweiligen Medientyp vor.";
-            if(root.Contains("general"))return "Die Registerkarten führen zu Lautstärke, Tastaturkürzeln, Bildwiederholrate und Startverhalten. Mit Strg+F kannst du auch einzelne Einstellungen suchen.";
-            return "Wähle einen Unterbereich oder suche mit Strg+F nach einer Einstellung. F1 öffnet die passende Dokumentation.";
+            if(root.Contains("codec")||root.Contains("renderer"))return Localization.T2("W├ñhle die installierten Decoder und die Bild- und Tonausgabe. F1 ├Âffnet die Dokumentation f├╝r den gew├ñhlten Bereich.","Choose the installed decoders and the video and audio output. F1 opens the documentation for this section.");
+            if(root.Contains("plugin"))return Localization.T2("W├ñhle eine Erweiterung aus, um sie zu aktivieren oder ihre Konfiguration zu ├Âffnen. Einzelne Plugins speichern direkt in ihrem eigenen Dialog.","Select an extension to enable it or open its configuration. Some plugins save directly in their own dialog.");
+            if(root.Contains("gui")||root.Contains("skin"))return Localization.T2("W├ñhle die Oberfl├ñche und das Verhalten von MediaPortal. Hell/Dunkel oben rechts ├ñndert nur dieses Konfigurationsfenster. Die Medienoberfl├ñche wird davon nicht umgestellt.","Choose the MediaPortal interface and behavior. Light/dark changes only this configuration window, not the media interface.");
+            if(root.Contains("tv")||root.Contains("radio"))return Localization.T2("Hier bleiben die Einstellungen des TV-/Radio-Clients erreichbar. Die separate TV-Server-Konfiguration geh├Ârt weiterhin zum TV-Server.","The TV/radio client settings remain available here. The separate TV Server configuration still belongs to TV Server.");
+            if(root.Contains("keyboard")||root.Contains("remote")||root.Contains("keys"))return Localization.T2("Richte Tastaturk├╝rzel und Fernbedienung ein. ├£ber die Suche findest du Tastenbelegungen und einzelne Optionen schneller.","Set up keyboard shortcuts and the remote control. Search finds key bindings and individual options faster.");
+            if(root.Contains("folder")||root.Contains("picture"))return Localization.T2("Verwalte deine Medienquellen und Bilder. ├änderungen an Ordnern und Bibliotheken nimmst du hier f├╝r den jeweiligen Medientyp vor.","Manage media sources and pictures. Folder and library changes apply to the selected media type.");
+            if(root.Contains("general"))return Localization.T2("Die Registerkarten f├╝hren zu Lautst├ñrke, Tastaturk├╝rzeln, Bildwiederholrate und Startverhalten. Mit Strg+F kannst du auch einzelne Einstellungen suchen.","The tabs cover volume, keyboard shortcuts, refresh rate, and startup behavior. Ctrl+F searches individual settings.");
+            return Localization.T2("W├ñhle einen Unterbereich oder suche mit Strg+F nach einer Einstellung. F1 ├Âffnet die passende Dokumentation.","Select a subsection or use Ctrl+F to search for a setting. F1 opens the matching documentation.");
         }
-        private void OpenHelp()
+private void OpenHelp()
         {
             var help=nativeTools.Items.Find("helpToolStripSplitButton",true).FirstOrDefault();
             if(help!=null)ClickNative(help);

@@ -388,11 +388,24 @@ namespace MP1.ConfigurationStudio
             Check(!CloseGuard.ShouldPrompt(CloseReason.UserClosing,2,true,false),"Studio restart skips the unsaved guard");
             Check(!CloseGuard.ShouldPrompt(CloseReason.UserClosing,2,false,true),"automated test mode skips the unsaved guard");
             Check(CloseGuard.ShouldPrompt(CloseReason.UserClosing,1,false,false),"window close with unsaved changes is guarded");
-            Check(CloseGuard.Prompt(1,false).Contains("Eine Änderung")&&CloseGuard.Prompt(2,true).Contains("2 unsaved changes"),"close prompt reflects the unsaved count and language");
-            Check(CloseGuard.RestartPrompt(0,true)=="Restart Studio now?"&&CloseGuard.RestartPrompt(2,false).Contains("2 ungespeicherte"),"restart prompt reflects the unsaved count");
+            Localization.Set(UiLanguage.English);
+            Check(CloseGuard.Prompt(1).Contains("One change")&&CloseGuard.Prompt(2).Contains("2 unsaved changes"),"close prompt reflects the unsaved count and language");
+            Check(CloseGuard.RestartPrompt(0)=="Restart Studio now?"&&CloseGuard.RestartPrompt(2).Contains("2 unsaved changes"),"restart prompt reflects the unsaved count");
+            Localization.Set(UiLanguage.German);
+            Check(CloseGuard.Prompt(1).Contains("Eine Änderung")&&CloseGuard.RestartPrompt(2).Contains("2 ungespeicherte"),"close and restart prompts fall back to German");
             Check(Localization.T("Studio neu starten")=="Studio neu starten","restart label falls back to German");
             Localization.Set(UiLanguage.English);
             Check(Localization.T("Studio neu starten")=="Restart Studio"&&Localization.T("Ungespeicherte Änderungen")=="Unsaved changes"&&Localization.T("Vor dem Speichern automatisch sichern")=="Back up automatically before saving","restart, close, and backup labels are localized");
+            Localization.Set(UiLanguage.French);
+            Check(Localization.T("Allgemein")=="Général"&&Localization.T("Deaktivieren")=="Désactiver","French core UI strings resolve");
+            NativeField frenchField=null;
+            foreach(NativeSection section in NativeSettingsSchema.Sections()) foreach(NativeGroup group in section.Groups) foreach(NativeField candidate in group.Fields) if(candidate.Section=="general"&&candidate.Entry=="startfullscreen") frenchField=candidate;
+            Check(frenchField!=null&&frenchField.Label=="Démarrer en plein écran","French schema labels resolve");
+            Localization.Set(UiLanguage.Dutch);
+            Check(Localization.T("Allgemein")=="Algemeen"&&Localization.T("Deaktivieren")=="Uitschakelen","Dutch core UI strings resolve");
+            Check(frenchField!=null&&frenchField.Label=="Op volledig scherm starten","Dutch schema labels resolve");
+            Check(SchemaTranslations.GroupTitle("fr","general","Renderer & Bild","Renderer & picture")=="Rendu & image","French group titles resolve");
+            Check(SchemaTranslations.SectionSubtitle("fr","general","Start, Stabilität und Grundverhalten von MediaPortal.","Startup, stability, and basic MediaPortal behavior.")=="Démarrage, stabilité et comportement de base de MediaPortal.","French section subtitles resolve");
             Localization.Set(UiLanguage.German);
         }
         private static void RunCompatibilityPolicyChecks(string directory)
@@ -438,7 +451,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.61"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.62"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }

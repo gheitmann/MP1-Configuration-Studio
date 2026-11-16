@@ -52,11 +52,11 @@ namespace MP1.ConfigurationStudio
             LoadStrings(configDirectory, language);
 
             var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = true, FlowDirection = FlowDirection.LeftToRight, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
-            var reload = ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { Reload(); }, body);
-            var save = ButtonFor(Localization.IsEnglish ? "Save" : "Speichern", delegate { SaveFile(); }, body);
+            var reload = ButtonFor(Localization.T("Neu laden"), delegate { Reload(); }, body);
+            var save = ButtonFor(Localization.T("Speichern"), delegate { SaveFile(); }, body);
             var up = ButtonFor("▲", delegate { MoveView(-1); }, body);
             var down = ButtonFor("▼", delegate { MoveView(1); }, body);
-            var addView = ButtonFor(Localization.IsEnglish ? "＋ View" : "＋ Ansicht", delegate { AddView(); }, body);
+            var addView = ButtonFor(Localization.T("＋ Ansicht"), delegate { AddView(); }, body);
             up.Width = Px(44);
             down.Width = Px(44);
             top.Controls.Add(reload);
@@ -80,11 +80,11 @@ namespace MP1.ConfigurationStudio
             var left = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = palette.Background, Margin = new Padding(0, 0, Px(10), 0) };
             left.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(32)));
             left.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            viewSearch = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, Margin = new Padding(0, 0, 0, Px(4)), AccessibleName = Localization.IsEnglish ? "Find view" : "Ansicht suchen" };
+            viewSearch = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, Margin = new Padding(0, 0, 0, Px(4)), AccessibleName = Localization.T("Ansicht suchen") };
             viewSearch.Box.ForeColor = palette.Muted;
-            viewSearch.Box.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …";
+            viewSearch.Box.Text = Localization.T("Ansicht suchen …");
             viewSearch.Box.GotFocus += delegate { if (viewSearch.Box.ForeColor == palette.Muted) { viewSearch.Box.Text = string.Empty; viewSearch.Box.ForeColor = palette.Text; } };
-            viewSearch.Box.LostFocus += delegate { if (viewSearch.Box.Text.Length == 0) { viewSearch.Box.ForeColor = palette.Muted; viewSearch.Box.Text = Localization.IsEnglish ? "Find view …" : "Ansicht suchen …"; } };
+            viewSearch.Box.LostFocus += delegate { if (viewSearch.Box.Text.Length == 0) { viewSearch.Box.ForeColor = palette.Muted; viewSearch.Box.Text = Localization.T("Ansicht suchen …"); } };
             viewSearch.Box.TextChanged += delegate { if (viewSearch.Box.ForeColor == palette.Text) SelectMatchingView(viewSearch.Text); };
             left.Controls.Add(viewSearch, 0, 0);
             viewList.Dock = DockStyle.Fill;
@@ -120,7 +120,7 @@ namespace MP1.ConfigurationStudio
         public bool ConfirmDiscardChanges()
         {
             if (!dirty) return true;
-            return MessageBox.Show(FindForm(), Localization.IsEnglish ? "Discard unsaved view changes?" : "Ungespeicherte Ansichtsänderungen verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            return MessageBox.Show(FindForm(), Localization.T("Ungespeicherte Ansichtsänderungen verwerfen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
         public bool SaveChanges()
@@ -131,7 +131,7 @@ namespace MP1.ConfigurationStudio
 
         private int Px(float value) { return (int)Math.Round(value * scale); }
 
-        private static string L(string de, string en) { return Localization.IsEnglish ? en : de; }
+        private static string L(string de, string en) { return Localization.T2(de, en); }
 
         private Button ButtonFor(string text, EventHandler click, Font font)
         {
@@ -211,7 +211,7 @@ namespace MP1.ConfigurationStudio
             {
                 if (!File.Exists(path))
                 {
-                    status.Text = (Localization.IsEnglish ? "File not found: " : "Datei nicht gefunden: ") + path;
+                    status.Text = (Localization.T("Datei nicht gefunden: ")) + path;
                     return;
                 }
                 string text = NativeXmlFileStore.ReadText(path, out encoding);
@@ -249,7 +249,7 @@ namespace MP1.ConfigurationStudio
                 }
                 RefreshList();
                 dirty = false;
-                status.Text = views.Count + (Localization.IsEnglish ? " views" : " Ansichten");
+                status.Text = views.Count + (Localization.T(" Ansichten"));
             }
             catch (Exception ex)
             {
@@ -358,13 +358,13 @@ namespace MP1.ConfigurationStudio
                 int titleWidth = Math.Max(Px(240), detail.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Px(20));
                 var title = new Label { Text = view.Label, Font = Typography.Create(13f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, MaximumSize = new Size(titleWidth, 0), Margin = new Padding(0, 0, 0, Px(2)) };
                 detailFlow.Controls.Add(title);
-                detailFlow.Controls.Add(new Label { Text = view.Filters.Count + (Localization.IsEnglish ? " filters" : " Filter"), Font = Typography.Create(9.5f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, 0, 0, Px(6)) });
+                detailFlow.Controls.Add(new Label { Text = view.Filters.Count + (Localization.T(" Filter")), Font = Typography.Create(9.5f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, 0, 0, Px(6)) });
                 var viewActions = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = true, AutoSize = true, BackColor = palette.Background, Margin = new Padding(0, 0, 0, Px(8)) };
                 viewActions.Controls.Add(ButtonFor(L("Ansicht löschen", "Delete view"), delegate { DeleteView(); }, Typography.Create(9f * scale, FontStyle.Regular)));
                 viewActions.Controls.Add(ButtonFor(L("Filter hinzufügen", "Add filter"), delegate { AddFilter(); }, Typography.Create(9f * scale, FontStyle.Regular)));
                 detailFlow.Controls.Add(viewActions);
                 if (view.Filters.Count == 0)
-                    detailFlow.Controls.Add(new Label { Text = Localization.IsEnglish ? "This view has no filters." : "Diese Ansicht hat keine Filter.", Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, 0, 0, Px(8)) });
+                    detailFlow.Controls.Add(new Label { Text = Localization.T("Diese Ansicht hat keine Filter."), Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, 0, 0, Px(8)) });
                 foreach (XmlElement filter in view.Filters) detailFlow.Controls.Add(BuildFilterCard(filter));
                 int width = Math.Max(Px(480), detail.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Px(12));
                 detailFlow.MinimumSize = new Size(width, 0);
@@ -504,7 +504,7 @@ namespace MP1.ConfigurationStudio
             }
             element.InnerText = value ?? string.Empty;
             dirty = true;
-            status.Text = (Localization.IsEnglish ? "Unsaved view changes" : "Ungespeicherte Ansichtsänderungen");
+            status.Text = (Localization.T("Ungespeicherte Ansichtsänderungen"));
         }
 
         private void DetachReferences(string id, string previous)
@@ -539,7 +539,7 @@ namespace MP1.ConfigurationStudio
             dirty = true;
             RefreshList();
             viewList.SelectedIndex = target;
-            status.Text = (Localization.IsEnglish ? "Order changed · unsaved" : "Reihenfolge geändert · ungespeichert");
+            status.Text = (Localization.T("Reihenfolge geändert · ungespeichert"));
         }
 
         private ViewModel SelectedView()
@@ -779,12 +779,12 @@ namespace MP1.ConfigurationStudio
             {
                 string backup = NativeXmlFileStore.SaveDocument(path, document, encoding);
                 dirty = false;
-                status.Text = (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + Path.GetFileName(backup);
+                status.Text = (Localization.T("Gespeichert · Sicherung: ")) + Path.GetFileName(backup);
             }
             catch (Exception ex)
             {
                 status.Text = ex.Message;
-                MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The views could not be saved.\r\n\r\n" : "Die Ansichten konnten nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(FindForm(), (Localization.T("Die Ansichten konnten nicht gespeichert werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -814,7 +814,7 @@ namespace MP1.ConfigurationStudio
                 input.BackColor = Palette.For(true).Input;
                 input.ForeColor = Palette.For(true).Text;
                 input.Text = initial ?? string.Empty;
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(342), Top = Px(112), Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(342), Top = Px(112), Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(232), Top = Px(112), Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
@@ -849,7 +849,7 @@ namespace MP1.ConfigurationStudio
             public FilterDialog(float scale, IEnumerable<string> fields, IEnumerable<string> sorts)
             {
                 this.scale = scale;
-                Text = Localization.IsEnglish ? "Add filter" : "Filter hinzufügen";
+                Text = Localization.T("Filter hinzufügen");
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
                 MaximizeBox = false;
@@ -874,14 +874,14 @@ namespace MP1.ConfigurationStudio
                 Fill(sort, sorts, null);
                 Fill(view, new[] { "List", "Icons", "Big Icons", "Cover Flow" }, "List");
                 limit.Text = "-1";
-                AddRow(table, 0, Localization.IsEnglish ? "Field" : "Feld", fieldChoice);
+                AddRow(table, 0, Localization.T("Feld"), fieldChoice);
                 AddRow(table, 1, "Operator", sqlOperator);
-                AddRow(table, 2, Localization.IsEnglish ? "Value" : "Wert", value);
-                AddRow(table, 3, Localization.IsEnglish ? "Sort" : "Sortierung", sort);
-                AddRow(table, 4, Localization.IsEnglish ? "View" : "Ansicht", view);
+                AddRow(table, 2, Localization.T("Wert"), value);
+                AddRow(table, 3, Localization.T("Sortierung"), sort);
+                AddRow(table, 4, Localization.T("Ansicht"), view);
                 AddRow(table, 5, "Limit", limit);
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;

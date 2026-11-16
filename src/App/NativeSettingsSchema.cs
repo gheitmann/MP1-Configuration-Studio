@@ -51,6 +51,19 @@ namespace MP1.ConfigurationStudio
             LabelDe = labelDe;
             LabelEn = labelEn;
         }
+
+        public string Label
+        {
+            get
+            {
+                // Options belong to their field; the field key is carried by the owning field, so
+                // the resolution here uses the German label as key fallback via the field-less table.
+                return SchemaTranslations.OptionLabel(Localization.Code, OwnerSection, OwnerEntry, Value, LabelDe, LabelEn);
+            }
+        }
+
+        internal string OwnerSection;
+        internal string OwnerEntry;
     }
 
     internal sealed class NativeField
@@ -80,9 +93,22 @@ namespace MP1.ConfigurationStudio
             HelpEn = helpEn;
         }
 
+        public string Label
+        {
+            get { return SchemaTranslations.FieldLabel(Localization.Code, Section, Entry, LabelDe, LabelEn); }
+        }
+
+        public string Help
+        {
+            get { return SchemaTranslations.FieldHelp(Localization.Code, Section, Entry, HelpDe, HelpEn); }
+        }
+
         public NativeField Option(string value, string labelDe, string labelEn)
         {
-            Options.Add(new NativeOption(value, labelDe, labelEn));
+            var option = new NativeOption(value, labelDe, labelEn);
+            option.OwnerSection = Section;
+            option.OwnerEntry = Entry;
+            Options.Add(option);
             return this;
         }
 
@@ -119,6 +145,13 @@ namespace MP1.ConfigurationStudio
             TitleEn = titleEn;
         }
 
+        public string Title
+        {
+            get { return SchemaTranslations.GroupTitle(Localization.Code, OwnerSection, TitleDe, TitleEn); }
+        }
+
+        internal string OwnerSection;
+
         public NativeGroup Add(NativeField field)
         {
             Fields.Add(field);
@@ -150,6 +183,7 @@ namespace MP1.ConfigurationStudio
 
         public NativeSection Group(NativeGroup group)
         {
+            group.OwnerSection = Id;
             Groups.Add(group);
             return this;
         }
@@ -159,6 +193,26 @@ namespace MP1.ConfigurationStudio
             NavTitleDe = titleDe;
             NavTitleEn = titleEn;
             return this;
+        }
+
+        public string Title
+        {
+            get { return SchemaTranslations.SectionTitle(Localization.Code, Id, TitleDe, TitleEn); }
+        }
+
+        public string Subtitle
+        {
+            get { return SchemaTranslations.SectionSubtitle(Localization.Code, Id, SubtitleDe, SubtitleEn); }
+        }
+
+        public string NavTitle
+        {
+            get
+            {
+                string german = String.IsNullOrEmpty(NavTitleDe) ? TitleDe : NavTitleDe;
+                string english = String.IsNullOrEmpty(NavTitleEn) ? TitleEn : NavTitleEn;
+                return SchemaTranslations.SectionNav(Localization.Code, Id, german, english);
+            }
         }
     }
 

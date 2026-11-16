@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -89,7 +89,7 @@ namespace MP1.ConfigurationStudio
 
             status.Font = Typography.Create(9f * scale, FontStyle.Regular);
             status.ForeColor = palette.Muted;
-            status.Text = Localization.IsEnglish ? "Reading plugins …" : "Plugins werden gelesen …";
+            status.Text = Localization.T("Plugins werden gelesen …");
             status.Margin = new Padding(0, 0, 0, Px(4));
             root.Controls.Add(status, 0, 0);
 
@@ -97,25 +97,25 @@ namespace MP1.ConfigurationStudio
             grid.Resize += delegate { SizeHeaders(); };
             root.Controls.Add(grid, 0, 3);
 
-            filter = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.IsEnglish ? "Filter plugins" : "Plugins filtern" };
+            filter = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.T("Plugins filtern") };
             filter.Box.TextChanged += delegate { ApplyFilter(); };
-            filter.Box.HandleCreated += delegate { SetCue(filter.Box, Localization.IsEnglish ? "Filter plugins…" : "Plugins filtern…"); };
+            filter.Box.HandleCreated += delegate { SetCue(filter.Box, Localization.T("Plugins filtern…")); };
             root.Controls.Add(filter, 0, 2);
 
             actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
             actions.SizeChanged += delegate { UpdateHeight(); };
-            configure = ActionButton(Localization.IsEnglish ? "Configure" : "Konfigurieren", delegate { ConfigureSelected(); }, body);
-            toggle = ActionButton(Localization.IsEnglish ? "Enable / disable" : "Aktivieren / deaktivieren", delegate { ToggleEnabled(); }, body);
-            home = ActionButton(Localization.IsEnglish ? "In Home" : "Im Home-Menü", delegate { ToggleHome(); }, body);
-            myPlugins = ActionButton(Localization.IsEnglish ? "In Plugins" : "In My Plugins", delegate { TogglePlugins(); }, body);
-            browse = ActionButton(Localization.IsEnglish ? "Browse and install plugins…" : "Plugins suchen und installieren…", delegate { Open("https://www.team-mediaportal.com/extensions"); }, body);
+            configure = ActionButton(Localization.T("Konfigurieren"), delegate { ConfigureSelected(); }, body);
+            toggle = ActionButton(Localization.T("Aktivieren / deaktivieren"), delegate { ToggleEnabled(); }, body);
+            home = ActionButton(Localization.T("Im Home-Menü"), delegate { ToggleHome(); }, body);
+            myPlugins = ActionButton(Localization.T("In My Plugins"), delegate { TogglePlugins(); }, body);
+            browse = ActionButton(Localization.T("Plugins suchen und installieren…"), delegate { Open("https://www.team-mediaportal.com/extensions"); }, body);
             actions.Controls.Add(configure);
             actions.Controls.Add(toggle);
             actions.Controls.Add(home);
             actions.Controls.Add(myPlugins);
-            actions.Controls.Add(ActionButton(Localization.IsEnglish ? "Refresh" : "Aktualisieren", delegate { LoadPlugins(true); }, body));
+            actions.Controls.Add(ActionButton(Localization.T("Aktualisieren"), delegate { LoadPlugins(true); }, body));
             actions.Controls.Add(browse);
-            actions.Controls.Add(ActionButton(Localization.IsEnglish ? "Classic configuration" : "Klassische Konfiguration", delegate { if (classic != null) classic(); }, body));
+            actions.Controls.Add(ActionButton(Localization.T("Klassische Konfiguration"), delegate { if (classic != null) classic(); }, body));
             root.Controls.Add(actions, 0, 1);
 
             Controls.Add(root);
@@ -155,7 +155,7 @@ namespace MP1.ConfigurationStudio
             entries.Clear();
             flow.Controls.Clear();
             headers.Clear();
-            status.Text = Localization.IsEnglish ? "Reading plugins …" : "Plugins werden gelesen …";
+            status.Text = Localization.T("Plugins werden gelesen …");
             status.ForeColor = palette.Muted;
             UpdateActions();
             ThreadPool.QueueUserWorkItem(delegate
@@ -193,9 +193,7 @@ namespace MP1.ConfigurationStudio
                     if (!process.WaitForExit(180000))
                     {
                         try { process.Kill(); } catch { }
-                        loadError = Localization.IsEnglish
-                            ? "The plugin scan timed out. Click Refresh to try again."
-                            : "Die Plugin-Erfassung hat zu lange gedauert. Klicke auf Aktualisieren.";
+                        loadError = Localization.T("Die Plugin-Erfassung hat zu lange gedauert. Klicke auf Aktualisieren.");
                         StudioLog.Warn("Plugin overview timed out for " + runtime);
                         return result;
                     }
@@ -204,7 +202,7 @@ namespace MP1.ConfigurationStudio
                     StudioLog.Info("Plugin overview: exit=" + process.ExitCode + " lines=" + ((output ?? String.Empty).Split('\n').Count(line => line.StartsWith("plugin=", StringComparison.OrdinalIgnoreCase))) + " runtime=" + runtime);
                     if (process.ExitCode != 0)
                     {
-                        loadError = (Localization.IsEnglish ? "Plugin scan failed: " : "Plugin-Erfassung fehlgeschlagen: ") + FirstLine(error);
+                        loadError = (Localization.T("Plugin-Erfassung fehlgeschlagen: ")) + FirstLine(error);
                         return result;
                     }
                     foreach (string line in (output ?? String.Empty).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
@@ -325,13 +323,13 @@ namespace MP1.ConfigurationStudio
             if (entries.Count == 0)
             {
                 status.Text = String.IsNullOrWhiteSpace(loadError)
-                    ? (Localization.IsEnglish ? "No plugins found in " : "Keine Plugins gefunden in ") + Path.Combine(runtime, "plugins")
+                    ? (Localization.T("Keine Plugins gefunden in ")) + Path.Combine(runtime, "plugins")
                     : loadError;
             }
             else
             {
-                status.Text = entries.Count + (Localization.IsEnglish ? " plugins · " : " Plugins · ") + entries.Count(entry => entry.Enabled)
-                    + (Localization.IsEnglish ? " enabled · right-click a tile for quick actions" : " aktiviert · Rechtsklick auf ein Plugin für Schnellaktionen");
+                status.Text = entries.Count + (Localization.T(" Plugins · ")) + entries.Count(entry => entry.Enabled)
+                    + (Localization.T(" aktiviert · Rechtsklick auf ein Plugin für Schnellaktionen"));
             }
             status.ForeColor = entries.Count == 0 ? palette.Muted : palette.Text;
             UpdateActions();
@@ -341,10 +339,10 @@ namespace MP1.ConfigurationStudio
         {
             string tip = (entry.Description ?? String.Empty).Trim();
             if (tip.Length == 0)
-                return Localization.IsEnglish ? "Right-click for quick actions" : "Rechtsklick für Schnellaktionen";
+                return Localization.T("Rechtsklick für Schnellaktionen");
             string author = (entry.Author ?? String.Empty).Trim();
-            if (author.Length > 0) tip += "\r\n" + (Localization.IsEnglish ? "Author: " : "Autor: ") + author;
-            tip += "\r\n" + (Localization.IsEnglish ? "Right-click for quick actions" : "Rechtsklick für Schnellaktionen");
+            if (author.Length > 0) tip += "\r\n" + (Localization.T("Autor: ")) + author;
+            tip += "\r\n" + (Localization.T("Rechtsklick für Schnellaktionen"));
             return tip;
         }
 
@@ -393,10 +391,10 @@ namespace MP1.ConfigurationStudio
         {
             switch ((category ?? String.Empty).ToLowerInvariant())
             {
-                case "window": return Localization.IsEnglish ? "Window plugins" : "Fenster-Plugins";
-                case "external": return Localization.IsEnglish ? "External players" : "Externe Player";
-                case "process": return Localization.IsEnglish ? "Process plugins" : "Prozess-Plugins";
-                default: return Localization.IsEnglish ? "Other plugins" : "Weitere Plugins";
+                case "window": return Localization.T("Fenster-Plugins");
+                case "external": return Localization.T("Externe Player");
+                case "process": return Localization.T("Prozess-Plugins");
+                default: return Localization.T("Weitere Plugins");
             }
         }
 
@@ -415,16 +413,16 @@ namespace MP1.ConfigurationStudio
             contextMenu.ShowCheckMargin = true;
             contextMenu.Font = Typography.Create(9.5f * scale, FontStyle.Regular);
             contextMenu.Renderer = new ToolStripProfessionalRenderer(new StudioMenuColorTable(palette));
-            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Configure" : "Konfigurieren", entry.HasSetup, null, delegate { Select(entry); ConfigureSelected(); }));
+            contextMenu.Items.Add(MenuItem(Localization.T("Konfigurieren"), entry.HasSetup, null, delegate { Select(entry); ConfigureSelected(); }));
             contextMenu.Items.Add(MenuItem(entry.Enabled
-                ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
-                : (Localization.IsEnglish ? "Enable" : "Aktivieren"), entry.CanEnable, null, delegate { Select(entry); ToggleEnabled(); }));
+                ? (Localization.T("Deaktivieren"))
+                : (Localization.T("Aktivieren")), entry.CanEnable, null, delegate { Select(entry); ToggleEnabled(); }));
             contextMenu.Items.Add(new ToolStripSeparator());
-            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "In Home" : "Im Home-Menü", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Home : null, delegate { Select(entry); ToggleHome(); }));
-            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "In Plugins" : "In My Plugins", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Plugins : null, delegate { Select(entry); TogglePlugins(); }));
+            contextMenu.Items.Add(MenuItem(Localization.T("Im Home-Menü"), entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Home : null, delegate { Select(entry); ToggleHome(); }));
+            contextMenu.Items.Add(MenuItem(Localization.T("In My Plugins"), entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Plugins : null, delegate { Select(entry); TogglePlugins(); }));
             contextMenu.Items.Add(new ToolStripSeparator());
-            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Browse and install plugins…" : "Plugins suchen und installieren…", true, null, delegate { Open("https://www.team-mediaportal.com/extensions"); }));
-            contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Classic configuration" : "Klassische Konfiguration", true, null, delegate { if (classic != null) classic(); }));
+            contextMenu.Items.Add(MenuItem(Localization.T("Plugins suchen und installieren…"), true, null, delegate { Open("https://www.team-mediaportal.com/extensions"); }));
+            contextMenu.Items.Add(MenuItem(Localization.T("Klassische Konfiguration"), true, null, delegate { if (classic != null) classic(); }));
             contextMenu.Show(Cursor.Position);
         }
 
@@ -472,16 +470,16 @@ namespace MP1.ConfigurationStudio
                 myPlugins.Enabled = has && selected.Category == "Window";
                 if (!has)
                 {
-                    SetText(toggle, Localization.IsEnglish ? "Enable / disable" : "Aktivieren / deaktivieren");
+                    SetText(toggle, Localization.T("Aktivieren / deaktivieren"));
                     return;
                 }
                 SetText(toggle, selected.Enabled
-                    ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
-                    : (Localization.IsEnglish ? "Enable" : "Aktivieren"));
-                SetText(home, selected.Home ? (Localization.IsEnglish ? "Remove from Home" : "Aus Home entfernen") : (Localization.IsEnglish ? "In Home" : "Im Home-Menü"));
-                SetText(myPlugins, selected.Plugins ? (Localization.IsEnglish ? "Remove from Plugins" : "Aus My Plugins entfernen") : (Localization.IsEnglish ? "In Plugins" : "In My Plugins"));
-                status.Text = selected.Name + "  ·  " + CategoryTitle(selected.Category) + (selected.HasSetup ? "  ·  " + (Localization.IsEnglish ? "configurable" : "konfigurierbar") : String.Empty)
-                    + (selected.CanEnable ? String.Empty : "  ·  " + (Localization.IsEnglish ? "cannot be disabled" : "nicht deaktivierbar"));
+                    ? (Localization.T("Deaktivieren"))
+                    : (Localization.T("Aktivieren")));
+                SetText(home, selected.Home ? (Localization.T("Aus Home entfernen")) : (Localization.T("Im Home-Menü")));
+                SetText(myPlugins, selected.Plugins ? (Localization.T("Aus My Plugins entfernen")) : (Localization.T("In My Plugins")));
+                status.Text = selected.Name + "  ·  " + CategoryTitle(selected.Category) + (selected.HasSetup ? "  ·  " + (Localization.T("konfigurierbar")) : String.Empty)
+                    + (selected.CanEnable ? String.Empty : "  ·  " + (Localization.T("nicht deaktivierbar")));
                 status.ForeColor = palette.Text;
             }
             finally
@@ -568,7 +566,7 @@ namespace MP1.ConfigurationStudio
                     WorkingDirectory = runtime
                 };
                 Process.Start(info);
-                status.Text = (Localization.IsEnglish ? "Opened: " : "Geöffnet: ") + selected.Name;
+                status.Text = (Localization.T("Geöffnet: ")) + selected.Name;
                 status.ForeColor = palette.Text;
             }
             catch (Exception ex)

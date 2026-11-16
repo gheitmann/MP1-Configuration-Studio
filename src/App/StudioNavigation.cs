@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -10,7 +10,7 @@ namespace MP1.ConfigurationStudio
     {
         private static readonly string[] GermanGroups={"Allgemein","Oberfläche","Wiedergabe","Medienordner","Bedienung","Plugins","System & Diagnose"};
         private static readonly string[] EnglishGroups={"General","Interface","Playback","Media folders","Input","Plugins","System & diagnostics"};
-        internal static string[] Groups{get{return Localization.IsEnglish?EnglishGroups:GermanGroups;}}
+        internal static string[] Groups{get{return Localization.Code=="de"?GermanGroups:EnglishGroups;}}
         internal static readonly string[] Icons={"settings","surface","play","folder","keyboard","plugin","system"};
         private readonly TreeView source;private readonly Func<TreeNode,Control> resolve;private readonly Func<TreeNode,bool> navigate;private readonly Func<Palette> colors;private readonly Action<string> tool;
         private readonly FlowLayoutPanel rows=new FlowLayoutPanel {Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=true};
@@ -30,7 +30,7 @@ namespace MP1.ConfigurationStudio
         }
         internal string Label(TreeNode node)
         {
-            if(Localization.IsEnglish)return node.Text;
+            if(Localization.Code!="de")return node.Text;
             switch(Kind(node)){
             case "Project":return "Über MediaPortal";case "General":return "Allgemein";case "Gui":case "GUI":return "Skin & Oberfläche";case "GuiLanguage":return "Sprache";case "GuiControls":return "Bedienelemente";case "GuiThumbs":return "Vorschaubilder";case "GuiScreensaver":case "Screensaver":return "Bildschirmschoner";case "GuiFileMenu":return "Dateimenü";case "GuiOSD":return "Bildschirmanzeige";case "GuiSkipSteps":return "Sprungweiten";case "Movies":return "Videos";case "MoviePlayer":return "Video-Player";case "MovieShares":return "Videoordner";case "MusicShares":return "Musikordner";case "MovieDatabase":return "Videodatenbank";case "MusicDatabase":return "Musikdatenbank";case "Music":return "Musik";case "Pictures":return "Bilder";case "Remote":return "Fernbedienung & Eingabe";case "FiltersSection":return "Codecs & Renderer";case "GeneralVolume":return "Lautstärke";case "GeneralKeyboardControl":return "Tastaturkürzel";case "Keys":return "Tasten & Klänge";case "GeneralStartupResume":return "Start & Fortsetzen";case "GeneralDynamicRefreshRate":return "Bildwiederholrate";case "GeneralDaemonTools":return "Virtuelles Laufwerk";case "GeneralAutoplay":return "Automatische Wiedergabe";case "PluginsNew":return "Plugins";case "MediaInfo":return "Medieninformationen";case "ThirdPartyChecks":return "Systemprüfung";default:return node.Text;}
         }

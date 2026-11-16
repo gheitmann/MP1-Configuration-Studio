@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -32,17 +33,17 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 22));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
-            top.Controls.Add(new Label { Text = Localization.IsEnglish ? "XML section" : "XML-Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "XML section" : "XML-Bereich" };
+            top.Controls.Add(new Label { Text = Localization.T("XML-Bereich"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+            choice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.T("XML-Bereich") };
             sections = configuration.Sections().OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase).ToList();
             choice.SetOptions(sections.Select(name => new ChoiceOption(name, name)), "general");
             choice.SelectedIndexChanged += delegate { if (!updating) Build(); };
             top.Controls.Add(choice, 1, 0);
-            filter = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Filter sections" : "Bereiche filtern" };
+            filter = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.T("Bereiche filtern") };
             filter.Box.ForeColor = palette.Muted;
-            filter.Box.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …";
+            filter.Box.Text = Localization.T("Bereiche filtern …");
             filter.Box.GotFocus += delegate { if (filter.Box.ForeColor == palette.Muted) { filter.Box.Text = string.Empty; filter.Box.ForeColor = palette.Text; RebuildChoices(); } };
-            filter.Box.LostFocus += delegate { if (filter.Box.Text.Length == 0) { filter.Box.ForeColor = palette.Muted; filter.Box.Text = Localization.IsEnglish ? "Filter sections …" : "Bereiche filtern …"; RebuildChoices(); } };
+            filter.Box.LostFocus += delegate { if (filter.Box.Text.Length == 0) { filter.Box.ForeColor = palette.Muted; filter.Box.Text = Localization.T("Bereiche filtern …"); RebuildChoices(); } };
             filter.Box.TextChanged += delegate { RebuildChoices(); };
             top.Controls.Add(filter, 2, 0);
 
@@ -54,8 +55,8 @@ namespace MP1.ConfigurationStudio
             scroll.Controls.Add(table);
             scroll.Resize += delegate { LayoutTable(); };
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Px(36), FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(3), 0, 0) };
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen", delegate { AddEntry(); }, body));
-            actions.Controls.Add(new Label { Text = Localization.IsEnglish ? "  × remove (confirmation) · ↺ reset to default · highlighted = differs from default" : "  × entfernen (Bestätigung) · ↺ auf Standard · farbig = weicht vom Standard ab", ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
+            actions.Controls.Add(ButtonFor(Localization.T("Eintrag hinzufügen"), delegate { AddEntry(); }, body));
+            actions.Controls.Add(new Label { Text = Localization.T("  × entfernen (Bestätigung) · ↺ auf Standard · farbig = weicht vom Standard ab"), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(Px(10), Px(8), 0, 0) });
             Controls.Add(new StudioScrollHost(scroll, delegate { return new Size(Math.Max(1, table.Width), Math.Max(1, table.Height)); }, () => palette, false, (Color?)palette.Background));
             Controls.Add(actions);
             Controls.Add(top);
@@ -164,8 +165,8 @@ namespace MP1.ConfigurationStudio
             var button = new StudioButton { Text = "↺", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = hasDefault ? palette.Accent : palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), Px(2), Px(2), Px(2)), Enabled = target != null };
             button.FlatAppearance.BorderColor = palette.Border;
             tips.SetToolTip(button, target == null
-                ? (Localization.IsEnglish ? "No MediaPortal default is known for this entry." : "Für diesen Eintrag ist kein MediaPortal-Standardwert bekannt.")
-                : (hasDefault ? (Localization.IsEnglish ? "Reset to MediaPortal default: " : "Auf MediaPortal-Standard zurücksetzen: ") : (Localization.IsEnglish ? "Restore last saved value: " : "Zuletzt gespeicherten Wert wiederherstellen: ")) + target);
+                ? (Localization.T("Für diesen Eintrag ist kein MediaPortal-Standardwert bekannt."))
+                : (hasDefault ? (Localization.T("Auf MediaPortal-Standard zurücksetzen: ")) : (Localization.T("Zuletzt gespeicherten Wert wiederherstellen: "))) + target);
             button.Click += delegate
             {
                 if (target == null) return;
@@ -180,12 +181,10 @@ namespace MP1.ConfigurationStudio
         {
             var button = new StudioButton { Text = "×", Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(Px(4), Px(2), 0, Px(2)) };
             button.FlatAppearance.BorderColor = palette.Border;
-            tips.SetToolTip(button, Localization.IsEnglish ? "Remove this entry from MediaPortal.xml" : "Diesen Eintrag aus MediaPortal.xml entfernen");
+            tips.SetToolTip(button, Localization.T("Diesen Eintrag aus MediaPortal.xml entfernen"));
             button.Click += delegate
             {
-                string message = Localization.IsEnglish
-                    ? "Remove entry \"" + key + "\" from section \"" + section + "\"?\r\n\r\nThe entry is deleted when you save; a ZIP backup is created first."
-                    : "Eintrag \"" + key + "\" aus dem Bereich \"" + section + "\" entfernen?\r\n\r\nDer Eintrag wird beim Speichern gelöscht; vorher wird eine ZIP-Sicherung erstellt.";
+                string message = String.Format(CultureInfo.CurrentCulture, Localization.Pair("Remove entry \"{0}\" from section \"{1}\"?\r\n\r\nThe entry is deleted when you save; a ZIP backup is created first.","Eintrag \"{0}\" aus dem Bereich \"{1}\" entfernen?\r\n\r\nDer Eintrag wird beim Speichern gelöscht; vorher wird eine ZIP-Sicherung erstellt."), key, section);
                 if (MessageBox.Show(FindForm(), message, "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
                 configuration.Remove(section, key);
                 RaiseChanged();
@@ -204,7 +203,7 @@ namespace MP1.ConfigurationStudio
                 string name = dialog.EntryName;
                 if (configuration.Entries(section).Any(entry => String.Equals(entry.Key, name, StringComparison.OrdinalIgnoreCase)))
                 {
-                    if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "This entry already exists. Overwrite it?" : "Dieser Eintrag existiert bereits. Überschreiben?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+                    if (MessageBox.Show(FindForm(), (Localization.T("Dieser Eintrag existiert bereits. Überschreiben?")), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
                 }
                 configuration.Set(section, name, dialog.EntryValue);
                 RaiseChanged();
@@ -223,7 +222,7 @@ namespace MP1.ConfigurationStudio
             public EntryDialog(float scale)
             {
                 this.scale = scale;
-                Text = Localization.IsEnglish ? "Add entry" : "Eintrag hinzufügen";
+                Text = Localization.T("Eintrag hinzufügen");
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
                 MaximizeBox = false;
@@ -235,20 +234,20 @@ namespace MP1.ConfigurationStudio
                 var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Name" : "Name", ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+                table.Controls.Add(new Label { Text = Localization.T("Name"), ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
                 name.Dock = DockStyle.Fill;
                 name.Font = Typography.Create(10f * scale, FontStyle.Regular);
                 name.BackColor = Palette.For(true).Input;
                 name.ForeColor = Palette.For(true).Text;
                 table.Controls.Add(name, 1, 0);
-                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Value" : "Wert", ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
+                table.Controls.Add(new Label { Text = Localization.T("Wert"), ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
                 value.Dock = DockStyle.Fill;
                 value.Font = Typography.Create(10f * scale, FontStyle.Regular);
                 value.BackColor = Palette.For(true).Input;
                 value.ForeColor = Palette.For(true).Text;
                 table.Controls.Add(value, 1, 1);
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
@@ -256,7 +255,7 @@ namespace MP1.ConfigurationStudio
                 {
                     if (name.Text.Trim().Length == 0)
                     {
-                        MessageBox.Show(this, Localization.IsEnglish ? "Please enter a name." : "Bitte einen Namen eingeben.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Localization.T("Bitte einen Namen eingeben."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                     DialogResult = DialogResult.OK;

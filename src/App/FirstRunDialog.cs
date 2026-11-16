@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -10,7 +10,7 @@ namespace MP1.ConfigurationStudio
         {
             Icon = StudioIcon.Value;
             Font = Typography.Create(Typography.DialogBody, FontStyle.Regular);
-            Text = Localization.IsEnglish ? "Welcome to MP1 Configuration Studio" : "Willkommen bei MP1 Configuration Studio";
+            Text = Localization.Pair("Welcome to MP1 Configuration Studio","Willkommen bei MP1 Configuration Studio");
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
             MaximizeBox = false;
@@ -34,21 +34,19 @@ namespace MP1.ConfigurationStudio
                 ScrollBars = ScrollBars.Vertical,
                 BorderStyle = BorderStyle.None,
                 Font = Typography.Create(Typography.DialogBody, FontStyle.Regular),
-                Text = Localization.IsEnglish
-                    ? "Welcome to MP1 Configuration Studio.\r\n\r\n"
+                Text = Localization.Pair("Welcome to MP1 Configuration Studio.\r\n\r\n"
                         + "• A backup of MediaPortal.xml was created on first launch if the file existed.\r\n\r\n"
                         + "• Close MediaPortal and the original configurator before changing settings.\r\n\r\n"
                         + "• If something goes wrong: Tools → Start classic interface. The original MediaPortal pages remain unchanged there.\r\n\r\n"
                         + "• The help column on the right explains the current section. Ctrl+F searches pages and settings.\r\n\r\n"
                         + "• Size, theme, and language are available at the top right and under Tools.\r\n\r\n"
-                        + "• OK saves with the original MediaPortal validation. Cancel discards changes."
-                    : "Willkommen bei MP1 Configuration Studio.\r\n\r\n"
+                        + "• OK saves with the original MediaPortal validation. Cancel discards changes.","Willkommen bei MP1 Configuration Studio.\r\n\r\n"
                         + "• Eine Sicherung von MediaPortal.xml wurde beim ersten Start angelegt, sofern die Datei vorhanden war.\r\n\r\n"
                         + "• Schließen Sie MediaPortal und den originalen Konfigurator, bevor Sie Änderungen vornehmen.\r\n\r\n"
                         + "• Bei Problemen: Werkzeuge → Klassische Oberfläche starten. Dort gelten die unveränderten MediaPortal-Seiten.\r\n\r\n"
                         + "• Die Hilfsspalte rechts erklärt den aktuellen Bereich. Mit Strg+F durchsuchen Sie Seiten und Einstellungen.\r\n\r\n"
                         + "• Größe, Theme und Sprache ändern Sie oben rechts bzw. unter Werkzeuge.\r\n\r\n"
-                        + "• OK speichert mit der originalen MediaPortal-Prüfung. Abbrechen verwirft die Änderungen."
+                        + "• OK speichert mit der originalen MediaPortal-Prüfung. Abbrechen verwirft die Änderungen.")
             };
             text.SelectionStart = 0;
             text.SelectionLength = 0;

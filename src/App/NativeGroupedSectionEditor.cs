@@ -41,9 +41,9 @@ namespace MP1.ConfigurationStudio
             search.BackColor = palette.Input;
             search.ForeColor = palette.Muted;
             search.Margin = new Padding(0, Px(4), Px(8), Px(4));
-            search.Text = Localization.IsEnglish ? "Filter entries …" : "Einträge filtern …";
+            search.Text = Localization.T("Einträge filtern …");
             search.GotFocus += delegate { if (search.ForeColor == palette.Muted) { search.Text = string.Empty; search.ForeColor = palette.Text; } };
-            search.LostFocus += delegate { if (search.Text.Length == 0) { search.ForeColor = palette.Muted; search.Text = Localization.IsEnglish ? "Filter entries …" : "Einträge filtern …"; } };
+            search.LostFocus += delegate { if (search.Text.Length == 0) { search.ForeColor = palette.Muted; search.Text = Localization.T("Einträge filtern …"); } };
             search.TextChanged += delegate { if (!building) Build(); };
             top.Controls.Add(search, 0, 0);
             status.AutoSize = false;
@@ -93,7 +93,7 @@ namespace MP1.ConfigurationStudio
             return L("Ansichten", "Views");
         }
 
-        private static string L(string de, string en) { return Localization.IsEnglish ? en : de; }
+        private static string L(string de, string en) { return Localization.T2(de, en); }
 
         private int Px(float value) { return (int)Math.Round(value * scale); }
 
@@ -169,7 +169,7 @@ namespace MP1.ConfigurationStudio
                     table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                     table.RowCount++;
                 }
-                status.Text = entries.Count + (Localization.IsEnglish ? " entries" : " Einträge");
+                status.Text = entries.Count + (Localization.T(" Einträge"));
             }
             finally
             {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -174,7 +174,7 @@ namespace MP1.ConfigurationStudio
             newInterface.Click+=delegate{restartNative=true;nativeCancel.PerformClick();if(!form.IsDisposed)form.Close();};
             menu.Items.Add(newInterface);
             var nativeLook=new ToolStripMenuItem(Localization.T("Native Seiten im Original-Look")){Checked=appearance.NativeOriginal,CheckOnClick=true};
-            nativeLook.Click+=delegate{appearance.NativeOriginal=nativeLook.Checked;appearance.Save();MessageBox.Show(form,Localization.IsEnglish?"Native page mode changed. Please restart Studio to apply it.":"Darstellung der nativen Seiten geändert. Bitte Studio neu starten.","MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);};
+            nativeLook.Click+=delegate{appearance.NativeOriginal=nativeLook.Checked;appearance.Save();MessageBox.Show(form,Localization.T("Darstellung der nativen Seiten geändert. Bitte Studio neu starten."),"MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);};
             menu.Items.Add(nativeLook);
             menu.Items.Add(new ToolStripSeparator());
             var restart=new ToolStripMenuItem(Localization.T("Studio neu starten"));
@@ -186,12 +186,16 @@ namespace MP1.ConfigurationStudio
             var support=new ToolStripMenuItem(Localization.T("Support-Bundle erzeugen…"));
             support.Click+=delegate{CreateSupportBundle();};
             menu.Items.Add(support);
-            var language=new ToolStripMenuItem(Localization.IsEnglish?"Language":"Sprache");
-            var german=new ToolStripMenuItem(Localization.IsEnglish?"German":"Deutsch"){Checked=appearance.Language=="de"};
+            var language=new ToolStripMenuItem(Localization.T("Sprache"));
+            var german=new ToolStripMenuItem(Localization.T("Deutsch")){Checked=appearance.Language=="de"};
             german.Click+=delegate{SetLanguage("de");};
             var english=new ToolStripMenuItem("English"){Checked=appearance.Language=="en"};
             english.Click+=delegate{SetLanguage("en");};
-            language.DropDownItems.Add(german);language.DropDownItems.Add(english);
+            var french=new ToolStripMenuItem("Français"){Checked=appearance.Language=="fr"};
+            french.Click+=delegate{SetLanguage("fr");};
+            var dutch=new ToolStripMenuItem("Nederlands"){Checked=appearance.Language=="nl"};
+            dutch.Click+=delegate{SetLanguage("nl");};
+            language.DropDownItems.Add(german);language.DropDownItems.Add(english);language.DropDownItems.Add(french);language.DropDownItems.Add(dutch);
             menu.Items.Add(language);
             var about=new ToolStripMenuItem(Localization.T("Über MP1 Configuration Studio"));
             about.Click+=delegate{ShowAbout();};
@@ -234,7 +238,7 @@ namespace MP1.ConfigurationStudio
             appearance.Language=code;
             appearance.Save();
             MessageBox.Show(form,
-                code=="en"?"Language changed. Please restart Studio to apply it.":"Sprache geändert. Bitte Studio neu starten.",
+                Localization.T2("Sprache geändert. Bitte Studio neu starten.","Language changed. Please restart Studio to apply it."),
                 "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         private void ManageBackups()
@@ -266,9 +270,7 @@ namespace MP1.ConfigurationStudio
                 using(var dialog=new OpenFileDialog {Filter="Studio-Backup (*.zip)|*.zip",Title=Localization.T("Konfiguration wiederherstellen"),CheckFileExists=true})
                 {
                     if(dialog.ShowDialog(form)!=DialogResult.OK)return;
-                    if(MessageBox.Show(form,Localization.IsEnglish
-                            ? "The current MediaPortal.xml is backed up first. Studio then closes and the original interface starts with the restored configuration.\r\n\r\nUnsaved changes will be lost. Continue?"
-                            : "Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?",
+                    if(MessageBox.Show(form,Localization.T("Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?"),
                         Localization.T("Konfiguration wiederherstellen"),MessageBoxButtons.YesNo,MessageBoxIcon.Warning,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
                     ConfigurationBackup.Restore(dialog.FileName,MediaPortalConfigPath());
                     StudioLog.Info("Configuration restored; restarting classic");
@@ -285,7 +287,7 @@ namespace MP1.ConfigurationStudio
         }
         private void RestartStudio()
         {
-            if(MessageBox.Show(form,CloseGuard.RestartPrompt(edits.Count,Localization.IsEnglish),Localization.T("Studio neu starten"),
+            if(MessageBox.Show(form,CloseGuard.RestartPrompt(edits.Count),Localization.T("Studio neu starten"),
                 MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
             restartStudio=true;
             StudioLog.Info("Studio restart requested");
@@ -294,9 +296,7 @@ namespace MP1.ConfigurationStudio
         }
         private void StartClassic()
         {
-            if(MessageBox.Show(form,Localization.IsEnglish
-                    ? "The Studio window will close. Unsaved changes will be lost.\r\n\r\nThe original interface will then start. Continue?"
-                    : "Das Studio-Fenster wird geschlossen. Nicht gespeicherte Änderungen gehen verloren.\r\n\r\nDie originale Oberfläche wird anschließend gestartet. Fortfahren?",
+            if(MessageBox.Show(form,Localization.T("Das Studio-Fenster wird geschlossen. Nicht gespeicherte Änderungen gehen verloren.\r\n\r\nDie originale Oberfläche wird anschließend gestartet. Fortfahren?"),
                 Localization.T("Klassische Oberfläche"),MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
             restartClassic=true;
             StudioLog.Info("Classic restart requested");
@@ -323,10 +323,10 @@ namespace MP1.ConfigurationStudio
         {
             string version=System.Diagnostics.FileVersionInfo.GetVersionInfo(Application.ExecutablePath).FileVersion;
             string text="MP1 Configuration Studio "+version+"\r\n\r\n"
-                +(Localization.IsEnglish?"For MediaPortal 1.39 x64.\r\n\r\n":"Für MediaPortal 1.39 x64.\r\n\r\n")
-                +(Localization.IsEnglish?"Unofficial project, not affiliated with Team MediaPortal.\r\n":"Inoffizielles Projekt, nicht mit Team MediaPortal verbunden.\r\n")
+                +(Localization.T("Für MediaPortal 1.39 x64.\r\n\r\n"))
+                +(Localization.T("Inoffizielles Projekt, nicht mit Team MediaPortal verbunden.\r\n"))
                 +"License: GPL-3.0-or-later.\r\n\r\n"
-                +(Localization.IsEnglish?"Log: ":"Protokoll: ")+StudioLog.FilePath+"\r\n"
+                +(Localization.T("Protokoll: "))+StudioLog.FilePath+"\r\n"
                 +"Project: https://github.com/gheitmann/MP1-Configuration-Studio";
             MessageBox.Show(form,text,"Über MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
@@ -355,13 +355,13 @@ namespace MP1.ConfigurationStudio
         {
             switch(navigation.Icon(node))
             {
-                case "settings":return Localization.IsEnglish?"Startup, behavior, and basic settings for your media center.":"Start, Verhalten und Grundeinstellungen deines Media Centers.";
-                case "surface":return Localization.IsEnglish?"Skin, language, and presentation of MediaPortal.":"Skin, Sprache und Darstellung von MediaPortal.";
-                case "play":return Localization.IsEnglish?"Player, audio, and video with the original MediaPortal settings.":"Player, Ton und Bild – mit den originalen MediaPortal-Einstellungen.";
-                case "folder":return Localization.IsEnglish?"Sources and libraries for videos, music, and pictures.":"Quellen und Bibliotheken für Videos, Musik und Bilder.";
-                case "keyboard":return Localization.IsEnglish?"Set up keyboard, remote, and input devices.":"Tastatur, Fernbedienung und Eingabegeräte einrichten.";
-                case "plugin":return Localization.IsEnglish?"Enable extensions and open their configuration.":"Erweiterungen aktivieren und ihre Konfiguration öffnen.";
-                default:return Localization.IsEnglish?"Information, compatibility, and diagnostics.":"Informationen, Kompatibilität und Diagnose.";
+                case "settings":return Localization.T("Start, Verhalten und Grundeinstellungen deines Media Centers.");
+                case "surface":return Localization.T("Skin, Sprache und Darstellung von MediaPortal.");
+                case "play":return Localization.T("Player, Ton und Bild – mit den originalen MediaPortal-Einstellungen.");
+                case "folder":return Localization.T("Quellen und Bibliotheken für Videos, Musik und Bilder.");
+                case "keyboard":return Localization.T("Tastatur, Fernbedienung und Eingabegeräte einrichten.");
+                case "plugin":return Localization.T("Erweiterungen aktivieren und ihre Konfiguration öffnen.");
+                default:return Localization.T("Informationen, Kompatibilität und Diagnose.");
             }
         }
     }

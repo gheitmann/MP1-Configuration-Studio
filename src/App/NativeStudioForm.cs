@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -75,7 +75,7 @@ namespace MP1.ConfigurationStudio
             appearance.NativeOriginal = true;
             Localization.Set(appearance.Language);
             Palette.UseLight = String.Equals(appearance.ThemeMode, "Hell", StringComparison.OrdinalIgnoreCase);
-            Text = Localization.IsEnglish ? "MP1 Configuration Studio · New interface" : "MP1 Configuration Studio · Neue Oberfläche";
+            Text = Localization.T("MP1 Configuration Studio · Neue Oberfläche");
             scale = appearance.TextScale / 100f;
             body = Typography.Create(10f * scale, FontStyle.Regular);
             heading = Typography.Create(18f * scale, FontStyle.Regular);
@@ -121,13 +121,13 @@ namespace MP1.ConfigurationStudio
             title.BackColor = Color.Transparent;
             title.Location = new Point(Px(76), Px(14));
             header.Controls.Add(title);
-            subtitle.Text = Localization.IsEnglish ? "New interface · MediaPortal 1.39" : "Neue Oberfläche · MediaPortal 1.39";
+            subtitle.Text = Localization.T("Neue Oberfläche · MediaPortal 1.39");
             subtitle.Font = Typography.Create(9f * Math.Min(scale, 1.4f), FontStyle.Regular);
             subtitle.ForeColor = palette.Muted;
             subtitle.BackColor = Color.Transparent;
             subtitle.Location = new Point(Px(78), Px(44));
             header.Controls.Add(subtitle);
-            sizeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Height = Px(30), Dock = DockStyle.Fill, AccessibleName = Localization.IsEnglish ? "Text size" : "Schriftgröße" };
+            sizeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Height = Px(30), Dock = DockStyle.Fill, AccessibleName = Localization.T("Schriftgröße") };
             sizeChoice.SetOptions(new[]
             {
                 new ChoiceOption("100", "100 %"),
@@ -138,12 +138,12 @@ namespace MP1.ConfigurationStudio
             }, appearance.TextScale.ToString());
             sizeChoice.SelectedIndexChanged += delegate { ChangeScale(); };
 
-            backButton = new StudioAction { Colors = () => palette, IconName = "back", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(0, Px(1), Px(4), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Back" : "Zurück" };
+            backButton = new StudioAction { Colors = () => palette, IconName = "back", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(0, Px(1), Px(4), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.T("Zurück") };
             backButton.Click += delegate { NavigateHistory(-1); };
-            forwardButton = new StudioAction { Colors = () => palette, IconName = "forward", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(0, Px(1), Px(8), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Forward" : "Vorwärts" };
+            forwardButton = new StudioAction { Colors = () => palette, IconName = "forward", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(0, Px(1), Px(8), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.T("Vorwärts") };
             forwardButton.Click += delegate { NavigateHistory(1); };
 
-            searchBox = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.IsEnglish ? "Search settings" : "Einstellungen durchsuchen" };
+            searchBox = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.T("Einstellungen durchsuchen") };
             searchBox.ConfigureIcon("search", "Ctrl+F");
             searchBox.Box.TextChanged += delegate { ApplySearch(); };
             searchBox.Box.KeyDown += delegate(object sender, KeyEventArgs e)
@@ -157,7 +157,7 @@ namespace MP1.ConfigurationStudio
                 }
             };
 
-            modeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.IsEnglish ? "View mode" : "Ansichtsmodus" };
+            modeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.T("Ansichtsmodus") };
             modeChoice.SetOptions(new[] { new ChoiceOption("standard", "Standard"), new ChoiceOption("expert", "Expert") }, appearance.ExpertMode ? "expert" : "standard");
             modeChoice.SelectedIndexChanged += delegate
             {
@@ -171,17 +171,17 @@ namespace MP1.ConfigurationStudio
                 }
             };
 
-            themeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.IsEnglish ? "Theme" : "Farbschema" };
+            themeChoice = new StudioChoice(scale) { Font = body, Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.T("Farbschema") };
             themeChoice.SetOptions(new[]
             {
-                new ChoiceOption("Dunkel", Localization.IsEnglish ? "Dark" : "Dunkel"),
-                new ChoiceOption("Hell", Localization.IsEnglish ? "Light" : "Hell")
+                new ChoiceOption("Dunkel", Localization.T("Dunkel")),
+                new ChoiceOption("Hell", Localization.T("Hell"))
             }, appearance.ThemeMode);
             themeChoice.SelectedIndexChanged += delegate { ChangeTheme(themeChoice.SelectedValue); };
 
-            helpButton = new StudioAction { Colors = () => palette, IconName = "keyboard", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(Px(4), Px(1), Px(4), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Keyboard shortcuts" : "Tastenkürzel" };
+            helpButton = new StudioAction { Colors = () => palette, IconName = "keyboard", Navigation = false, Secondary = true, Font = body, Height = Px(30), Width = Px(34), Margin = new Padding(Px(4), Px(1), Px(4), Px(1)), BackColor = palette.Panel, AccessibleName = Localization.T("Tastenkürzel") };
             helpButton.Click += delegate { using (var dialog = new KeyboardHelpDialog()) dialog.ShowDialog(this); };
-            toolsButton = new StudioAction { Colors = () => palette, IconName = "system", Text = Localization.IsEnglish ? "Tools" : "Werkzeuge", Navigation = false, Font = body, Height = Px(30), Width = Px(124), Margin = new Padding(0, Px(1), 0, Px(1)), BackColor = palette.Panel, AccessibleName = Localization.IsEnglish ? "Tools" : "Werkzeuge" };
+            toolsButton = new StudioAction { Colors = () => palette, IconName = "system", Text = Localization.T("Werkzeuge"), Navigation = false, Font = body, Height = Px(30), Width = Px(124), Margin = new Padding(0, Px(1), 0, Px(1)), BackColor = palette.Panel, AccessibleName = Localization.T("Werkzeuge") };
             toolsButton.Click += delegate { ShowToolsMenu(); };
 
             toolbar = new GlassPanel { Dock = DockStyle.Fill, BackColor = palette.Background, Padding = new Padding(Px(24), Px(6), Px(20), Px(6)) };
@@ -230,21 +230,18 @@ namespace MP1.ConfigurationStudio
                     navigation.Controls.Add(caption);
                     navigationHeaders.Add(caption);
                 }
-                string navTitle = Localization.IsEnglish
-                    ? (String.IsNullOrEmpty(section.NavTitleEn) ? section.TitleEn : section.NavTitleEn)
-                    : (String.IsNullOrEmpty(section.NavTitleDe) ? section.TitleDe : section.NavTitleDe);
-                var item = new StudioAction { Text = navTitle, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(header ? Px(12) : 0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
+                var item = new StudioAction { Text = section.NavTitle, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(header ? Px(12) : 0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
                 item.Click += delegate { ShowSection(section, item); };
                 item.Tag = section;
-                string navTip = Localization.IsEnglish ? section.SubtitleEn : section.SubtitleDe;
+                string navTip = section.Subtitle;
                 if (!String.IsNullOrEmpty(navTip)) FieldTips().SetToolTip(item, navTip);
                 navigation.Controls.Add(item);
                 previousGroup = group;
             }
-            var classic = new StudioAction { Text = Localization.IsEnglish ? "Classic / plugins" : "Klassisch / Plugins", IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
+            var classic = new StudioAction { Text = Localization.T("Klassisch / Plugins"), IconName = "plugin", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 18, 0, 2), BackColor = palette.Panel };
             classic.Click += delegate { StartClassic(); };
             navigation.Controls.Add(classic);
-            var legacy = new StudioAction { Text = Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
+            var legacy = new StudioAction { Text = Localization.T("Studio 1.9-Oberfläche"), IconName = "surface", Colors = () => palette, Navigation = true, Secondary = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(0, 4, 0, 2), BackColor = palette.Panel };
             legacy.Click += delegate { StartStudioShell(); };
             navigation.Controls.Add(legacy);
             navigation.MouseLeave += delegate { ClearNavigationHover(); };
@@ -280,7 +277,7 @@ namespace MP1.ConfigurationStudio
             {
                 using (var pen = new Pen(palette.Border)) e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
             };
-            status.Text = Localization.IsEnglish ? "Ready" : "Bereit";
+            status.Text = Localization.T("Bereit");
             status.Font = small;
             status.ForeColor = palette.Muted;
             status.BackColor = Color.Transparent;
@@ -295,15 +292,15 @@ namespace MP1.ConfigurationStudio
             status.MouseLeave += delegate { if (dirty) RestoreStatus(); };
             footer.Controls.Add(status);
             footerActions = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Width = Px(520) };
-            closeButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Close" : "Schließen", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            closeButton = new GlassButton { Colors = () => palette, Text = Localization.T("Schließen"), Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             closeButton.FlatAppearance.BorderColor = palette.Border;
             closeButton.Click += delegate { Close(); };
             footerActions.Controls.Add(closeButton);
-            saveButton = new GlassButton { Primary = true, Colors = () => palette, Text = Localization.IsEnglish ? "Save" : "Speichern", Width = Px(120), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            saveButton = new GlassButton { Primary = true, Colors = () => palette, Text = Localization.T("Speichern"), Width = Px(120), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             saveButton.FlatAppearance.BorderSize = 0;
             saveButton.Click += delegate { SaveConfiguration(); };
             footerActions.Controls.Add(saveButton);
-            backupButton = new GlassButton { Colors = () => palette, Text = Localization.IsEnglish ? "Backup" : "Sicherung", Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
+            backupButton = new GlassButton { Colors = () => palette, Text = Localization.T("Sicherung"), Width = Px(110), Height = Px(34), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Font = body, Margin = new Padding(Px(8), 0, 0, 0) };
             backupButton.FlatAppearance.BorderColor = palette.Border;
             backupButton.Click += delegate { CreateBackup(); };
             footerActions.Controls.Add(backupButton);
@@ -427,7 +424,7 @@ namespace MP1.ConfigurationStudio
             public string TitleEn;
             public NativeGroup Group;
             public List<KeyValuePair<string, List<KeyValuePair<string, string>>>> Remaining;
-            public string Title { get { return Localization.IsEnglish ? TitleEn : TitleDe; } }
+            public string Title { get { return Group != null ? Group.Title : Localization.T("Weitere Einstellungen"); } }
         }
 
         private void ShowSection(NativeSection section, StudioAction selected = null)
@@ -490,7 +487,7 @@ namespace MP1.ConfigurationStudio
                 tabStrip = null;
                 tabRowIndex = -1;
                 contentRowIndex = -1;
-                pageTitle.Text = Localization.IsEnglish ? section.TitleEn : section.TitleDe;
+                pageTitle.Text = section.Title;
                 pageTitle.Font = heading;
                 pageTitle.ForeColor = palette.Text;
                 pageTitle.Margin = new Padding(0, 0, 0, Px(2));
@@ -498,7 +495,7 @@ namespace MP1.ConfigurationStudio
                 table.SetColumnSpan(pageTitle, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 table.RowCount++;
-                pageLead.Text = Localization.IsEnglish ? section.SubtitleEn : section.SubtitleDe;
+                pageLead.Text = section.Subtitle;
                 pageLead.Font = small;
                 pageLead.ForeColor = palette.Muted;
                 pageLead.Margin = new Padding(0, 0, 0, tabs.Count > 1 ? Px(10) : Px(18));
@@ -606,7 +603,7 @@ namespace MP1.ConfigurationStudio
                 Dock = DockStyle.Top,
                 Height = Px(36),
                 BackColor = palette.Background,
-                AccessibleName = Localization.IsEnglish ? "Subsections" : "Unterbereiche",
+                AccessibleName = Localization.T("Unterbereiche"),
                 Margin = new Padding(0)
             };
             for (int i = 0; i < tabs.Count; i++)
@@ -664,7 +661,7 @@ namespace MP1.ConfigurationStudio
         {
             if (showTitle)
             {
-                var groupTitle = new Label { Text = Localization.IsEnglish ? group.TitleEn : group.TitleDe, Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
+                var groupTitle = new Label { Text = group.Title, Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
                 groupTitle.Paint += delegate(object sender, PaintEventArgs e)
                 {
                     using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
@@ -724,7 +721,7 @@ namespace MP1.ConfigurationStudio
 
             if (showTitle)
             {
-                var groupTitle = new Label { Text = Localization.IsEnglish ? "More settings" : "Weitere Einstellungen", Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
+                var groupTitle = new Label { Text = Localization.T("Weitere Einstellungen"), Font = Typography.Create(12f * scale, FontStyle.Bold), ForeColor = palette.Text, AutoSize = true, UseMnemonic = false, Padding = new Padding(Px(12), 0, 0, 0), Margin = new Padding(0, Px(8), 0, Px(8)) };
                 groupTitle.Paint += delegate(object sender, PaintEventArgs e)
                 {
                     using (var brush = new SolidBrush(palette.Accent)) e.Graphics.FillRectangle(brush, 0, Px(3), Math.Max(2, Px(3)), Math.Max(2, groupTitle.Height - Px(6)));
@@ -830,7 +827,7 @@ namespace MP1.ConfigurationStudio
             }
             if (field.Kind == NativeFieldKind.Classic)
             {
-                var button = new StudioButton { Text = Localization.IsEnglish ? field.LabelEn : field.LabelDe, Font = body, Height = Px(32), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(12), 0, Px(12), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, Px(2), 0, Px(4)) };
+                var button = new StudioButton { Text = field.Label, Font = body, Height = Px(32), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(12), 0, Px(12), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, Px(2), 0, Px(4)) };
                 button.FlatAppearance.BorderColor = palette.Border;
                 button.Click += delegate { StartClassic(); };
                 table.Controls.Add(button, 0, table.RowCount);
@@ -982,7 +979,7 @@ namespace MP1.ConfigurationStudio
                 }
                 if (count == 0)
                 {
-                    var empty = new Label { Text = Localization.IsEnglish ? "No entries found in this section." : "Keine Einträge in diesem Bereich gefunden.", Font = small, ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(2), 0, Px(10)) };
+                    var empty = new Label { Text = Localization.T("Keine Einträge in diesem Bereich gefunden."), Font = small, ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(2), 0, Px(10)) };
                     table.Controls.Add(empty, 0, table.RowCount);
                     table.SetColumnSpan(empty, 2);
                     table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -1008,7 +1005,7 @@ namespace MP1.ConfigurationStudio
                 }
                 if (count == 0)
                 {
-                    var empty = new Label { Text = Localization.IsEnglish ? "No entries found in the configuration." : "Keine Einträge in der Konfiguration gefunden.", Font = small, ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(2), 0, Px(10)) };
+                    var empty = new Label { Text = Localization.T("Keine Einträge in der Konfiguration gefunden."), Font = small, ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(2), 0, Px(10)) };
                     table.Controls.Add(empty, 0, table.RowCount);
                     table.SetColumnSpan(empty, 2);
                     table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -1030,14 +1027,14 @@ namespace MP1.ConfigurationStudio
             }
             if (field.Kind == NativeFieldKind.Info)
             {
-                var info = new Label { Text = Localization.IsEnglish ? field.HelpEn : field.HelpDe, Font = small, ForeColor = palette.Muted, AutoSize = true, MaximumSize = new Size(Px(760), 0), Margin = new Padding(0, Px(2), 0, Px(10)) };
+                var info = new Label { Text = field.Help, Font = small, ForeColor = palette.Muted, AutoSize = true, MaximumSize = new Size(Px(760), 0), Margin = new Padding(0, Px(2), 0, Px(10)) };
                 table.Controls.Add(info, 0, table.RowCount);
                 table.SetColumnSpan(info, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 table.RowCount++;
                 return;
             }
-            string labelText = Localization.IsEnglish ? field.LabelEn : field.LabelDe;
+            string labelText = field.Label;
             if (field.Kind == NativeFieldKind.Bool)
             {
                 var check = new StudioCheck(scale) { Text = labelText, Checked = configuration.GetBool(field.Section, field.Entry, false), Font = body, Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
@@ -1061,7 +1058,7 @@ namespace MP1.ConfigurationStudio
             else if (field.Kind == NativeFieldKind.Combo)
             {
                 var choices = new List<ChoiceOption>();
-                foreach (NativeOption option in field.Options) choices.Add(new ChoiceOption(option.Value, Localization.IsEnglish ? option.LabelEn : option.LabelDe));
+                foreach (NativeOption option in field.Options) choices.Add(new ChoiceOption(option.Value, option.Label));
                 input = CreateChoiceControl(field.Section, field.Entry, choices);
             }
             else if (field.Kind == NativeFieldKind.Filter)
@@ -1103,7 +1100,7 @@ namespace MP1.ConfigurationStudio
                 {
                     using (var picker = new FolderBrowserDialog())
                     {
-                        picker.Description = Localization.IsEnglish ? "Select a folder" : "Ordner auswählen";
+                        picker.Description = Localization.T("Ordner auswählen");
                         if (Directory.Exists(folder.Text)) picker.SelectedPath = folder.Text;
                         if (picker.ShowDialog(FindForm()) == DialogResult.OK) folder.Text = picker.SelectedPath;
                     }
@@ -1130,7 +1127,7 @@ namespace MP1.ConfigurationStudio
 
         private void AddHelp(NativeField field)
         {
-            string help = Localization.IsEnglish ? field.HelpEn : field.HelpDe;
+            string help = field.Help;
             if (String.IsNullOrEmpty(help)) return;
             var label = new Label { Text = help, Font = small, ForeColor = palette.Muted, AutoSize = true, MaximumSize = new Size(Px(740), 0), Margin = new Padding(0, Px(1), 0, Px(10)) };
             table.Controls.Add(label, 0, table.RowCount);
@@ -1153,12 +1150,12 @@ namespace MP1.ConfigurationStudio
         private void AttachFieldTip(Control control, NativeField field)
         {
             if (control == null || field == null) return;
-            string help = Localization.IsEnglish ? field.HelpEn : field.HelpDe;
+            string help = field.Help;
             if (String.IsNullOrEmpty(help))
             {
                 string fallback;
                 if (!MediaPortalDefaults.TryGet(field.Section, field.Entry, out fallback)) return;
-                help = (Localization.IsEnglish ? "Default: " : "Standard: ") + fallback;
+                help = (Localization.T("Standard: ")) + fallback;
             }
             ApplyTip(control, help);
         }
@@ -1175,7 +1172,7 @@ namespace MP1.ConfigurationStudio
             if (statusTimer != null) statusTimer.Stop();
             if (dirty)
             {
-                status.Text = Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen";
+                status.Text = Localization.T("Ungespeicherte Änderungen");
                 status.ForeColor = palette.Accent;
                 status.Font = smallUnderline;
                 status.Cursor = Cursors.Hand;
@@ -1199,23 +1196,23 @@ namespace MP1.ConfigurationStudio
                 }
                 if (fileFailure)
                 {
-                    ShowStatusMessage(Localization.IsEnglish ? "One or more files could not be saved." : "Eine oder mehrere Dateien konnten nicht gespeichert werden.", palette.Accent, 6000);
+                    ShowStatusMessage(Localization.T("Eine oder mehrere Dateien konnten nicht gespeichert werden."), palette.Accent, 6000);
                     return;
                 }
                 string backup = configuration.Save();
                 dirty = false;
                 appearance.Save();
                 string message = !String.IsNullOrEmpty(backup)
-                    ? (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + System.IO.Path.GetFileName(backup)
+                    ? (Localization.T("Gespeichert · Sicherung: ")) + System.IO.Path.GetFileName(backup)
                     : fileChanges
-                        ? (Localization.IsEnglish ? "Files saved" : "Dateien gespeichert")
-                        : (Localization.IsEnglish ? "No changes to save" : "Keine Änderungen zu speichern");
+                        ? (Localization.T("Dateien gespeichert"))
+                        : (Localization.T("Keine Änderungen zu speichern"));
                 ShowStatusMessage(message, palette.Accent, 6000);
             }
             catch (Exception ex)
             {
                 StudioLog.Error(ex, "Native configuration save failed");
-                MessageBox.Show(this, (Localization.IsEnglish ? "The configuration could not be saved.\r\n\r\n" : "Die Konfiguration konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, (Localization.T("Die Konfiguration konnte nicht gespeichert werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1223,7 +1220,7 @@ namespace MP1.ConfigurationStudio
         {
             if (updateButton == null) return;
             updateButton.Enabled = false;
-            status.Text = Localization.IsEnglish ? "Checking for updates …" : "Update-Prüfung läuft …";
+            status.Text = Localization.T("Update-Prüfung läuft …");
             status.ForeColor = palette.Muted;
             string current = UpdateChecker.CurrentVersion;
             ThreadPool.QueueUserWorkItem(delegate
@@ -1238,17 +1235,17 @@ namespace MP1.ConfigurationStudio
                         if (!String.IsNullOrEmpty(result.Error))
                         {
                             status.Text = result.Error;
-                            MessageBox.Show(this, (Localization.IsEnglish ? "Update check failed:\r\n" : "Update-Prüfung fehlgeschlagen:\r\n") + result.Error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            MessageBox.Show(this, (Localization.T("Update-Prüfung fehlgeschlagen:\r\n")) + result.Error, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
                         }
                         if (!result.Newer)
                         {
-                            status.Text = (Localization.IsEnglish ? "Up to date: " : "Aktuell: ") + result.Latest;
-                            MessageBox.Show(this, (Localization.IsEnglish ? "You are using the latest version (" : "Sie verwenden die neueste Version (") + current + ").", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            status.Text = (Localization.T2("Aktuell: ", "Up to date: ")) + result.Latest;
+                            MessageBox.Show(this, (Localization.T("Sie verwenden die neueste Version (")) + current + ").", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             return;
                         }
-                        status.Text = (Localization.IsEnglish ? "Update available: " : "Update verfügbar: ") + result.Latest;
-                        if (MessageBox.Show(this, (Localization.IsEnglish ? "Version " : "Version ") + result.Latest + (Localization.IsEnglish ? " is available. Open the release page?" : " ist verfügbar. Release-Seite öffnen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                        status.Text = (Localization.T("Update verfügbar: ")) + result.Latest;
+                        if (MessageBox.Show(this, (Localization.T("Version ")) + result.Latest + (Localization.T(" ist verfügbar. Release-Seite öffnen?")), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                         {
                             try { Process.Start(result.Url); } catch { }
                         }
@@ -1266,13 +1263,13 @@ namespace MP1.ConfigurationStudio
                 Directory.CreateDirectory(folder);
                 string backup = System.IO.Path.Combine(folder, "native-manual-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".zip");
                 ConfigurationBackup.Create(configuration.Path, backup);
-                ShowStatusMessage((Localization.IsEnglish ? "Backup created · " : "Sicherung erstellt · ") + System.IO.Path.GetFileName(backup), palette.Accent, 6000);
+                ShowStatusMessage((Localization.T("Sicherung erstellt · ")) + System.IO.Path.GetFileName(backup), palette.Accent, 6000);
                 StudioLog.Info("Native manual backup: " + backup);
             }
             catch (Exception ex)
             {
                 StudioLog.Error(ex, "Native manual backup failed");
-                MessageBox.Show(this, (Localization.IsEnglish ? "The backup could not be created.\r\n\r\n" : "Die Sicherung konnte nicht erstellt werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, (Localization.T("Die Sicherung konnte nicht erstellt werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1299,14 +1296,14 @@ namespace MP1.ConfigurationStudio
         {
             if (dirty)
             {
-                status.Text = Localization.IsEnglish ? "Unsaved changes" : "Ungespeicherte Änderungen";
+                status.Text = Localization.T("Ungespeicherte Änderungen");
                 status.ForeColor = palette.Accent;
                 status.Font = smallUnderline;
                 status.Cursor = Cursors.Hand;
             }
             else
             {
-                status.Text = Localization.IsEnglish ? "Ready" : "Bereit";
+                status.Text = Localization.T("Bereit");
                 status.ForeColor = palette.Muted;
                 status.Font = small;
                 status.Cursor = Cursors.Default;
@@ -1318,7 +1315,7 @@ namespace MP1.ConfigurationStudio
             int files = table.Controls.OfType<IStudioFileEditor>().Count(editor => editor.HasUnsavedChanges);
             if (!dirty && files == 0)
             {
-                ShowStatusMessage(Localization.IsEnglish ? "No pending changes" : "Keine ausstehenden Änderungen", palette.Muted, 4000);
+                ShowStatusMessage(Localization.T("Keine ausstehenden Änderungen"), palette.Muted, 4000);
                 return;
             }
             using (var dialog = new PendingChangesDialog(configuration.PendingChanges, files, scale)) dialog.ShowDialog(this);
@@ -1334,15 +1331,17 @@ namespace MP1.ConfigurationStudio
                 item.Click += delegate { menu.Close(); action(); };
                 panel.Controls.Add(item);
             };
-            add(Localization.IsEnglish ? "Back up now" : "Jetzt sichern", CreateBackup);
-            add(Localization.IsEnglish ? "Manage backups…" : "Sicherungen verwalten…", ShowBackupManager);
+            add(Localization.T("Jetzt sichern"), CreateBackup);
+            add(Localization.T("Sicherungen verwalten…"), ShowBackupManager);
             add("English", delegate { SwitchLanguage("en"); });
             add("Deutsch", delegate { SwitchLanguage("de"); });
-            add(Localization.IsEnglish ? "Classic interface" : "Klassische Oberfläche", StartClassic);
-            add(Localization.IsEnglish ? "Studio 1.9 interface" : "Studio 1.9-Oberfläche", StartStudioShell);
+            add("Français", delegate { SwitchLanguage("fr"); });
+            add("Nederlands", delegate { SwitchLanguage("nl"); });
+            add(Localization.T("Klassische Oberfläche"), StartClassic);
+            add(Localization.T("Studio 1.9-Oberfläche"), StartStudioShell);
 
-            add(Localization.IsEnglish ? "Support bundle…" : "Support-Bundle…", ShowSupportBundle);
-            add(Localization.IsEnglish ? "About" : "Über", ShowAbout);
+            add(Localization.T("Support-Bundle…"), ShowSupportBundle);
+            add(Localization.T("Über"), ShowAbout);
             menu.Items.Add(new ToolStripControlHost(panel) { Margin = Padding.Empty, Padding = Padding.Empty, AutoSize = true });
             menu.Show(toolsButton, new Point(0, toolsButton.Height + Px(2)));
         }
@@ -1354,17 +1353,17 @@ namespace MP1.ConfigurationStudio
 
         private void ShowSupportBundle()
         {
-            using (var dialog = new SaveFileDialog { Title = Localization.IsEnglish ? "Save support bundle" : "Support-Bundle speichern", Filter = "ZIP (*.zip)|*.zip", FileName = "mp1-studio-support-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".zip" })
+            using (var dialog = new SaveFileDialog { Title = Localization.T("Support-Bundle speichern"), Filter = "ZIP (*.zip)|*.zip", FileName = "mp1-studio-support-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".zip" })
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK) return;
                 try
                 {
                     SupportBundle.Create(dialog.FileName, appearance.PathName);
-                    ShowStatusMessage((Localization.IsEnglish ? "Support bundle created: " : "Support-Bundle erstellt: ") + System.IO.Path.GetFileName(dialog.FileName), palette.Accent, 6000);
+                    ShowStatusMessage((Localization.T("Support-Bundle erstellt: ")) + System.IO.Path.GetFileName(dialog.FileName), palette.Accent, 6000);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, (Localization.IsEnglish ? "The support bundle could not be created.\r\n\r\n" : "Das Support-Bundle konnte nicht erstellt werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, (Localization.T("Das Support-Bundle konnte nicht erstellt werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }
@@ -1465,7 +1464,7 @@ namespace MP1.ConfigurationStudio
         private void OpenSectionHelp()
         {
             NativeSection section = current;
-            string query = section == null ? "MediaPortal" : (Localization.IsEnglish ? section.TitleEn : section.TitleDe);
+            string query = section == null ? "MediaPortal" : (section.Title);
             string url = "https://www.team-mediaportal.com/wiki/dosearchsite.action?query=" + Uri.EscapeDataString(query);
             try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
             catch (Exception ex) { StudioLog.Error(ex, "Could not open online help"); ShowStatusMessage(ex.Message, palette.Accent, 4000); }
@@ -1702,8 +1701,8 @@ namespace MP1.ConfigurationStudio
             if (active)
             {
                 status.Text = matches == 0
-                    ? (Localization.IsEnglish ? "No matches" : "Keine Treffer")
-                    : (Localization.IsEnglish ? "Search: " : "Suche: ") + matches + (Localization.IsEnglish ? (matches == 1 ? " page" : " pages") : (matches == 1 ? " Seite" : " Seiten"));
+                    ? (Localization.T("Keine Treffer"))
+                    : (Localization.T("Suche: ")) + matches + (matches == 1 ? Localization.T2(" Seite", " page") : Localization.T2(" Seiten", " pages"));
                 status.ForeColor = palette.Muted;
             }
             else
@@ -1750,13 +1749,13 @@ namespace MP1.ConfigurationStudio
         {
             switch ((group ?? String.Empty).ToLowerInvariant())
             {
-                case "general": return Localization.IsEnglish ? "General" : "Allgemein";
+                case "general": return Localization.T("Allgemein");
                 case "gui": return "GUI";
-                case "videos": return Localization.IsEnglish ? "Videos" : "Videos";
+                case "videos": return Localization.T("Videos");
                 case "tvradio": return "TV / Radio";
-                case "music": return Localization.IsEnglish ? "Music" : "Musik";
+                case "music": return Localization.T("Musik");
                 case "plugins": return "Plugins";
-                default: return Localization.IsEnglish ? "More areas" : "Weitere Bereiche";
+                default: return Localization.T("Weitere Bereiche");
             }
         }
 
@@ -1803,7 +1802,7 @@ namespace MP1.ConfigurationStudio
 
         private void ApplyCueBanner()
         {
-            try { SendMessage(searchBox.Box.Handle, 0x1501, new IntPtr(1), Localization.IsEnglish ? "Search settings…" : "Einstellungen durchsuchen…"); }
+            try { SendMessage(searchBox.Box.Handle, 0x1501, new IntPtr(1), Localization.T("Einstellungen durchsuchen…")); }
             catch (DllNotFoundException) { }
             catch (EntryPointNotFoundException) { }
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -44,28 +44,28 @@ namespace MP1.ConfigurationStudio
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
             top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 24));
-            top.Controls.Add(new Label { Text = Localization.IsEnglish ? "Context" : "Bereich", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
-            contextChoice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Context" : "Bereich" };
+            top.Controls.Add(new Label { Text = Localization.T("Bereich"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+            contextChoice = new StudioChoice(scale) { Dock = DockStyle.Fill, Font = body, Colors = () => palette, AccessibleName = Localization.T("Bereich") };
             contextChoice.SelectedIndexChanged += delegate { if (!building) BuildTable(); };
             top.Controls.Add(contextChoice, 1, 0);
-            search = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.IsEnglish ? "Filter actions" : "Aktionen filtern" };
+            search = new StudioTextInput(scale, body, palette) { Dock = DockStyle.Fill, Colors = () => palette, AccessibleName = Localization.T("Aktionen filtern") };
             search.Box.ForeColor = palette.Muted;
-            search.Box.Text = Localization.IsEnglish ? "Filter actions …" : "Aktionen filtern …";
+            search.Box.Text = Localization.T("Aktionen filtern …");
             search.Box.GotFocus += delegate { if (search.Box.ForeColor == palette.Muted) { search.Box.Text = string.Empty; search.Box.ForeColor = palette.Text; } };
-            search.Box.LostFocus += delegate { if (search.Box.Text.Length == 0) { search.Box.ForeColor = palette.Muted; search.Box.Text = Localization.IsEnglish ? "Filter actions …" : "Aktionen filtern …"; } };
+            search.Box.LostFocus += delegate { if (search.Box.Text.Length == 0) { search.Box.ForeColor = palette.Muted; search.Box.Text = Localization.T("Aktionen filtern …"); } };
             search.Box.TextChanged += delegate { if (!building) BuildTable(); };
             top.Controls.Add(search, 2, 0);
-            var save = ButtonFor(Localization.IsEnglish ? "Save" : "Speichern", delegate { SaveFile(); }, body);
+            var save = ButtonFor(Localization.T("Speichern"), delegate { SaveFile(); }, body);
             save.Dock = DockStyle.Fill;
             top.Controls.Add(save, 3, 0);
 
             var actions = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Padding = new Padding(0, Px(4), 0, 0) };
-            var reload = ButtonFor(Localization.IsEnglish ? "Reload" : "Neu laden", delegate { Reload(); }, body);
-            var add = ButtonFor(Localization.IsEnglish ? "Add action" : "Aktion hinzufügen", delegate { AddAction(); }, body);
+            var reload = ButtonFor(Localization.T("Neu laden"), delegate { Reload(); }, body);
+            var add = ButtonFor(Localization.T("Aktion hinzufügen"), delegate { AddAction(); }, body);
             actions.Controls.Add(reload);
             actions.Controls.Add(add);
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add window" : "Fenster hinzufügen", delegate { AddWindow(); }, body));
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Delete window" : "Fenster löschen", delegate { DeleteWindow(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Fenster hinzufügen"), delegate { AddWindow(); }, body));
+            actions.Controls.Add(ButtonFor(Localization.T("Fenster löschen"), delegate { DeleteWindow(); }, body));
             status.AutoSize = false;
             status.Width = Px(260);
             status.Height = Px(28);
@@ -94,7 +94,7 @@ namespace MP1.ConfigurationStudio
         public bool ConfirmDiscardChanges()
         {
             if (!dirty) return true;
-            return MessageBox.Show(FindForm(), Localization.IsEnglish ? "Discard unsaved key mapping changes?" : "Ungespeicherte Tastenbelegung verwerfen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            return MessageBox.Show(FindForm(), Localization.T("Ungespeicherte Tastenbelegung verwerfen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
         public bool SaveChanges()
@@ -127,7 +127,7 @@ namespace MP1.ConfigurationStudio
             {
                 if (!File.Exists(path))
                 {
-                    status.Text = (Localization.IsEnglish ? "File not found: " : "Datei nicht gefunden: ") + path;
+                    status.Text = (Localization.T("Datei nicht gefunden: ")) + path;
                     return;
                 }
                 string text = NativeXmlFileStore.ReadText(path, out encoding);
@@ -158,12 +158,12 @@ namespace MP1.ConfigurationStudio
                 var element = node as XmlElement;
                 if (element == null) continue;
                 if (String.Equals(element.Name, "global", StringComparison.OrdinalIgnoreCase))
-                    contexts.Add(new Context { Label = Localization.IsEnglish ? "Global" : "Global", Element = element });
+                    contexts.Add(new Context { Label = Localization.T("Global"), Element = element });
                 else if (String.Equals(element.Name, "window", StringComparison.OrdinalIgnoreCase))
                 {
                     string description = ChildText(element, "description");
                     string id = ChildText(element, "id");
-                    contexts.Add(new Context { Label = (String.IsNullOrEmpty(description) ? (Localization.IsEnglish ? "Window" : "Fenster") : description) + (String.IsNullOrEmpty(id) ? "" : "  ·  #" + id), Element = element });
+                    contexts.Add(new Context { Label = (String.IsNullOrEmpty(description) ? (Localization.T("Fenster")) : description) + (String.IsNullOrEmpty(id) ? "" : "  ·  #" + id), Element = element });
                 }
             }
             building = true;
@@ -186,7 +186,7 @@ namespace MP1.ConfigurationStudio
                 BuildContexts();
                 contextChoice.SelectedIndex = contexts.Count - 1;
                 BuildTable();
-                status.Text = (Localization.IsEnglish ? "Window added · unsaved" : "Fenster hinzugefügt · ungespeichert");
+                status.Text = (Localization.T("Fenster hinzugefügt · ungespeichert"));
             }
         }
 
@@ -195,15 +195,15 @@ namespace MP1.ConfigurationStudio
             Context context = SelectedContext();
             if (context == null || context.Element == null || !String.Equals(context.Element.Name, "window", StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show(FindForm(), Localization.IsEnglish ? "Only window contexts can be deleted; Global is required." : "Nur Fenster-Bereiche können gelöscht werden; Global ist erforderlich.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(FindForm(), Localization.T("Nur Fenster-Bereiche können gelöscht werden; Global ist erforderlich."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "Delete the window “" : "Fenster „") + context.Label + (Localization.IsEnglish ? "” and all its mappings?" : "“ und alle Zuordnungen löschen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            if (MessageBox.Show(FindForm(), (Localization.T("Fenster „")) + context.Label + (Localization.T("“ und alle Zuordnungen löschen?")), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             context.Element.ParentNode.RemoveChild(context.Element);
             dirty = true;
             BuildContexts();
             BuildTable();
-            status.Text = (Localization.IsEnglish ? "Window deleted · unsaved" : "Fenster gelöscht · ungespeichert");
+            status.Text = (Localization.T("Fenster gelöscht · ungespeichert"));
         }
 
         private void BuildTable()
@@ -238,13 +238,13 @@ namespace MP1.ConfigurationStudio
                 }
                 if (visible == 0)
                 {
-                    var empty = new Label { Text = Localization.IsEnglish ? "No actions in this context." : "Keine Aktionen in diesem Bereich.", Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(6), 0, Px(6)) };
+                    var empty = new Label { Text = Localization.T("Keine Aktionen in diesem Bereich."), Font = Typography.Create(10f * scale, FontStyle.Regular), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, Px(6), 0, Px(6)) };
                     table.Controls.Add(empty, 0, table.RowCount);
                     table.SetColumnSpan(empty, 5);
                     table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                     table.RowCount++;
                 }
-                status.Text = context.Label + "  ·  " + visible + (Localization.IsEnglish ? " actions" : " Aktionen") + (dirty ? (Localization.IsEnglish ? "  ·  unsaved" : "  ·  ungespeichert") : "");
+                status.Text = context.Label + "  ·  " + visible + (Localization.T(" Aktionen")) + (dirty ? (Localization.T("  ·  ungespeichert")) : "");
             }
             finally { table.ResumeLayout(true); }
             LayoutTable();
@@ -252,9 +252,7 @@ namespace MP1.ConfigurationStudio
 
         private void AddHeader()
         {
-            string[] titles = Localization.IsEnglish
-                ? new[] { "Action", "Key", "", "Sound", "" }
-                : new[] { "Aktion", "Taste", "", "Sound", "" };
+            string[] titles = new[] { Localization.T2("Aktion","Action"), Localization.T2("Taste","Key"), "", Localization.T2("Sound","Sound"), "" };
             for (int i = 0; i < titles.Length; i++)
             {
                 var label = new Label { Text = titles[i], Font = Typography.Create(9f * scale, FontStyle.Bold), ForeColor = palette.Muted, AutoSize = true, Margin = new Padding(0, 0, 0, Px(4)) };
@@ -268,7 +266,7 @@ namespace MP1.ConfigurationStudio
         {
             var info = new Label
             {
-                Text = (String.IsNullOrEmpty(description) ? (Localization.IsEnglish ? "(no description)" : "(ohne Beschreibung)") : description) + "\n#" + id,
+                Text = (String.IsNullOrEmpty(description) ? (Localization.T("(ohne Beschreibung)")) : description) + "\n#" + id,
                 Font = Typography.Create(10f * scale, FontStyle.Regular),
                 ForeColor = palette.Text,
                 AutoSize = false,
@@ -280,14 +278,14 @@ namespace MP1.ConfigurationStudio
             };
             table.Controls.Add(info, 0, table.RowCount);
 
-            var keyButton = new StudioButton { Text = String.IsNullOrEmpty(key) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : key, Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
+            var keyButton = new StudioButton { Text = String.IsNullOrEmpty(key) ? (Localization.T("(leer)")) : key, Font = Typography.Create(10f * scale, FontStyle.Bold), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             keyButton.FlatAppearance.BorderColor = palette.Border;
             keyButton.Click += delegate { CaptureKey(action, keyButton); };
             table.Controls.Add(keyButton, 1, table.RowCount);
 
-            var clear = new StudioButton { Text = Localization.IsEnglish ? "Clear" : "Leer", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
+            var clear = new StudioButton { Text = Localization.T("Leer"), Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
             clear.FlatAppearance.BorderColor = palette.Border;
-            clear.Click += delegate { SetActionValue(action, "key", string.Empty); keyButton.Text = Localization.IsEnglish ? "(empty)" : "(leer)"; MarkDirty(); BuildTable(); };
+            clear.Click += delegate { SetActionValue(action, "key", string.Empty); keyButton.Text = Localization.T("(leer)"); MarkDirty(); BuildTable(); };
             table.Controls.Add(clear, 2, table.RowCount);
 
             var sound = new StudioComboInput(scale, Typography.Create(9.5f * scale, FontStyle.Regular), palette) { Colors = () => palette, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), Px(4), Px(2)) };
@@ -300,7 +298,7 @@ namespace MP1.ConfigurationStudio
             sound.Leave += delegate { SetActionValue(action, "sound", sound.Text); MarkDirty(); };
             table.Controls.Add(sound, 3, table.RowCount);
 
-            var remove = new StudioButton { Text = Localization.IsEnglish ? "Delete" : "Löschen", Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), 0, Px(2)) };
+            var remove = new StudioButton { Text = Localization.T("Löschen"), Font = Typography.Create(8f * scale, FontStyle.Regular), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Muted, Dock = DockStyle.Fill, Margin = new Padding(0, Px(2), 0, Px(2)) };
             remove.FlatAppearance.BorderColor = palette.Border;
             remove.Click += delegate { RemoveAction(action); };
             table.Controls.Add(remove, 4, table.RowCount);
@@ -332,18 +330,18 @@ namespace MP1.ConfigurationStudio
                 dirty = true;
                 BuildTable();
                 status.Text = conflicts.Count > 0
-                    ? (Localization.IsEnglish ? "Action added · key conflict resolved" : "Aktion hinzugefügt · Konflikt aufgelöst")
-                    : (Localization.IsEnglish ? "Action added · unsaved" : "Aktion hinzugefügt · ungespeichert");
+                    ? (Localization.T("Aktion hinzugefügt · Konflikt aufgelöst"))
+                    : (Localization.T("Aktion hinzugefügt · ungespeichert"));
             }
         }
 
         private void RemoveAction(XmlElement action)
         {
-            if (MessageBox.Show(FindForm(), (Localization.IsEnglish ? "Delete this action?" : "Diese Aktion löschen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            if (MessageBox.Show(FindForm(), (Localization.T("Diese Aktion löschen?")), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             action.ParentNode.RemoveChild(action);
             dirty = true;
             BuildTable();
-            status.Text = (Localization.IsEnglish ? "Action deleted · unsaved" : "Aktion gelöscht · ungespeichert");
+            status.Text = (Localization.T("Aktion gelöscht · ungespeichert"));
         }
 
         private Context SelectedContext()
@@ -386,19 +384,19 @@ namespace MP1.ConfigurationStudio
                     if (!ConfirmResolveKey(key, conflicts))
                     {
                         BuildTable();
-                        status.Text = Localization.IsEnglish ? "Key conflict left unchanged." : "Tastenkonflikt unverändert gelassen.";
+                        status.Text = Localization.T("Tastenkonflikt unverändert gelassen.");
                         return;
                     }
                     foreach (XmlElement conflict in conflicts) ClearActionKey(conflict);
                 }
                 SetActionValue(action, "key", key);
-                button.Text = String.IsNullOrEmpty(key) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : key;
+                button.Text = String.IsNullOrEmpty(key) ? (Localization.T("(leer)")) : key;
                 MarkDirty();
                 BuildTable();
                 if (conflicts.Count > 0)
-                    status.Text = (Localization.IsEnglish ? "Key " : "Taste ") + key + (Localization.IsEnglish ? " assigned · conflict resolved" : " zugewiesen · Konflikt aufgelöst");
+                    status.Text = (Localization.T("Taste ")) + key + (Localization.T(" zugewiesen · Konflikt aufgelöst"));
                 else if (!String.Equals(previous, key, StringComparison.OrdinalIgnoreCase))
-                    status.Text = (Localization.IsEnglish ? "Key " : "Taste ") + key + (Localization.IsEnglish ? " assigned · unsaved" : " zugewiesen · ungespeichert");
+                    status.Text = (Localization.T("Taste ")) + key + (Localization.T(" zugewiesen · ungespeichert"));
             }
         }
 
@@ -410,12 +408,12 @@ namespace MP1.ConfigurationStudio
             {
                 string description = ChildText(conflicts[i], "description");
                 string id = ChildText(conflicts[i], "id");
-                names.Add("• " + (String.IsNullOrWhiteSpace(description) ? (Localization.IsEnglish ? "(no description)" : "(ohne Beschreibung)") : description) + (String.IsNullOrWhiteSpace(id) ? "" : " (#" + id + ")"));
+                names.Add("• " + (String.IsNullOrWhiteSpace(description) ? (Localization.T("(ohne Beschreibung)")) : description) + (String.IsNullOrWhiteSpace(id) ? "" : " (#" + id + ")"));
             }
             if (conflicts.Count > shown) names.Add("…");
-            string message = (Localization.IsEnglish ? "The key " : "Die Taste ") + key + (Localization.IsEnglish ? " is already used by:\r\n\r\n" : " ist bereits belegt durch:\r\n\r\n")
+            string message = (Localization.T("Die Taste ")) + key + (Localization.T(" ist bereits belegt durch:\r\n\r\n"))
                 + String.Join("\r\n", names.ToArray())
-                + (Localization.IsEnglish ? "\r\n\r\nRemove the key from those actions and assign it here?" : "\r\n\r\nTaste bei diesen Aktionen entfernen und hier zuweisen?");
+                + (Localization.T("\r\n\r\nTaste bei diesen Aktionen entfernen und hier zuweisen?"));
             return MessageBox.Show(FindForm(), message, "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
@@ -475,8 +473,8 @@ namespace MP1.ConfigurationStudio
         private void MarkDirty()
         {
             dirty = true;
-            if (status.Text.IndexOf(Localization.IsEnglish ? "unsaved" : "ungespeichert", StringComparison.OrdinalIgnoreCase) < 0)
-                status.Text += Localization.IsEnglish ? "  ·  unsaved" : "  ·  ungespeichert";
+            if (status.Text.IndexOf(Localization.T("ungespeichert"), StringComparison.OrdinalIgnoreCase) < 0)
+                status.Text += Localization.T("  ·  ungespeichert");
         }
 
         private void SaveFile()
@@ -486,13 +484,13 @@ namespace MP1.ConfigurationStudio
             {
                 string backup = NativeXmlFileStore.SaveDocument(path, document, encoding);
                 dirty = false;
-                status.Text = (Localization.IsEnglish ? "Saved · backup: " : "Gespeichert · Sicherung: ") + Path.GetFileName(backup);
+                status.Text = (Localization.T("Gespeichert · Sicherung: ")) + Path.GetFileName(backup);
                 BuildTable();
             }
             catch (Exception ex)
             {
                 status.Text = ex.Message;
-                MessageBox.Show(FindForm(), (Localization.IsEnglish ? "The key mapping could not be saved.\r\n\r\n" : "Die Tastenbelegung konnte nicht gespeichert werden.\r\n\r\n") + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(FindForm(), (Localization.T("Die Tastenbelegung konnte nicht gespeichert werden.\r\n\r\n")) + ex.Message, "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -507,7 +505,7 @@ namespace MP1.ConfigurationStudio
             public WindowDialog(float scale)
             {
                 this.scale = scale;
-                Text = Localization.IsEnglish ? "Add window" : "Fenster hinzufügen";
+                Text = Localization.T("Fenster hinzufügen");
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
                 MaximizeBox = false;
@@ -519,20 +517,20 @@ namespace MP1.ConfigurationStudio
                 var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(Px(16)), BackColor = Palette.For(true).Panel };
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(120)));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Window ID" : "Fenster-ID", ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+                table.Controls.Add(new Label { Text = Localization.T("Fenster-ID"), ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
                 id.Dock = DockStyle.Fill;
                 id.Font = Typography.Create(10f * scale, FontStyle.Regular);
                 id.BackColor = Palette.For(true).Input;
                 id.ForeColor = Palette.For(true).Text;
                 table.Controls.Add(id, 1, 0);
-                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Description" : "Beschreibung", ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
+                table.Controls.Add(new Label { Text = Localization.T("Beschreibung"), ForeColor = Palette.For(true).Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
                 description.Dock = DockStyle.Fill;
                 description.Font = Typography.Create(10f * scale, FontStyle.Regular);
                 description.BackColor = Palette.For(true).Input;
                 description.ForeColor = Palette.For(true).Text;
                 table.Controls.Add(description, 1, 1);
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
@@ -541,12 +539,12 @@ namespace MP1.ConfigurationStudio
                     int value;
                     if (!Int32.TryParse(id.Text.Trim(), out value) || value <= 0)
                     {
-                        MessageBox.Show(this, Localization.IsEnglish ? "The window ID must be a positive number." : "Die Fenster-ID muss eine positive Zahl sein.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Localization.T("Die Fenster-ID muss eine positive Zahl sein."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                     if (String.IsNullOrWhiteSpace(description.Text))
                     {
-                        MessageBox.Show(this, Localization.IsEnglish ? "Please enter a description." : "Bitte eine Beschreibung eingeben.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Localization.T("Bitte eine Beschreibung eingeben."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                     DialogResult = DialogResult.OK;
@@ -579,7 +577,7 @@ namespace MP1.ConfigurationStudio
             public ActionDialog(float scale, string suggestedId)
             {
                 this.scale = scale;
-                Text = Localization.IsEnglish ? "Add action" : "Aktion hinzufügen";
+                Text = Localization.T("Aktion hinzufügen");
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
                 MaximizeBox = false;
@@ -597,11 +595,11 @@ namespace MP1.ConfigurationStudio
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Px(110)));
-                AddRow(table, 0, Localization.IsEnglish ? "Action ID" : "Aktions-ID", id);
+                AddRow(table, 0, Localization.T("Aktions-ID"), id);
                 id.Text = suggestedId ?? string.Empty;
-                AddRow(table, 1, Localization.IsEnglish ? "Description" : "Beschreibung", description);
-                AddRow(table, 2, Localization.IsEnglish ? "Key" : "Taste", key, false);
-                var capture = new StudioButton { Text = Localization.IsEnglish ? "Capture …" : "Aufnehmen …", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
+                AddRow(table, 1, Localization.T("Beschreibung"), description);
+                AddRow(table, 2, Localization.T("Taste"), key, false);
+                var capture = new StudioButton { Text = Localization.T("Aufnehmen …"), FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Dock = DockStyle.Fill };
                 capture.FlatAppearance.BorderColor = Palette.For(true).Border;
                 capture.Click += delegate
                 {
@@ -612,7 +610,7 @@ namespace MP1.ConfigurationStudio
                 AddRow(table, 3, "Sound", sound);
 
                 var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, BackColor = Palette.For(true).Panel, Margin = new Padding(0, Px(8), 0, 0) };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 var ok = new StudioButton { Text = "OK", FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Width = Px(100), Height = Px(30) };
                 ok.FlatAppearance.BorderColor = Palette.For(true).Border;
@@ -621,12 +619,12 @@ namespace MP1.ConfigurationStudio
                     int value;
                     if (!Int32.TryParse(id.Text.Trim(), out value) || value < 0)
                     {
-                        MessageBox.Show(this, Localization.IsEnglish ? "The action ID must be a non-negative number." : "Die Aktions-ID muss eine nicht negative Zahl sein.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Localization.T("Die Aktions-ID muss eine nicht negative Zahl sein."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                     if (String.IsNullOrWhiteSpace(description.Text))
                     {
-                        MessageBox.Show(this, Localization.IsEnglish ? "Please enter a description." : "Bitte eine Beschreibung eingeben.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, Localization.T("Bitte eine Beschreibung eingeben."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                     DialogResult = DialogResult.OK;
@@ -666,7 +664,7 @@ namespace MP1.ConfigurationStudio
             public KeyCaptureDialog(float scale, string current)
             {
                 this.scale = scale;
-                Text = Localization.IsEnglish ? "Press a key" : "Taste drücken";
+                Text = Localization.T("Taste drücken");
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
                 MaximizeBox = false;
@@ -676,10 +674,10 @@ namespace MP1.ConfigurationStudio
                 BackColor = Palette.For(true).Panel;
                 ForeColor = Palette.For(true).Text;
                 ClientSize = new Size(Px(430), Px(196));
-                var title = new Label { Text = Localization.IsEnglish ? "Press the new key for this action." : "Neue Taste für diese Aktion drücken.", Font = Typography.Create(11f * scale, FontStyle.Bold), ForeColor = Palette.For(true).Text, AutoSize = true, Left = Px(18), Top = Px(18) };
-                var hint = new Label { Text = (Localization.IsEnglish ? "Current: " : "Aktuell: ") + (String.IsNullOrEmpty(current) ? (Localization.IsEnglish ? "(empty)" : "(leer)") : current), Font = Typography.Create(9.5f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Muted, AutoSize = true, Left = Px(18), Top = Px(52) };
+                var title = new Label { Text = Localization.T("Neue Taste für diese Aktion drücken."), Font = Typography.Create(11f * scale, FontStyle.Bold), ForeColor = Palette.For(true).Text, AutoSize = true, Left = Px(18), Top = Px(18) };
+                var hint = new Label { Text = (Localization.T("Aktuell: ")) + (String.IsNullOrEmpty(current) ? (Localization.T("(leer)")) : current), Font = Typography.Create(9.5f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Muted, AutoSize = true, Left = Px(18), Top = Px(52) };
                 var warning = new Label { Text = string.Empty, Font = Typography.Create(9f * scale, FontStyle.Regular), ForeColor = Palette.For(true).Accent, AutoSize = false, Width = Px(394), Height = Px(48), Left = Px(18), Top = Px(78), Visible = false };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(310), Top = Px(148), Width = Px(100), Height = Px(30) };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), DialogResult = DialogResult.Cancel, FlatStyle = FlatStyle.Flat, BackColor = Palette.For(true).Panel, ForeColor = Palette.For(true).Text, Left = Px(310), Top = Px(148), Width = Px(100), Height = Px(30) };
                 cancel.FlatAppearance.BorderColor = Palette.For(true).Border;
                 Controls.Add(title);
                 Controls.Add(hint);
@@ -690,9 +688,7 @@ namespace MP1.ConfigurationStudio
                 {
                     if (e.Control || e.Alt)
                     {
-                        warning.Text = Localization.IsEnglish
-                            ? "keymap.xml stores single keys only. Ctrl/Alt combinations are not part of MediaPortal's native keymap; press the key without Ctrl or Alt."
-                            : "keymap.xml speichert nur einzelne Tasten. Strg-/Alt-Kombinationen sind nicht Teil der nativen MediaPortal-Tastenbelegung; bitte die Taste ohne Strg oder Alt drücken.";
+                        warning.Text = Localization.T("keymap.xml speichert nur einzelne Tasten. Strg-/Alt-Kombinationen sind nicht Teil der nativen MediaPortal-Tastenbelegung; bitte die Taste ohne Strg oder Alt drücken.");
                         warning.Visible = true;
                         return;
                     }

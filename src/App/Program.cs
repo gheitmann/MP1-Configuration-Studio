@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +15,7 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("MP1 Configuration Studio")]
 [assembly: AssemblyDescription("Presentation layer for the original MediaPortal 1.39 configurator")]
 [assembly: AssemblyProduct("MP1 Configuration Studio")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.61")]
+[assembly: AssemblyInformationalVersion("2.0.0-beta.62")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
 
@@ -79,9 +80,7 @@ namespace MP1.ConfigurationStudio
                     NativeDarkMode.Enable();
                     if(!SingleInstance.TryAcquire("MP1ConfigurationStudio-SingleInstance"))
                     {
-                        MessageBox.Show(Localization.IsEnglish
-                                ?"MP1 Configuration Studio is already running in this session. Please close the existing window first."
-                                :"MP1 Configuration Studio läuft bereits in dieser Sitzung. Bitte zuerst das vorhandene Fenster schließen.",
+                        MessageBox.Show(Localization.T("MP1 Configuration Studio läuft bereits in dieser Sitzung. Bitte zuerst das vorhandene Fenster schließen."),
                             "MP1 Configuration Studio",MessageBoxButtons.OK,MessageBoxIcon.Information);
                         return 0;
                     }
@@ -123,9 +122,7 @@ namespace MP1.ConfigurationStudio
                 {
                     StudioLog.Warn("Unsupported MediaPortal version: " + version.FileVersion);
                     DialogResult answer = MessageBox.Show(
-                        Localization.IsEnglish
-                            ? "This Studio release supports MediaPortal 1.39.\r\n\r\nFound: " + version.FileVersion + "\r\n\r\nThe original interface can still be started. Continue?"
-                            : "Diese Studio-Ausgabe unterstützt MediaPortal 1.39.\r\n\r\nGefunden: " + version.FileVersion + "\r\n\r\nDie originale Oberfläche kann trotzdem gestartet werden. Fortfahren?",
+                        String.Format(CultureInfo.CurrentCulture, Localization.Pair( "This Studio release supports MediaPortal 1.39.\r\n\r\nFound: {0}\r\n\r\nThe original interface can still be started. Continue?","Diese Studio-Ausgabe unterstützt MediaPortal 1.39.\r\n\r\nGefunden: " + version.FileVersion + "\r\n\r\nDie originale Oberfläche kann trotzdem gestartet werden. Fortfahren?"), version.FileVersion),
                         "MP1 Configuration Studio",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning,
@@ -158,9 +155,7 @@ namespace MP1.ConfigurationStudio
                 {
                     if (!SingleInstance.TryAcquire("MP1ConfigurationStudio-SingleInstance"))
                     {
-                        MessageBox.Show(Localization.IsEnglish
-                                ? "MP1 Configuration Studio is already running in this session. Please use the existing window."
-                                : "MP1 Configuration Studio läuft bereits in dieser Sitzung. Bitte verwenden Sie das vorhandene Fenster.",
+                        MessageBox.Show(Localization.T("MP1 Configuration Studio läuft bereits in dieser Sitzung. Bitte verwenden Sie das vorhandene Fenster."),
                             "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return 0;
                     }
@@ -191,9 +186,7 @@ namespace MP1.ConfigurationStudio
             {
                 while (ex is TargetInvocationException && ex.InnerException != null) ex = ex.InnerException;
                 StudioLog.Error(ex,"Startup failed");
-                string error = (Localization.IsEnglish
-                    ? "Configuration Studio could not be started.\r\n\r\n" + ex.Message + "\r\n\r\nThe original configurator remains available through Configuration.exe."
-                    : "Configuration Studio konnte nicht gestartet werden.\r\n\r\n" + ex.Message + "\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar.");
+                string error = String.Format(CultureInfo.CurrentCulture, Localization.Pair("Configuration Studio could not be started.\r\n\r\n{0}\r\n\r\nThe original configurator remains available through Configuration.exe.","Configuration Studio konnte nicht gestartet werden.\r\n\r\n{0}\r\n\r\nDer originale Konfigurator bleibt über Configuration.exe erreichbar."), ex.Message);
                 if (Array.IndexOf(args, "--self-test") >= 0) Console.Error.WriteLine(ex);
                 else ErrorDialog.Show(null, error, native, runtime);
                 return 1;
@@ -215,7 +208,7 @@ namespace MP1.ConfigurationStudio
             catch (Exception ex)
             {
                 StudioLog.Error(ex, "Classic start failed");
-                MessageBox.Show((Localization.IsEnglish ? "The original Configuration.exe could not be started.\r\n\r\n" : "Die originale Configuration.exe konnte nicht gestartet werden.\r\n\r\n") + ex.Message + "\r\n\r\n" + Localization.T("Protokoll: ") + StudioLog.FilePath,
+                MessageBox.Show((Localization.T("Die originale Configuration.exe konnte nicht gestartet werden.\r\n\r\n")) + ex.Message + "\r\n\r\n" + Localization.T("Protokoll: ") + StudioLog.FilePath,
                     "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -357,7 +350,7 @@ namespace MP1.ConfigurationStudio
                         StudioLog.Error(ex,"Studio shell attach failed");
                         string native = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration.exe");
                         ErrorDialog.Show(form,
-                            (Localization.IsEnglish ? "The new interface could not be initialized. Please close this window and use the classic interface.\r\n\r\n" : "Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und die klassische Oberfläche verwenden.\r\n\r\n") + ex.Message,
+                            (Localization.T("Die neue Oberfläche konnte nicht initialisiert werden. Bitte dieses Fenster schließen und die klassische Oberfläche verwenden.\r\n\r\n")) + ex.Message,
                             native,
                             AppDomain.CurrentDomain.BaseDirectory);
                     }

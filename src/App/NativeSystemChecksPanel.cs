@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.ServiceProcess;
@@ -40,7 +40,7 @@ namespace MP1.ConfigurationStudio
             mcs.Margin = new Padding(0, 0, 0, Px(6));
             table.Controls.Add(mcs, 0, 0);
 
-            mptray.Text = Localization.IsEnglish ? "Start MPTray with Windows" : "MPTray mit Windows starten";
+            mptray.Text = Localization.T("MPTray mit Windows starten");
             mptray.AutoSize = true;
             mptray.Font = body;
             mptray.ForeColor = palette.Text;
@@ -51,12 +51,12 @@ namespace MP1.ConfigurationStudio
             {
                 if (loading) return;
                 SetMPTray(mptray.Checked);
-                status.Text = Localization.IsEnglish ? "MPTray autostart updated." : "MPTray-Autostart aktualisiert.";
+                status.Text = Localization.T("MPTray-Autostart aktualisiert.");
             };
             table.Controls.Add(mptray, 0, 1);
 
             var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0, 0, 0, Px(6)) };
-            var open = new StudioButton { Text = Localization.IsEnglish ? "Open classic checks" : "Klassische Prüfungen öffnen", Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
+            var open = new StudioButton { Text = Localization.T("Klassische Prüfungen öffnen"), Font = body, Height = Px(28), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(Px(8), 0, Px(8), 0), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, Margin = new Padding(0, 0, Px(6), 0) };
             open.FlatAppearance.BorderColor = palette.Border;
             open.Click += delegate { if (classic != null) classic(); };
             actions.Controls.Add(open);
@@ -70,9 +70,7 @@ namespace MP1.ConfigurationStudio
 
             var note = new Label
             {
-                Text = Localization.IsEnglish
-                    ? "MPTray autostart is a per-user registry setting. Media Center service policy changes need administrator rights and remain in the classic checks page."
-                    : "Der MPTray-Autostart ist eine Benutzer-Registry-Einstellung. Änderungen an der Media-Center-Dienstrichtlinie benötigen Administratorrechte und bleiben in der klassischen Prüfseite.",
+                Text = Localization.T("Der MPTray-Autostart ist eine Benutzer-Registry-Einstellung. Änderungen an der Media-Center-Dienstrichtlinie benötigen Administratorrechte und bleiben in der klassischen Prüfseite."),
                 AutoSize = true,
                 MaximumSize = new Size(Px(740), 0),
                 Font = Typography.Create(9f * scale, FontStyle.Regular),
@@ -110,7 +108,7 @@ namespace MP1.ConfigurationStudio
                 }
             }
             catch { }
-            if (!installed) return Localization.IsEnglish ? "Media Center services: not installed" : "Media-Center-Dienste: nicht installiert";
+            if (!installed) return Localization.T("Media-Center-Dienste: nicht installiert");
             bool policy = false;
             try
             {
@@ -121,10 +119,10 @@ namespace MP1.ConfigurationStudio
                 }
             }
             catch { }
-            if (policy) return Localization.IsEnglish ? "Media Center services: disabled by policy" : "Media-Center-Dienste: per Richtlinie deaktiviert";
+            if (policy) return Localization.T("Media-Center-Dienste: per Richtlinie deaktiviert");
             return running
-                ? (Localization.IsEnglish ? "Media Center services: running" : "Media-Center-Dienste: laufen")
-                : (Localization.IsEnglish ? "Media Center services: stopped" : "Media-Center-Dienste: gestoppt");
+                ? (Localization.T("Media-Center-Dienste: laufen"))
+                : (Localization.T("Media-Center-Dienste: gestoppt"));
         }
 
         private bool ReadMPTray()

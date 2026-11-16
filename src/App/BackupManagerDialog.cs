@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -126,9 +126,7 @@ namespace MP1.ConfigurationStudio
 
             DialogResult answer = MessageBox.Show(
                 this,
-                Localization.IsEnglish
-                    ? "The current MediaPortal.xml is backed up first. Studio then closes and the original interface starts with the restored configuration.\r\n\r\nUnsaved changes will be lost. Continue?"
-                    : "Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?",
+                Localization.T("Die aktuelle MediaPortal.xml wird vorher gesichert. Danach wird Studio geschlossen und die originale Oberfläche mit der wiederhergestellten Konfiguration gestartet.\r\n\r\nNicht gespeicherte Änderungen gehen verloren. Fortfahren?"),
                 Localization.T("Konfiguration wiederherstellen"),
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning,
@@ -147,9 +145,7 @@ namespace MP1.ConfigurationStudio
         {
             if (MessageBox.Show(
                     this,
-                    Localization.IsEnglish
-                        ? "Delete old automatic pre-save backups and keep the newest 10?\r\n\r\nManual and first-run backups are kept."
-                        : "Alte automatische Vor-Sicherungen löschen und die neuesten 10 behalten?\r\n\r\nManuelle und First-Run-Sicherungen bleiben erhalten.",
+                    Localization.T("Alte automatische Vor-Sicherungen löschen und die neuesten 10 behalten?\r\n\r\nManuelle und First-Run-Sicherungen bleiben erhalten."),
                     Localization.T("Aufräumen"),
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question,

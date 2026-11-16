@@ -92,6 +92,8 @@ namespace MP1.ConfigurationStudio
                 Language = SchemaVersion < 3 ? "en"
                     : String.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en"
                     : String.Equals(language, "de", StringComparison.OrdinalIgnoreCase) ? "de"
+                    : String.Equals(language, "fr", StringComparison.OrdinalIgnoreCase) ? "fr"
+                    : String.Equals(language, "nl", StringComparison.OrdinalIgnoreCase) ? "nl"
                     : "en";
 
                 int value;

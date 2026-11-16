@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -51,17 +51,17 @@ namespace MP1.ConfigurationStudio
             MinimumSize = new Size(Px(320), Px(150));
             var body = Typography.Create(10f * scale, FontStyle.Regular);
             list = new ThemedListView(palette) { Dock = DockStyle.Fill, Font = body, BackColor = palette.Input, ForeColor = palette.Text };
-            list.Columns.Add(Localization.IsEnglish ? "Name" : "Name", Px(150));
-            list.Columns.Add(Localization.IsEnglish ? "Folder" : "Ordner", Px(260));
-            if (supportsScan) list.Columns.Add(Localization.IsEnglish ? "Scan" : "Scannen", Px(80));
+            list.Columns.Add(Localization.T("Name"), Px(150));
+            list.Columns.Add(Localization.T("Ordner"), Px(260));
+            if (supportsScan) list.Columns.Add(Localization.T("Scannen"), Px(80));
             list.DoubleClick += delegate { EditSelected(); };
             list.SelectedIndexChanged += delegate { UpdateButtons(); };
             list.Resize += delegate { ResizeColumns(); };
 
             var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.LeftToRight, Height = Px(38), WrapContents = false, BackColor = palette.Background, Padding = new Padding(0, Px(5), 0, 0) };
-            actions.Controls.Add(ButtonFor(Localization.IsEnglish ? "Add folder…" : "Ordner hinzufügen…", delegate { AddShare(); }, body));
-            editButton = ButtonFor(Localization.IsEnglish ? "Edit" : "Bearbeiten", delegate { EditSelected(); }, body);
-            removeButton = ButtonFor(Localization.IsEnglish ? "Remove" : "Entfernen", delegate { RemoveSelected(); }, body);
+            actions.Controls.Add(ButtonFor(Localization.T("Ordner hinzufügen…"), delegate { AddShare(); }, body));
+            editButton = ButtonFor(Localization.T("Bearbeiten"), delegate { EditSelected(); }, body);
+            removeButton = ButtonFor(Localization.T("Entfernen"), delegate { RemoveSelected(); }, body);
             actions.Controls.Add(editButton);
             actions.Controls.Add(removeButton);
             Controls.Add(list);
@@ -140,7 +140,7 @@ namespace MP1.ConfigurationStudio
                 {
                     var item = new ListViewItem(share.Name ?? "");
                     item.SubItems.Add(share.Path ?? "");
-                    if (supportsScan) item.SubItems.Add(share.Scan ? (Localization.IsEnglish ? "Yes" : "Ja") : (Localization.IsEnglish ? "No" : "Nein"));
+                    if (supportsScan) item.SubItems.Add(share.Scan ? (Localization.T("Ja")) : (Localization.T("Nein")));
                     list.Items.Add(item);
                 }
             }
@@ -190,7 +190,7 @@ namespace MP1.ConfigurationStudio
             if (list.SelectedIndices.Count == 0) return;
             int index = list.SelectedIndices[0];
             if (index < 0 || index >= shares.Count) return;
-            if (MessageBox.Show(FindForm(), Localization.IsEnglish ? "Remove this folder?" : "Diesen Ordner entfernen?", "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            if (MessageBox.Show(FindForm(), Localization.T("Diesen Ordner entfernen?"), "MP1 Configuration Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             shares.RemoveAt(index);
             Commit();
             RefreshList();
@@ -273,7 +273,7 @@ namespace MP1.ConfigurationStudio
         {
             private readonly TextBox name = new TextBox();
             private readonly TextBox path = new TextBox();
-            private readonly CheckBox scan = new CheckBox { Text = Localization.IsEnglish ? "Scan this folder" : "Diesen Ordner scannen" };
+            private readonly CheckBox scan = new CheckBox { Text = Localization.T("Diesen Ordner scannen") };
             public string ShareName { get { return name.Text.Trim(); } }
             public string SharePath { get { return path.Text.Trim(); } }
             public bool Scan { get { return scan.Checked; } }
@@ -281,7 +281,7 @@ namespace MP1.ConfigurationStudio
             public ShareDialog(ShareEntry entry, float scale, bool supportsScan)
             {
                 var palette = Palette.For(true);
-                Text = entry == null ? (Localization.IsEnglish ? "Add media folder" : "Medienordner hinzufügen") : (Localization.IsEnglish ? "Edit media folder" : "Medienordner bearbeiten");
+                Text = entry == null ? (Localization.T("Medienordner hinzufügen")) : (Localization.T("Medienordner bearbeiten"));
                 Icon = StudioIcon.Value;
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 StartPosition = FormStartPosition.CenterParent;
@@ -296,10 +296,10 @@ namespace MP1.ConfigurationStudio
                 table.RowStyles.Add(new RowStyle(SizeType.Absolute, (int)(34 * scale)));
                 table.RowStyles.Add(new RowStyle(SizeType.Absolute, (int)(34 * scale)));
                 table.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Name" : "Name", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
+                table.Controls.Add(new Label { Text = Localization.T("Name"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 0);
                 name.Dock = DockStyle.Fill; name.BackColor = palette.Input; name.ForeColor = palette.Text; name.BorderStyle = BorderStyle.FixedSingle;
                 table.Controls.Add(name, 1, 0);
-                table.Controls.Add(new Label { Text = Localization.IsEnglish ? "Folder" : "Ordner", ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
+                table.Controls.Add(new Label { Text = Localization.T("Ordner"), ForeColor = palette.Text, TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill }, 0, 1);
                 var pathRow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
                 pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, (int)(36 * scale)));
                 path.Dock = DockStyle.Fill; path.BackColor = palette.Input; path.ForeColor = palette.Text; path.BorderStyle = BorderStyle.FixedSingle;
@@ -312,7 +312,7 @@ namespace MP1.ConfigurationStudio
                 scan.Dock = DockStyle.Fill; scan.ForeColor = palette.Text; scan.BackColor = palette.Background; scan.UseMnemonic = false;
                 if (supportsScan) table.Controls.Add(scan, 1, 2);
                 var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
-                var cancel = new StudioButton { Text = Localization.IsEnglish ? "Cancel" : "Abbrechen", Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, DialogResult = DialogResult.Cancel };
+                var cancel = new StudioButton { Text = Localization.T("Abbrechen"), Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Panel, ForeColor = palette.Text, DialogResult = DialogResult.Cancel };
                 cancel.FlatAppearance.BorderColor = palette.Border;
                 var ok = new StudioButton { Text = "OK", Width = (int)(100 * scale), Height = (int)(30 * scale), FlatStyle = FlatStyle.Flat, BackColor = palette.Primary, ForeColor = palette.PrimaryText, DialogResult = DialogResult.OK, Margin = new Padding(8, 0, 0, 0) };
                 ok.FlatAppearance.BorderSize = 0;
@@ -321,7 +321,7 @@ namespace MP1.ConfigurationStudio
                 Controls.Add(table);
                 AcceptButton = ok; CancelButton = cancel;
                 if (entry != null) { name.Text = entry.Name; path.Text = entry.Path; scan.Checked = entry.Scan; }
-                FormClosing += delegate(object sender, FormClosingEventArgs e) { if (DialogResult == DialogResult.OK && String.IsNullOrWhiteSpace(path.Text)) { e.Cancel = true; MessageBox.Show(this, Localization.IsEnglish ? "Please select a folder." : "Bitte einen Ordner auswählen.", "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information); } };
+                FormClosing += delegate(object sender, FormClosingEventArgs e) { if (DialogResult == DialogResult.OK && String.IsNullOrWhiteSpace(path.Text)) { e.Cancel = true; MessageBox.Show(this, Localization.T("Bitte einen Ordner auswählen."), "MP1 Configuration Studio", MessageBoxButtons.OK, MessageBoxIcon.Information); } };
                 Shown += delegate { name.Focus(); };
             }
 

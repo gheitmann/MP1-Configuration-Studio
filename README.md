@@ -1,10 +1,10 @@
-# MP1 Configuration Studio
+﻿# MP1 Configuration Studio
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.61](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.61) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.62](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.62) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -19,6 +19,7 @@ The 2.0 previews replace the re-themed native pages with a dedicated Studio inte
 - Manual ZIP backup, save with automatic pre-save backup, atomic replacement of `MediaPortal.xml`, and keyboard shortcuts (`Ctrl+S`, `Ctrl+W`, `Ctrl+PageUp/PageDown`). The main save also writes every dirty structured file editor.
 - **Update** button in the footer checks the project's GitHub releases and opens the release page when a newer version is available.
 - **Choice catalog:** classic Configuration combo fields are dropdowns in the desktop Studio (also in automatic "More settings" rows) and open MediaPortal selection dialogs in the plugin: skins, languages, fonts, Blu-ray region/codec, DVD aspect/display, subtitle engine, TV deinterlace/episode info, music play/queue/date, audio player/resume/upmix/WASAPI speakers, actor list size, DX9 filtering, start screen, and HID profiles.
+- **Languages:** the interface ships completely in German, English, French, and Dutch (UI, settings schema, labels, help texts, dialogs, and plugin pages); language is chosen in the Tools menu and stored in the appearance preferences.
 - **Controls and tabs:** the new interface uses the flat blue/black palette of the 1.9 shell, owner-drawn dropdowns, large interactive check boxes, rounded text frames and slim dark scroll bars, and brings back the 1.9 subsection tabs for long pages. Hover and pressed states are painted on every interactive control; the structured editors (keyboard, views, raw XML, plugin data, TV details, DSP, XML files) share the same frames and rounded buttons. The 1.9-style toolbar adds back/forward history, Ctrl+F search, Standard/Expert mode, size selector, Dark/Light theme (English default, German option) and a Tools menu; the window title bar follows the theme. Unsaved changes open a list of pending entries with Save/Don't save/Cancel; Standard mode is limited to everyday pages while Expert exposes database, codec, keyboard, view, DSP, plugin and raw editors. Raw XML entries show a reset-to-default button and highlight values that differ from the MediaPortal defaults. Backup/save report their result in the footer.
 - `--section=<id>` opens a page directly, for example `--section=plugins`.
 - XML file editor for `keymap.xml`, `MusicViews.xml`, `VideoViews.xml`, `musicdsp.xml`, other configuration XML files, and any file chosen with **Other file**; each save validates XML, creates a ZIP backup, and replaces atomically.
