@@ -90,11 +90,16 @@ namespace MP1.ConfigurationStudio
                                 if (name.StartsWith("GUI", StringComparison.Ordinal) && name.Length > 3) name = name.Substring(3);
                                 object hasSetupValue = Invoke(instance, "HasSetup");
                                 object defaultEnabledValue = Invoke(instance, "DefaultEnabled");
+                                object canEnableValue = Invoke(instance, "CanEnable");
                                 bool hasSetup = !(hasSetupValue is bool) || (bool)hasSetupValue;
                                 bool defaultEnabled = defaultEnabledValue is bool && (bool)defaultEnabledValue;
+                                bool canEnable = !(canEnableValue is bool) || (bool)canEnableValue;
+                                string description = (Invoke(instance, "Description") as string ?? String.Empty).Trim();
+                                string author = (Invoke(instance, "Author") as string ?? String.Empty).Trim();
                                 string icon = IconBase64(assembly, name);
                                 lines.Add("plugin=" + Clean(name) + "|" + Clean(file) + "|" + Clean(type.FullName) + "|" + folder.Category + "|"
-                                    + (hasSetup ? "1" : "0") + "|" + (defaultEnabled ? "1" : "0") + "|" + icon);
+                                    + (hasSetup ? "1" : "0") + "|" + (defaultEnabled ? "1" : "0") + "|" + (canEnable ? "1" : "0") + "|"
+                                    + Clean(description) + "|" + Clean(author) + "|" + icon);
                             }
                             catch { }
                         }
@@ -107,7 +112,7 @@ namespace MP1.ConfigurationStudio
                     {
                         using (var writer = new StreamWriter(cacheFile, false, Encoding.UTF8))
                         {
-                            writer.WriteLine("#MP1-PluginOverview2|" + mediaPortalDirectory);
+                            writer.WriteLine("#MP1-PluginOverview3|" + mediaPortalDirectory);
                             foreach (string line in lines) writer.WriteLine(line);
                         }
                     }
@@ -126,7 +131,7 @@ namespace MP1.ConfigurationStudio
             {
                 if (!File.Exists(cacheFile) || File.GetLastWriteTimeUtc(cacheFile) < DateTime.UtcNow.AddHours(-12)) return false;
                 string[] lines = File.ReadAllLines(cacheFile, Encoding.UTF8);
-                if (lines.Length == 0 || !String.Equals(lines[0], "#MP1-PluginOverview2|" + mediaPortalDirectory, StringComparison.OrdinalIgnoreCase)) return false;
+                if (lines.Length == 0 || !String.Equals(lines[0], "#MP1-PluginOverview3|" + mediaPortalDirectory, StringComparison.OrdinalIgnoreCase)) return false;
                 for (int index = 1; index < lines.Length; index++)
                     if (lines[index].StartsWith("plugin=", StringComparison.OrdinalIgnoreCase)) Console.WriteLine(lines[index]);
                 Console.Out.Flush();

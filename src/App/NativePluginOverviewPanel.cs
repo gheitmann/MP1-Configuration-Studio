@@ -27,6 +27,12 @@ namespace MP1.ConfigurationStudio
             public bool Enabled;
             public bool Home;
             public bool Plugins;
+            public bool CanEnable;
+            public string Description;
+            public string Author;
+            public bool LoadedEnabled;
+            public bool LoadedHome;
+            public bool LoadedPlugins;
             public StudioPluginTile Tile;
         }
 
@@ -37,6 +43,18 @@ namespace MP1.ConfigurationStudio
         private readonly Action changed;
         private readonly Action<int> heightChanged;
         private readonly FlowLayoutPanel actions;
+        private StudioTextInput filter;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern IntPtr SendMessage(IntPtr handle, uint message, IntPtr wParam, string lParam);
+
+        private static void SetCue(TextBox box, string text)
+        {
+            if (box == null || box.IsDisposed) return;
+            try { SendMessage(box.Handle, 0x1501, new IntPtr(1), text); }
+            catch (DllNotFoundException) { }
+            catch (EntryPointNotFoundException) { }
+        }
         private readonly Palette palette = Palette.For(true);
         private readonly FlowLayoutPanel flow = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, BackColor = Palette.For(true).Background, Padding = new Padding(0) };
         private readonly Panel grid = new Panel { Dock = DockStyle.Fill, AutoScroll = false, BackColor = Palette.For(true).Background };
@@ -63,9 +81,10 @@ namespace MP1.ConfigurationStudio
             ForeColor = palette.Text;
             var body = Typography.Create(10f * scale, FontStyle.Regular);
 
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = palette.Background, Margin = new Padding(0), Padding = new Padding(0) };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = palette.Background, Margin = new Padding(0), Padding = new Padding(0) };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(30)));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, Px(38)));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             status.Font = Typography.Create(9f * scale, FontStyle.Regular);
@@ -76,7 +95,12 @@ namespace MP1.ConfigurationStudio
 
             grid.Controls.Add(flow);
             grid.Resize += delegate { SizeHeaders(); };
-            root.Controls.Add(grid, 0, 2);
+            root.Controls.Add(grid, 0, 3);
+
+            filter = new StudioTextInput(scale, body, palette) { Colors = () => palette, Dock = DockStyle.Fill, AccessibleName = Localization.IsEnglish ? "Filter plugins" : "Plugins filtern" };
+            filter.Box.TextChanged += delegate { ApplyFilter(); };
+            filter.Box.HandleCreated += delegate { SetCue(filter.Box, Localization.IsEnglish ? "Filter plugins…" : "Plugins filtern…"); };
+            root.Controls.Add(filter, 0, 2);
 
             actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = palette.Background, Margin = new Padding(0) };
             actions.SizeChanged += delegate { UpdateHeight(); };
@@ -200,12 +224,18 @@ namespace MP1.ConfigurationStudio
                             Category = parts[3].Trim(),
                             HasSetup = parts[4] == "1",
                             DefaultEnabled = parts[5] == "1",
-                            Icon = Decode(parts[6])
+                            CanEnable = parts.Length <= 6 || parts[6] == "1",
+                            Description = parts.Length > 7 ? parts[7] : String.Empty,
+                            Author = parts.Length > 8 ? parts[8] : String.Empty,
+                            Icon = Decode(parts.Length > 9 ? parts[9] : String.Empty)
                         };
                         entry.Enabled = configuration.GetBool("plugins", entry.Name, entry.DefaultEnabled);
                         entry.Home = configuration.GetBool("home", entry.Name, false);
                         entry.Plugins = configuration.GetBool("myplugins", entry.Name, false);
                         if (entry.Category == "Window" && entry.Enabled && !entry.Home && !entry.Plugins) entry.Home = true;
+                        entry.LoadedEnabled = entry.Enabled;
+                        entry.LoadedHome = entry.Home;
+                        entry.LoadedPlugins = entry.Plugins;
                         result.Add(entry);
                     }
                 }
@@ -264,6 +294,7 @@ namespace MP1.ConfigurationStudio
                             Padding = new Padding(Px(4), Px(6), 0, 0)
                         };
                         flow.Controls.Add(header);
+                        header.Tag = category;
                         headers.Add(header);
                         flow.SetFlowBreak(header, true);
                     }
@@ -284,11 +315,12 @@ namespace MP1.ConfigurationStudio
                         Select(entry);
                         ShowContextMenu(entry);
                     };
-                    tips.SetToolTip(tile, Localization.IsEnglish ? "Right-click for quick actions" : "Rechtsklick für Schnellaktionen");
+                    tips.SetToolTip(tile, BuildTileTip(entry));
                     entry.Tile = tile;
                     flow.Controls.Add(tile);
                 }
                 SizeHeaders();
+                ApplyFilter();
             }
             if (entries.Count == 0)
             {
@@ -303,6 +335,38 @@ namespace MP1.ConfigurationStudio
             }
             status.ForeColor = entries.Count == 0 ? palette.Muted : palette.Text;
             UpdateActions();
+        }
+
+        private string BuildTileTip(PluginEntry entry)
+        {
+            string tip = (entry.Description ?? String.Empty).Trim();
+            if (tip.Length == 0)
+                return Localization.IsEnglish ? "Right-click for quick actions" : "Rechtsklick für Schnellaktionen";
+            string author = (entry.Author ?? String.Empty).Trim();
+            if (author.Length > 0) tip += "\r\n" + (Localization.IsEnglish ? "Author: " : "Autor: ") + author;
+            tip += "\r\n" + (Localization.IsEnglish ? "Right-click for quick actions" : "Rechtsklick für Schnellaktionen");
+            return tip;
+        }
+
+        private void ApplyFilter()
+        {
+            if (flow == null || entries.Count == 0) return;
+            string query = filter == null ? String.Empty : filter.Text.Trim();
+            foreach (PluginEntry entry in entries)
+            {
+                if (entry.Tile == null) continue;
+                bool visible = query.Length == 0
+                    || entry.Name.IndexOf(query, StringComparison.CurrentCultureIgnoreCase) >= 0
+                    || (entry.Description ?? String.Empty).IndexOf(query, StringComparison.CurrentCultureIgnoreCase) >= 0
+                    || entry.Category.IndexOf(query, StringComparison.CurrentCultureIgnoreCase) >= 0;
+                entry.Tile.Visible = visible;
+            }
+            foreach (Label header in headers)
+            {
+                string category = Convert.ToString(header.Tag, CultureInfo.InvariantCulture);
+                header.Visible = entries.Any(entry => String.Equals(entry.Category, category, StringComparison.OrdinalIgnoreCase)
+                    && entry.Tile != null && entry.Tile.Visible);
+            }
         }
 
         private void SizeHeaders()
@@ -354,7 +418,7 @@ namespace MP1.ConfigurationStudio
             contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "Configure" : "Konfigurieren", entry.HasSetup, null, delegate { Select(entry); ConfigureSelected(); }));
             contextMenu.Items.Add(MenuItem(entry.Enabled
                 ? (Localization.IsEnglish ? "Disable" : "Deaktivieren")
-                : (Localization.IsEnglish ? "Enable" : "Aktivieren"), true, null, delegate { Select(entry); ToggleEnabled(); }));
+                : (Localization.IsEnglish ? "Enable" : "Aktivieren"), entry.CanEnable, null, delegate { Select(entry); ToggleEnabled(); }));
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "In Home" : "Im Home-Menü", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Home : null, delegate { Select(entry); ToggleHome(); }));
             contextMenu.Items.Add(MenuItem(Localization.IsEnglish ? "In Plugins" : "In My Plugins", entry.Category == "Window", entry.Category == "Window" ? (bool?)entry.Plugins : null, delegate { Select(entry); TogglePlugins(); }));
@@ -403,7 +467,7 @@ namespace MP1.ConfigurationStudio
             try
             {
                 configure.Enabled = has && selected.HasSetup;
-                toggle.Enabled = has;
+                toggle.Enabled = has && selected.CanEnable;
                 home.Enabled = has && selected.Category == "Window";
                 myPlugins.Enabled = has && selected.Category == "Window";
                 if (!has)
@@ -416,7 +480,8 @@ namespace MP1.ConfigurationStudio
                     : (Localization.IsEnglish ? "Enable" : "Aktivieren"));
                 SetText(home, selected.Home ? (Localization.IsEnglish ? "Remove from Home" : "Aus Home entfernen") : (Localization.IsEnglish ? "In Home" : "Im Home-Menü"));
                 SetText(myPlugins, selected.Plugins ? (Localization.IsEnglish ? "Remove from Plugins" : "Aus My Plugins entfernen") : (Localization.IsEnglish ? "In Plugins" : "In My Plugins"));
-                status.Text = selected.Name + "  ·  " + CategoryTitle(selected.Category) + (selected.HasSetup ? "  ·  " + (Localization.IsEnglish ? "configurable" : "konfigurierbar") : String.Empty);
+                status.Text = selected.Name + "  ·  " + CategoryTitle(selected.Category) + (selected.HasSetup ? "  ·  " + (Localization.IsEnglish ? "configurable" : "konfigurierbar") : String.Empty)
+                    + (selected.CanEnable ? String.Empty : "  ·  " + (Localization.IsEnglish ? "cannot be disabled" : "nicht deaktivierbar"));
                 status.ForeColor = palette.Text;
             }
             finally
@@ -457,17 +522,37 @@ namespace MP1.ConfigurationStudio
 
         private void WriteState(PluginEntry entry)
         {
-            configuration.SetBool("plugins", entry.Name, entry.Enabled);
-            configuration.SetBool("pluginsdlls", Path.GetFileName(entry.Dll), entry.Enabled);
+            // Writes only deltas against the original MediaPortal.xml state so enabling a plugin back
+            // does not leave unexpected pending entries for keys that were absent originally.
+            SyncBool("plugins", entry.Name, entry.Enabled, entry.DefaultEnabled);
+            SyncBool("pluginsdlls", Path.GetFileName(entry.Dll), entry.Enabled, entry.DefaultEnabled);
             if (entry.Category == "Window")
             {
-                configuration.SetBool("pluginswindows", entry.Type, entry.Enabled);
-                configuration.SetBool("home", entry.Name, entry.Home);
-                configuration.SetBool("myplugins", entry.Name, entry.Plugins);
+                SyncBool("pluginswindows", entry.Type, entry.Enabled, true);
+                SyncBool("home", entry.Name, entry.Home, entry.LoadedHome);
+                SyncBool("myplugins", entry.Name, entry.Plugins, entry.LoadedPlugins);
             }
             if (changed != null) changed();
             if (entry.Tile != null) entry.Tile.Invalidate();
             UpdateActions();
+        }
+
+        private void SyncBool(string section, string key, bool desired, bool defaultWhenAbsent)
+        {
+            string original = configuration.OriginalValue(section, key);
+            bool originalEnabled = original == null ? defaultWhenAbsent : IsYes(original);
+            if (desired == originalEnabled)
+            {
+                if (original == null) configuration.Remove(section, key); // no-op, or clears a pending entry we added earlier
+                else configuration.Set(section, key, original);           // no-op, or reverts an earlier pending change
+                return;
+            }
+            configuration.SetBool(section, key, desired);
+        }
+
+        private static bool IsYes(string value)
+        {
+            return String.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) || String.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         private void ConfigureSelected()

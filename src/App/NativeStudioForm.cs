@@ -236,6 +236,8 @@ namespace MP1.ConfigurationStudio
                 var item = new StudioAction { Text = navTitle, IconName = section.Icon, Colors = () => palette, Navigation = true, Font = body, Height = Px(38), Width = Px(198), Margin = new Padding(header ? Px(12) : 0, 2, 0, 2), BackColor = palette.Panel, AccessibleName = section.TitleDe };
                 item.Click += delegate { ShowSection(section, item); };
                 item.Tag = section;
+                string navTip = Localization.IsEnglish ? section.SubtitleEn : section.SubtitleDe;
+                if (!String.IsNullOrEmpty(navTip)) FieldTips().SetToolTip(item, navTip);
                 navigation.Controls.Add(item);
                 previousGroup = group;
             }
@@ -1040,6 +1042,7 @@ namespace MP1.ConfigurationStudio
             {
                 var check = new StudioCheck(scale) { Text = labelText, Checked = configuration.GetBool(field.Section, field.Entry, false), Font = body, Colors = () => palette, Dock = DockStyle.Fill, Height = Px(30), Margin = new Padding(0, Px(1), 0, Px(1)) };
                 check.CheckedChanged += delegate { configuration.SetBool(field.Section, field.Entry, check.Checked); MarkDirty(); };
+                AttachFieldTip(check, field);
                 table.Controls.Add(check, 0, table.RowCount);
                 table.SetColumnSpan(check, 2);
                 table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -1118,6 +1121,8 @@ namespace MP1.ConfigurationStudio
             }
             table.Controls.Add(input, 1, table.RowCount);
             if (!String.IsNullOrEmpty(labelText)) input.AccessibleName = labelText;
+            AttachFieldTip(label, field);
+            AttachFieldTip(input, field);
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowCount++;
             AddHelp(field);
@@ -1132,6 +1137,36 @@ namespace MP1.ConfigurationStudio
             table.SetColumnSpan(label, 2);
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.RowCount++;
+        }
+
+        private ToolTip fieldTips;
+
+        private ToolTip FieldTips()
+        {
+            if (fieldTips == null)
+            {
+                fieldTips = new ToolTip { AutoPopDelay = 15000, InitialDelay = 500, ReshowDelay = 120 };
+            }
+            return fieldTips;
+        }
+
+        private void AttachFieldTip(Control control, NativeField field)
+        {
+            if (control == null || field == null) return;
+            string help = Localization.IsEnglish ? field.HelpEn : field.HelpDe;
+            if (String.IsNullOrEmpty(help))
+            {
+                string fallback;
+                if (!MediaPortalDefaults.TryGet(field.Section, field.Entry, out fallback)) return;
+                help = (Localization.IsEnglish ? "Default: " : "Standard: ") + fallback;
+            }
+            ApplyTip(control, help);
+        }
+
+        private void ApplyTip(Control control, string tip)
+        {
+            FieldTips().SetToolTip(control, tip);
+            foreach (Control child in control.Controls) ApplyTip(child, tip);
         }
 
         private void MarkDirty()
