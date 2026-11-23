@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
-    <Platforms>x64</Platforms>
-    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget Condition="'$(PlatformTarget)' == ''">x64</PlatformTarget>
     <LangVersion>12.0</LangVersion>
     <AssemblyName>MP1ConfigurationStudio</AssemblyName>
     <RootNamespace>MP1.ConfigurationStudio</RootNamespace>

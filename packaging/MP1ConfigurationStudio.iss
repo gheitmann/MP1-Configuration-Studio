@@ -34,8 +34,7 @@ DefaultDirName={code:GetMediaPortalDir}
 #endif
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x86compatible
 OutputDir={#ProjectRoot}\dist\package
 #ifdef TestInstall
 OutputBaseFilename=MP1-Configuration-Studio-{#AppVersion}-Setup-Test
@@ -58,7 +57,12 @@ Name: "mpPlugin"; Description: "MediaPortal plugin (optional)"; Types: full
 #endif
 
 [Files]
+#ifdef TestInstall
 Source: "{#ProjectRoot}\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+#else
+Source: "{#ProjectRoot}\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion; Check: MpIs64
+Source: "{#ProjectRoot}\dist\MP1ConfigurationStudio.x86.exe"; DestDir: "{app}"; DestName: "{#AppExe}"; Flags: ignoreversion; Check: not MpIs64
+#endif
 Source: "{#ProjectRoot}\dist\{#AppExe}.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\SECURITY.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -106,6 +110,23 @@ begin
     Result := '';
 end;
 
+function MpIs64(): Boolean;
+var
+  Dir, Value: String;
+begin
+#ifdef TestInstall
+  Result := True;
+#else
+  Dir := GetMediaPortalDir('');
+  if RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MediaPortal', 'InstallPath', Value) and (CompareText(Value, Dir) = 0) then
+    Result := True
+  else if RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MediaPortal', 'InstallPath', Value) and (CompareText(Value, Dir) = 0) then
+    Result := False
+  else
+    Result := Pos('(x86)', Dir) = 0;
+#endif
+end;
+
 function GetSkinRoot(Param: String): String;
 begin
 #ifdef TestInstall
@@ -127,7 +148,7 @@ begin
   Dir := GetMediaPortalDir('');
   Result := (Dir <> '') and FileExists(Dir + '\Configuration.exe');
   if not Result then
-    MsgBox('MediaPortal 1.39 x64 wurde nicht gefunden. Bitte zuerst MediaPortal installieren.', mbError, MB_OK);
+    MsgBox('MediaPortal 1.39 wurde nicht gefunden. Bitte zuerst MediaPortal installieren.', mbError, MB_OK);
 #endif
 end;
 

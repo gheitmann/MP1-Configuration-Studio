@@ -8,12 +8,17 @@ $root = Split-Path $PSScriptRoot -Parent
 $dist = Join-Path $root 'dist'
 $app = Join-Path $dist 'MP1ConfigurationStudio.exe'
 $config = $app + '.config'
+$x86 = Join-Path $dist 'MP1ConfigurationStudio.x86.exe'
+$x86config = $x86 + '.config'
 
 if (-not (Test-Path -LiteralPath $app)) {
     throw "Built application not found: $app. Run build.ps1 first."
 }
 if (-not (Test-Path -LiteralPath $config)) {
     throw "Application config not found: $config"
+}
+if (-not (Test-Path -LiteralPath $x86)) {
+    throw "x86 application not found: $x86. Run build.ps1 first."
 }
 
 $version = $Version.TrimStart('v')
@@ -42,6 +47,8 @@ New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
 Copy-Item -LiteralPath $app -Destination $stage
 Copy-Item -LiteralPath $config -Destination $stage
+Copy-Item -LiteralPath $x86 -Destination $stage
+Copy-Item -LiteralPath $x86config -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'README.md') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'SECURITY.md') -Destination $stage

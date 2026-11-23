@@ -1,10 +1,10 @@
-# MP1 Configuration Studio
+﻿# MP1 Configuration Studio
 
 A modern Windows interface for the original MediaPortal 1.39 configurator.
 
 > **Current stable release:** [1.9.0](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v1.9.0) for MediaPortal 1.39 x64. The build is **unsigned** because no code-signing certificate is configured; verify the published SHA256 and expect a possible SmartScreen warning. German and the Studio-owned English UI are complete via Tools → Language. Native page labels follow the MediaPortal language.
 >
-> **2.0 previews:** [2.0.0-beta.63](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.63) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
+> **2.0 previews:** [2.0.0-beta.64](https://github.com/gheitmann/MP1-Configuration-Studio/releases/tag/v2.0.0-beta.64) is the new native configuration interface and now the **default** when the application starts without arguments. It reads and writes `MediaPortal.xml` directly, keeps unknown sections and entries, and creates a ZIP backup before saving. Use the sidebar entry **Studio 1.9-Oberfläche** or `--studio` for the 1.9 shell, and `--classic` for the original MediaPortal configurator.
 >
 > `0.1.0-alpha.1` is kept as a historical preview only.
 
@@ -64,7 +64,7 @@ The published 1.9.0 build predates the SignPath application and is unsigned. The
 
 ## Install and run
 
-1.9.0 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39 x64. x86 is not shipped.
+2.0 requires Windows 11 23H2 or newer, .NET Framework 4.8, and MediaPortal 1.39. The setup installs the Studio build that matches the installed MediaPortal architecture (x64 or x86); the portable ZIP contains both executables.
 
 1. Back up the MediaPortal configuration.
 2. Close MediaPortal and the original configurator.
