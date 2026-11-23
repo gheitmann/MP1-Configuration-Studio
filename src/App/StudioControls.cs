@@ -925,8 +925,7 @@ namespace MP1.ConfigurationStudio
             using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), 6))
             {
                 using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
-                if (!Primary)
-                    using (var pen = new Pen(hover ? palette.Accent : palette.Border)) e.Graphics.DrawPath(pen, path);
+                using (var pen = new Pen(Primary ? StudioChoice.Blend(fill, Color.Black, 0.18f) : (hover ? palette.Accent : palette.Border))) e.Graphics.DrawPath(pen, path);
             }
             Color ink = !Enabled ? palette.Muted : (Primary ? palette.PrimaryText : ForeColor);
             TextRenderer.DrawText(e.Graphics, Text, Font, bounds, ink, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);

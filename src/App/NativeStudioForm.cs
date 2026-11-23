@@ -2002,6 +2002,7 @@ namespace MP1.ConfigurationStudio
         protected override void OnPaint(PaintEventArgs e)
         {
             Palette palette = Colors != null ? Colors() : Palette.For(true);
+            e.Graphics.Clear(Parent != null ? Parent.BackColor : palette.Background);
             Rectangle bounds = ClientRectangle;
             bounds.Width--;
             bounds.Height--;
@@ -2011,11 +2012,9 @@ namespace MP1.ConfigurationStudio
             if (!Enabled) fill = GlassPanelBlend(palette.Panel, palette.Background, 0.4f);
             else if (hover) fill = GlassPanelBlend(fill, Color.White, Primary ? 0.10f : 0.07f);
             using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), 6))
-            using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
-            if (!Primary)
             {
-                using (var path = StudioIcons.Rounded(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), 6))
-                using (var pen = new Pen(palette.Border)) e.Graphics.DrawPath(pen, path);
+                using (var brush = new SolidBrush(fill)) e.Graphics.FillPath(brush, path);
+                using (var pen = new Pen(Primary ? GlassPanelBlend(fill, Color.Black, 0.18f) : palette.Border)) e.Graphics.DrawPath(pen, path);
             }
             TextRenderer.DrawText(e.Graphics, Text, Font, bounds, Enabled ? ForeColor : palette.Muted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
         }

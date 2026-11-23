@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -313,6 +313,20 @@ namespace MP1.ConfigurationStudio
             {
                 Check(errorDialog.Text=="MP1 Configuration Studio","error dialog can be constructed");
             }
+            using(var primaryButton=new GlassButton{Primary=true,Text="Save",Width=120,Height=34})
+            {
+                primaryButton.Colors=()=>Palette.For(true);
+                primaryButton.BackColor=Palette.For(true).Primary;
+                primaryButton.ForeColor=Palette.For(true).PrimaryText;
+                using(var bitmap=new Bitmap(120,34))
+                {
+                    primaryButton.DrawToBitmap(bitmap,new Rectangle(0,0,120,34));
+                    Color corner=bitmap.GetPixel(0,0);
+                    Color border=bitmap.GetPixel(60,0);
+                    Check(corner.ToArgb()==Palette.For(true).Background.ToArgb(),"primary button corners clear to the panel background");
+                    Check(border.ToArgb()!=Palette.For(true).Primary.ToArgb()&&border.ToArgb()!=Palette.For(true).Background.ToArgb(),"primary button draws a matching outline");
+                }
+            }
             using(var firstRun=new FirstRunDialog())
             {
                 var welcomeText=All(firstRun).OfType<TextBox>().First();
@@ -453,7 +467,7 @@ namespace MP1.ConfigurationStudio
                 Check(names.Contains("appearance.xml"),"support bundle contains appearance preferences");
                 Check(!names.Any(name=>name.IndexOf("MediaPortal.xml",StringComparison.OrdinalIgnoreCase)>=0),"support bundle excludes MediaPortal.xml");
                 Check(ReadEntry(archive,"README.txt").Contains("Nicht enthalten"),"support bundle documents privacy");
-                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.64"),"support bundle records the beta version");
+                Check(ReadEntry(archive,"version.txt").Contains("2.0.0-beta.65"),"support bundle records the beta version");
                 Check(ReadEntry(archive,"compatibility.txt").Contains("Tier"),"support bundle records the compatibility policy");
                 Check(ReadEntry(archive,"environment.txt").Contains("System DPI:")&&ReadEntry(archive,"environment.txt").Contains("High contrast:")&&ReadEntry(archive,"environment.txt").Contains("Screens:"),"support bundle records display diagnostics");
             }
